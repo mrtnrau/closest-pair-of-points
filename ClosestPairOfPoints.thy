@@ -115,10 +115,10 @@ qed
 
 
 text \<open>
-  Maximal Distance between two Points within a Square of size d.
+  Maximum Distance between two Points within a Square of size d.
 \<close>
 
-lemma maximal_dist_points_in_square:
+lemma maximum_dist_points_in_square:
   assumes "p\<^sub>0 = (x, y)" "p\<^sub>1 = (x + d, y + d)" "(x\<^sub>a, y\<^sub>a) \<in> box p\<^sub>0 p\<^sub>1" "(x\<^sub>b, y\<^sub>b) \<in> box p\<^sub>0 p\<^sub>1" "0 \<le> d"
   shows "dist (x\<^sub>a, y\<^sub>a) (x\<^sub>b, y\<^sub>b) \<le> sqrt 2 * d"
 proof -
@@ -182,13 +182,13 @@ proof (rule ccontr)
   have D: "0 \<le> d / 2"
     using assms(3) by simp
   have LL: "\<forall>a \<in> ?ll. \<forall>b \<in> ?ll. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximal_dist_points_in_square[of "(x, y)" x y "(?x', ?y')" "d / 2"] D by auto
+    using maximum_dist_points_in_square[of "(x, y)" x y "(?x', ?y')" "d / 2"] D by auto
   have LU: "\<forall>a \<in> ?lu. \<forall>b \<in> ?lu. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximal_dist_points_in_square[of "(x, ?y')" x ?y' "(?x', y + d)" "d / 2"] D by auto
+    using maximum_dist_points_in_square[of "(x, ?y')" x ?y' "(?x', y + d)" "d / 2"] D by auto
   have RL: "\<forall>a \<in> ?rl. \<forall>b \<in> ?rl. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximal_dist_points_in_square[of "(?x', y)" ?x' y "(x + d, ?y')" "d / 2"] D by auto
+    using maximum_dist_points_in_square[of "(?x', y)" ?x' y "(x + d, ?y')" "d / 2"] D by auto
   have RU: "\<forall>a \<in> ?ru. \<forall>b \<in> ?ru. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximal_dist_points_in_square[of "(?x', ?y')" ?x' ?y' "(x + d, y + d)" "d / 2"] D by auto
+    using maximum_dist_points_in_square[of "(?x', ?y')" ?x' ?y' "(x + d, y + d)" "d / 2"] D by auto
 
   have "\<forall>a \<in> s. \<forall>b \<in> s. dist a b \<le> sqrt 2 * (d / 2)"
     using # LL LU RL RU by blast
