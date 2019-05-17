@@ -1,249 +1,73 @@
 theory ClosestPairOfPoints
-  imports "HOL-Analysis.Analysis"
+  imports "HOL-Analysis.Analysis" "Geometry"
 begin
 
 
 
 
 text \<open>
-  Definition of 2D-Boxes and Sparsity of Points
+  Closest Pair of Points Criteria
 \<close>
 
-type_synonym point = "real * real"
+fun cpop_dist :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
+  "cpop_dist (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> (\<forall>i < length ps. \<forall>j < length ps. i \<noteq> j \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist (ps!i) (ps!j))"
 
-(* use cbox ? *)
-fun box :: "point \<Rightarrow> point \<Rightarrow> point set" where
-  "box (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) = { (x, y). min x\<^sub>0 x\<^sub>1 \<le> x \<and> x \<le> max x\<^sub>0 x\<^sub>1 \<and> min y\<^sub>0 y\<^sub>1 \<le> y \<and> y \<le> max y\<^sub>0 y\<^sub>1 }"
+fun cpop_set :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
+  "cpop_set (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> p\<^sub>0 \<in> set ps \<and> p\<^sub>1 \<in> set ps"
 
-lemma box_extend_top:
-  assumes "b \<le> d" "d \<le> e"
-  shows "box (a, b) (c, d) \<union> box (a, d) (c, e) = box (a, b) (c, e)"
-  using assms by (auto simp add: min_def max_def)
+fun cpop_distinct :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
+  "cpop_distinct (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> (
+    if distinct ps then
+      p\<^sub>0 \<noteq> p\<^sub>1
+    else
+      (p\<^sub>0 = p\<^sub>1) \<and> 2 \<le> length (filter (\<lambda>p. p = p\<^sub>0) ps)
+  )"
 
-lemma box_extend_right:
-  assumes "a \<le> c" "c \<le> e"
-  shows "box (a, b) (c, d) \<union> box (c, b) (e, d) = box (a, b) (e, d)"
-  using assms by (auto simp add: min_def max_def)
-
-definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
-  "sparse d ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> d \<le> dist p\<^sub>0 p\<^sub>1)"
+fun cpop_distinct_dist :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
+  "cpop_distinct_dist (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> (\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y)"
 
 
 
 
-text \<open>
-  Lemmas about Cardinality of Sets
-\<close>
+lemma distinct_pairwise:
+  "distinct xs \<Longrightarrow> (\<forall>i < length xs. \<forall>j < length xs. i \<noteq> j \<longrightarrow> P (xs!i) (xs!j)) \<longleftrightarrow> (\<forall>x \<in> set xs. \<forall>y \<in> set xs. x \<noteq> y \<longrightarrow> P x y)"
+  by (metis (no_types, hide_lams) distinct_conv_nth in_set_conv_nth)
 
-lemma card_le_1_pairs_identical:
-  assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y"
-  shows "card S \<le> 1"
+lemma cpop_dist_iff_cpop_distinct_dist:
+  "distinct ps \<Longrightarrow> cpop_dist (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> cpop_distinct_dist (p\<^sub>0, p\<^sub>1) ps"
+  using distinct_pairwise[of ps "(\<lambda>x y. dist p\<^sub>0 p\<^sub>1 \<le> dist x y)"] by simp
+
+lemma cpop_distinct_dist_id:
+  "cpop_distinct_dist (c\<^sub>0, c\<^sub>1) ps \<Longrightarrow> \<forall>p \<in> set ps. dist c\<^sub>0 c\<^sub>1 \<le> dist c p \<Longrightarrow> cpop_distinct_dist (c\<^sub>0, c\<^sub>1) (c # ps)"
+  by (simp add: dist_commute)
+
+lemma cpop_distinct_dist_upd:
+  assumes "cpop_distinct_dist (c\<^sub>0, c\<^sub>1) ps" "dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
+  shows "cpop_distinct_dist (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # ps)"
+  using assms by (smt cpop_distinct_dist.simps cpop_distinct_dist_id)
+
+declare cpop_distinct_dist.simps [simp del]
+
+lemma _?:
+  assumes "\<not> distinct ps" "cpop_dist (p\<^sub>0, p\<^sub>1) ps"
+  shows "p\<^sub>0 = p\<^sub>1"
 proof (rule ccontr)
-  assume "\<not> card S \<le> 1"
-  hence "2 \<le> card S"
-    by simp
-  then obtain T where *: "T \<subseteq> S \<and> card T = 2"
-    using ex_card by metis
-  then obtain x y where "x \<in> T \<and> y \<in> T \<and> x \<noteq> y"
-    using card_2_exists by metis
-  then show False
-    using * assms by blast
-qed
-
-lemma card_S_inter_T:
-  assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> T \<or> y \<notin> T" 
-  shows "card (S \<inter> T) \<le> 1"
-proof -
-  show ?thesis
-    using assms by (meson IntD1 IntD2 card_le_1_pairs_identical)
-qed
-
-lemma card_inter_2_le:
-  "card (A \<inter> (B \<union> C)) \<le> card (A \<inter> B) + card (A \<inter> C)"
-  by (simp add: card_Un_le inf_sup_distrib1)
-
-lemma card_inter_3_le:
-  "card (S \<inter> (A \<union> B \<union> C)) \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C)"
-proof -
-  have "card (S \<inter> (A \<union> B \<union> C)) \<le> card (S \<inter> A) + card (S \<inter> (B \<union> C))"
-    by (simp add: card_inter_2_le sup_assoc)
-  also have "... \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C)"
-    using card_inter_2_le by auto
-  finally show ?thesis by simp
-qed
-
-lemma card_inter_4_le:
-  "card (S \<inter> (A \<union> B \<union> C \<union> D)) \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C) + card (S \<inter> D)"
-proof -
-  have "card (S \<inter> (A \<union> B \<union> C \<union> D)) \<le> card (S \<inter> A) + card (S \<inter> (B \<union> C \<union> D))"
-    by (simp add: card_inter_2_le sup_assoc)
-  also have "... \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C) + card (S \<inter> D)"
-    using card_inter_3_le by (metis ab_semigroup_add_class.add_ac(1) nat_add_left_cancel_le)
-  finally show ?thesis by simp
-qed
-
-
-
-
-text \<open>
-  Pigeonhole Principle
-\<close>
-
-lemma pigeonhole:
-  assumes "S \<subseteq> \<Union>{ A, B, C, D }" "4 < card S"
-  shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>s \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> s \<and> y \<in> s"
-proof (rule ccontr)
-  assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>s \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> s \<and> y \<in> s)"
-
-  hence "\<forall>X \<in> { A, B, C, D }. \<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> X \<or> y \<notin> X"
-    by auto
-  hence *: "\<forall>X \<in> { A, B, C, D }. card (S \<inter> X) \<le> 1"
-    using card_S_inter_T by auto
-
-  have "4 < card (S \<inter> \<Union>{ A, B, C, D })"
-    using Int_absorb2 assms by fastforce
-  also have "... = card (S \<inter> (A \<union> B \<union> C \<union> D))"
-    by (simp add: sup_assoc)
-  also have "... \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C) + card (S \<inter> D)"
-    using card_inter_4_le by blast
-  also have "... \<le> 4"
-    using * by simp
-  finally show False by simp
-qed
-
-
-
-
-text \<open>
-  Maximum Distance between two Points within a Square of size d.
-\<close>
-
-lemma maximum_dist_points_in_square:
-  assumes "p\<^sub>0 = (x, y)" "p\<^sub>1 = (x + d, y + d)" "(x\<^sub>a, y\<^sub>a) \<in> box p\<^sub>0 p\<^sub>1" "(x\<^sub>b, y\<^sub>b) \<in> box p\<^sub>0 p\<^sub>1" "0 \<le> d"
-  shows "dist (x\<^sub>a, y\<^sub>a) (x\<^sub>b, y\<^sub>b) \<le> sqrt 2 * d"
-proof -
-  have X: "dist x\<^sub>a x\<^sub>b \<le> d"
-    using assms dist_real_def by auto
-  have Y: "dist y\<^sub>a y\<^sub>b \<le> d"
-    using assms dist_real_def by auto
-
-  have "dist (x\<^sub>a, y\<^sub>a) (x\<^sub>b, y\<^sub>b) = sqrt ((dist x\<^sub>a x\<^sub>b)\<^sup>2 + (dist y\<^sub>a y\<^sub>b)\<^sup>2)"
-    using dist_Pair_Pair by auto
-  also have "... \<le> sqrt (d\<^sup>2 + (dist y\<^sub>a y\<^sub>b)\<^sup>2)"
-    using X power_mono by fastforce
-  also have "... \<le> sqrt (d\<^sup>2 + d\<^sup>2)"
-    using Y power_mono by fastforce
-  also have "... = sqrt 2 * sqrt (d\<^sup>2)"
-    using real_sqrt_mult by simp
-  also have "... = sqrt 2 * d"
-    using assms(5) by simp
-  finally show ?thesis .
-qed
-
-
-
-
-text \<open>
-  Maximum Number of d Sparse Points within a Square of size d. 
-\<close>
-
-lemma maximum_sparse_points_square:
-  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + d, y + d)" "sparse d ps" "0 < d"
-  shows "card ps \<le> 4"
-proof (rule ccontr)
-  assume *: "\<not> (card ps \<le> 4)"
-
-  let ?x' = "x + d / 2"
-  let ?y' = "y + d / 2"
-
-  let ?ll = "box ( x ,  y ) (?x'   , ?y'   )"
-  let ?lu = "box ( x , ?y') (?x'   ,  y + d)"
-  let ?rl = "box (?x',  y ) ( x + d, ?y'   )"
-  let ?ru = "box (?x', ?y') ( x + d,  y + d)"
-
-  have "box (x, y) (?x', y + d) = ?ll \<union> ?lu"
-    using box_extend_top assms(3) by auto
-  moreover have "box (?x', y) (x + d, y + d) = ?rl \<union> ?ru"
-    using box_extend_top assms(3) by auto
-  moreover have "box (x, y) (?x', y + d) \<union> box (?x', y) (x + d, y + d) = box (x, y) (x + d, y + d)"
-    using box_extend_right assms(3) by simp
-  ultimately have "?ll \<union> ?lu \<union> ?rl \<union> ?ru = box (x, y) (x + d, y + d)"
-    by blast
-
-  hence "ps \<subseteq> \<Union>{ ?ll, ?lu, ?rl, ?ru }"
-    using assms(1) by blast
-  moreover have "4 < card ps"
-    using * by simp
-  ultimately have "\<exists>p \<in> ps. \<exists>q \<in> ps. \<exists>s \<in> { ?ll, ?lu, ?rl, ?ru }. (p \<noteq> q \<and> p \<in> s \<and> q \<in> s)"
-    using pigeonhole by fast
-  then obtain p q s where #: "p \<in> ps" "q \<in> ps" "s \<in> { ?ll, ?lu, ?rl, ?ru }" "p \<noteq> q" "p \<in> s" "q \<in> s"
-    by blast
-
-  have D: "0 \<le> d / 2"
-    using assms(3) by simp
-  have LL: "\<forall>a \<in> ?ll. \<forall>b \<in> ?ll. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximum_dist_points_in_square[of "(x, y)" x y "(?x', ?y')" "d / 2"] D by auto
-  have LU: "\<forall>a \<in> ?lu. \<forall>b \<in> ?lu. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximum_dist_points_in_square[of "(x, ?y')" x ?y' "(?x', y + d)" "d / 2"] D by auto
-  have RL: "\<forall>a \<in> ?rl. \<forall>b \<in> ?rl. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximum_dist_points_in_square[of "(?x', y)" ?x' y "(x + d, ?y')" "d / 2"] D by auto
-  have RU: "\<forall>a \<in> ?ru. \<forall>b \<in> ?ru. dist a b \<le> sqrt 2 * (d / 2)"
-    using maximum_dist_points_in_square[of "(?x', ?y')" ?x' ?y' "(x + d, y + d)" "d / 2"] D by auto
-
-  have "\<forall>a \<in> s. \<forall>b \<in> s. dist a b \<le> sqrt 2 * (d / 2)"
-    using # LL LU RL RU by blast
-  hence "dist p q \<le> (sqrt 2 / 2) * d"
-    using # by simp
-  moreover have "(sqrt 2 / 2) * d < d"
-    using sqrt2_less_2 assms(3) by simp
-  ultimately have "dist p q < d"
-    by simp
-  moreover have "d \<le> dist p q"
-    using assms(2) sparse_def # by blast
-  ultimately show False
-    by simp
-qed
-
-
-
-
-text \<open>
-  Maximum Number of d Sparse Points within a Rectangle of width 2 * d and height d. 
-\<close>
-
-lemma maximum_sparse_points_rect:
-  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + 2 * d, y + d)" "sparse d ps" "0 < d"
-  shows "card ps \<le> 8"
-proof -
-  let ?l = "box (x    , y) (x + d    , y + d)"
-  let ?r = "box (x + d, y) (x + 2 * d, y + d)"
-
-  let ?psl = "{ p. p \<in> ps \<and> p \<in> ?l }"
-  let ?psr = "{ p. p \<in> ps \<and> p \<in> ?r }" 
-
-  have "box (x, y) (x + 2 * d, y + d) = ?l \<union> ?r"
-    using assms(3) box_extend_right by simp
-  hence *: "ps = ?psl \<union> ?psr"
-    using assms(1) by blast
-
-  have "\<forall>p \<in> ?psl. p \<in> ?l"
-    by blast
-  moreover have "sparse d ?psl"
-    using assms(2) * sparse_def by blast
-  hence L: "card ?psl \<le> 4"
-    using assms(3) maximum_sparse_points_square[of ?psl x y d] by blast
-
-  have "\<forall>p \<in> ?psr. p \<in> ?r"
-    by blast
-  moreover have "sparse d ?psr"
-    using assms(2) * sparse_def by blast
-  hence R: "card ?psr \<le> 4"
-    using assms(3) maximum_sparse_points_square[of ?psr "x + d" y d] box.simps by fastforce
-
-  have "card ps \<le> card ?psl + card ?psr"
-    using * card_Un_le by (metis (no_types, lifting))
-  thus ?thesis
-    using L R by force
+  assume *: "p\<^sub>0 \<noteq> p\<^sub>1"
+  obtain p as bs cs where 0: "ps = as @ [p] @ bs @ [p] @ cs"
+    using assms(1) not_distinct_decomp by blast
+  hence 1: "ps = as @ [ps!(length as)] @ bs @ [ps!(length as + 1 + length bs)] @ cs"
+    by (metis (no_types, lifting) One_nat_def Suc_eq_plus1 append.assoc append_Cons length_append list.size(3) list.size(4) nth_append_length)
+  moreover have "length as < length ps" "length as + 1 + length bs < length ps"
+    apply (metis (no_types, lifting) add_diff_cancel_left' add_is_0 calculation gr0I length_append list.size(4) nat.simps(3) zero_less_diff)
+    sorry
+  ultimately obtain i j where 2: "ps = as @ [ps!i] @ bs @ [ps!j] @ cs \<and> i \<noteq> j \<and> i < length ps \<and> j < length ps"
+    by fastforce
+  hence "dist p\<^sub>0 p\<^sub>1 \<le> dist (ps!i) (ps!j)"
+    using assms(2) by simp
+  also have "... = 0"
+    using 0 2 by simp
+  finally show False
+     using * by simp
 qed
 
 end
