@@ -6,6 +6,62 @@ begin
 
 
 text \<open>
+  Duplicates
+\<close>
+
+fun dups :: "'a list \<Rightarrow> 'a list" where
+  "dups [] = []"
+| "dups (x # xs) = (
+    if x \<in> set xs then
+      x # dups xs
+    else
+      dups xs
+  )"
+
+lemma dups_duplicate:
+  "x \<in> set (dups xs) \<longleftrightarrow> (\<exists>i j. i < length xs \<and> j < length xs \<and> i \<noteq> j \<and> x = xs!i \<and> x = xs!j)" (is "?A \<longleftrightarrow> ?B")
+proof standard
+  assume ?A
+  then show ?B
+  proof (induction xs)
+    case (Cons y xs)
+    thus ?case
+    proof (cases "x \<in> set (dups xs)")
+      case True
+      thus ?thesis
+        using Cons by fastforce
+    next
+      case False
+      hence 0: "x = y"
+        using Cons False by (metis dups.simps(2) set_ConsD)
+      hence "x \<in> set xs"
+        by (metis Cons.prems False dups.simps(2))
+      then obtain j where "j < length xs \<and> x = xs!j"
+        by (metis in_set_conv_nth)
+      hence "j + 1 < length (y#xs) \<and> x = (y#xs)!(j+1)"
+        by auto
+      moreover have "0 < length (y#xs) \<and> y = (y#xs)!0"
+        by simp
+      ultimately show ?thesis
+        using 0 by fastforce
+    qed
+  qed simp
+next
+  assume ?B
+  then show ?A
+  proof (induction xs)
+    case (Cons y xs)
+    then obtain i j where "i < length (y # xs) \<and> j < length (y # xs) \<and> i \<noteq> j \<and> x = (y # xs) ! i \<and> x = (y # xs) ! j"
+      by blast
+    thus ?case 
+      using Cons.IH less_Suc_eq_0_disj apply (auto) by fastforce+
+  qed simp
+qed
+
+
+
+
+text \<open>
   Closest Pair of Points Criteria
 \<close>
 
@@ -20,14 +76,18 @@ fun cpop_distinct :: "(point * point) \<Rightarrow> point list \<Rightarrow> boo
     if distinct ps then
       p\<^sub>0 \<noteq> p\<^sub>1
     else
-      (p\<^sub>0 = p\<^sub>1) \<and> 2 \<le> length (filter (\<lambda>p. p = p\<^sub>0) ps)
+      (p\<^sub>0 = p\<^sub>1) \<and> p\<^sub>0 \<in> set (dups ps)
   )"
+
+
+
+
+text \<open>
+  Simplification of cpop_dist for distinct lists of points
+\<close>
 
 fun cpop_distinct_dist :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
   "cpop_distinct_dist (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> (\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y)"
-
-
-
 
 lemma distinct_pairwise:
   "distinct xs \<Longrightarrow> (\<forall>i < length xs. \<forall>j < length xs. i \<noteq> j \<longrightarrow> P (xs!i) (xs!j)) \<longleftrightarrow> (\<forall>x \<in> set xs. \<forall>y \<in> set xs. x \<noteq> y \<longrightarrow> P x y)"
@@ -47,27 +107,5 @@ lemma cpop_distinct_dist_upd:
   using assms by (smt cpop_distinct_dist.simps cpop_distinct_dist_id)
 
 declare cpop_distinct_dist.simps [simp del]
-
-lemma _?:
-  assumes "\<not> distinct ps" "cpop_dist (p\<^sub>0, p\<^sub>1) ps"
-  shows "p\<^sub>0 = p\<^sub>1"
-proof (rule ccontr)
-  assume *: "p\<^sub>0 \<noteq> p\<^sub>1"
-  obtain p as bs cs where 0: "ps = as @ [p] @ bs @ [p] @ cs"
-    using assms(1) not_distinct_decomp by blast
-  hence 1: "ps = as @ [ps!(length as)] @ bs @ [ps!(length as + 1 + length bs)] @ cs"
-    by (metis (no_types, lifting) One_nat_def Suc_eq_plus1 append.assoc append_Cons length_append list.size(3) list.size(4) nth_append_length)
-  moreover have "length as < length ps" "length as + 1 + length bs < length ps"
-    apply (metis (no_types, lifting) add_diff_cancel_left' add_is_0 calculation gr0I length_append list.size(4) nat.simps(3) zero_less_diff)
-    sorry
-  ultimately obtain i j where 2: "ps = as @ [ps!i] @ bs @ [ps!j] @ cs \<and> i \<noteq> j \<and> i < length ps \<and> j < length ps"
-    by fastforce
-  hence "dist p\<^sub>0 p\<^sub>1 \<le> dist (ps!i) (ps!j)"
-    using assms(2) by simp
-  also have "... = 0"
-    using 0 2 by simp
-  finally show False
-     using * by simp
-qed
 
 end
