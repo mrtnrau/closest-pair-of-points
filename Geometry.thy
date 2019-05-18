@@ -25,15 +25,8 @@ lemma box_extend_right:
   shows "box (a, b) (c, d) \<union> box (c, b) (e, d) = box (a, b) (e, d)"
   using assms by (auto simp add: min_def max_def)
 
-definition sparse_set :: "real \<Rightarrow> point set \<Rightarrow> bool" where
-  "sparse_set d ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> d \<le> dist p\<^sub>0 p\<^sub>1)"
-
-definition sparse_list :: "real \<Rightarrow> point list \<Rightarrow> bool" where
-  "sparse_list d ps \<longleftrightarrow> (\<forall>i < length ps. \<forall>j < length ps. i \<noteq> j \<longrightarrow> d \<le> dist (ps!i) (ps!j))"
-
-lemma distinct_sparse_set_list:
-  "distinct ps \<Longrightarrow> sparse_list d ps \<longleftrightarrow> sparse_set d (set ps)"
-  by (smt distinct_conv_nth in_set_conv_nth sparse_list_def sparse_set_def)
+definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
+  "sparse d ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> d \<le> dist p\<^sub>0 p\<^sub>1)"
 
 
 
@@ -155,7 +148,7 @@ text \<open>
 \<close>
 
 lemma maximum_sparse_points_square:
-  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + d, y + d)" "sparse_set d ps" "0 < d"
+  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + d, y + d)" "sparse d ps" "0 < d"
   shows "card ps \<le> 4"
 proof (rule ccontr)
   assume *: "\<not> (card ps \<le> 4)"
@@ -206,7 +199,7 @@ proof (rule ccontr)
   ultimately have "dist p q < d"
     by simp
   moreover have "d \<le> dist p q"
-    using assms(2) sparse_set_def # by blast
+    using assms(2) sparse_def # by blast
   ultimately show False
     by simp
 qed
@@ -219,7 +212,7 @@ text \<open>
 \<close>
 
 lemma maximum_sparse_points_rect:
-  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + 2 * d, y + d)" "sparse_set d ps" "0 < d"
+  assumes "\<forall>p \<in> ps. p \<in> box (x, y) (x + 2 * d, y + d)" "sparse d ps" "0 < d"
   shows "card ps \<le> 8"
 proof -
   let ?l = "box (x    , y) (x + d    , y + d)"
@@ -235,15 +228,15 @@ proof -
 
   have "\<forall>p \<in> ?psl. p \<in> ?l"
     by blast
-  moreover have "sparse_set d ?psl"
-    using assms(2) * sparse_set_def by blast
+  moreover have "sparse d ?psl"
+    using assms(2) * sparse_def by blast
   hence L: "card ?psl \<le> 4"
     using assms(3) maximum_sparse_points_square[of ?psl x y d] by blast
 
   have "\<forall>p \<in> ?psr. p \<in> ?r"
     by blast
-  moreover have "sparse_set d ?psr"
-    using assms(2) * sparse_set_def by blast
+  moreover have "sparse d ?psr"
+    using assms(2) * sparse_def by blast
   hence R: "card ?psr \<le> 4"
     using assms(3) maximum_sparse_points_square[of ?psr "x + d" y d] box.simps by fastforce
 
