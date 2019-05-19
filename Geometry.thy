@@ -1,5 +1,5 @@
 theory Geometry
-  imports "HOL-Analysis.Analysis"
+  imports "HOL-Analysis.Analysis" "HOL-Library.Multiset"
 begin
 
 
@@ -10,6 +10,12 @@ text \<open>
 \<close>
 
 type_synonym point = "real * real"
+
+term cbox
+
+term Basis
+
+value "cbox (0::nat) (5::nat)"
 
 (* use cbox ? *)
 fun box :: "point \<Rightarrow> point \<Rightarrow> point set" where
@@ -63,6 +69,45 @@ proof (rule ccontr)
     using assms * by auto
   ultimately show False
     by blast
+qed
+
+lemma card_Int_Un_le_Sum:
+  assumes "finite S"
+  shows "card (A \<inter> \<Union>S) \<le> (\<Sum>B \<in> S. card (A \<inter> B))"
+  using assms
+proof (induction "card S" arbitrary: S)
+  case (Suc n)
+  then obtain B T where *: "S = { B } \<union> T" "card T = n" "B \<notin> T"
+    by (metis card_Suc_eq Suc_eq_plus1 insert_is_Un)
+  hence "card (A \<inter> \<Union>S) = card (A \<inter> \<Union>({ B } \<union> T))"
+    using * by blast
+  also have "... \<le> card (A \<inter> B) + card (A \<inter> \<Union>T)"
+    by (simp add: card_Un_le inf_sup_distrib1)
+  also have "... \<le> card (A \<inter> B) + (\<Sum>B \<in> T. card (A \<inter> B))"
+    using Suc * by simp
+  also have "... \<le> (\<Sum>B \<in> S. card (A \<inter> B))"
+    using Suc.prems * by simp
+  finally show ?case .
+qed simp
+
+lemma pigeonhole:
+  assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
+  shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
+proof (rule ccontr)
+  assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
+
+  hence "\<forall>X \<in> T. \<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> X \<or> y \<notin> X"
+    by auto
+  hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
+    using card_S_inter_T by fast
+
+  have "card T < card (S \<inter> \<Union>T)"
+    using Int_absorb2 assms by fastforce
+  also have "... \<le> (\<Sum>X \<in> T. card (S \<inter> X))"
+    using assms(1) card_Int_Un_le_Sum by blast
+  also have "... \<le> card T"
+    using * sum_mono by fastforce
+  finally show False by simp
 qed
 
 lemma card_inter_2_le:
