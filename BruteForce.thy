@@ -20,20 +20,23 @@ fun brute_force_closest' :: "point \<Rightarrow> point list \<Rightarrow> point"
 
 
 lemma brute_force_closest'_point:
-  "0 < length ps \<Longrightarrow> \<forall>p\<^sub>1 \<in> set ps. dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ps) \<le> dist p\<^sub>0 p\<^sub>1"
+  "\<forall>p\<^sub>1 \<in> set ps. dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ps) \<le> dist p\<^sub>0 p\<^sub>1"
   by (induction p\<^sub>0 ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
 
 lemma brute_force_closest'_set:
-  "0 < length ps \<Longrightarrow> brute_force_closest' p ps \<in> set ps"
-  by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
+  assumes "0 < length ps"
+  shows "brute_force_closest' p ps \<in> set ps"
+  using assms by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
 
 lemma brute_force_closest'_distinct:
-  "0 < length ps \<Longrightarrow> p \<notin> set ps \<Longrightarrow> brute_force_closest' p ps \<noteq> p"
-  by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
+  assumes "0 < length ps" "p \<notin> set ps"
+  shows "brute_force_closest' p ps \<noteq> p"
+  using assms by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
 
 lemma brute_force_closest'_not_distinct:
-  "0 < length ps \<Longrightarrow> p \<in> set ps \<Longrightarrow> brute_force_closest' p ps = p"
-  by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
+  assumes "0 < length ps" "p \<in> set ps"
+  shows "brute_force_closest' p ps = p"
+  using assms by (induction p ps rule: brute_force_closest'.induct) (auto simp add: Let_def)
 
 
 
@@ -55,21 +58,25 @@ fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
 
 
 lemma brute_force_closest_set:
-  "1 < length ps \<Longrightarrow> cpop_set (brute_force_closest ps) ps"
+  assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
+  shows "p\<^sub>0 \<in> set ps \<and> p\<^sub>1 \<in> set ps"
+  using assms brute_force_closest'_set 
   apply (induction ps rule: brute_force_closest.induct)
   apply (auto simp add: Let_def split: prod.splits if_splits)
-  using brute_force_closest'_set by fastforce+
+  by fastforce
 
 lemma brute_force_closest_distinct:
-  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (p\<^sub>0, p\<^sub>1) = brute_force_closest ps \<Longrightarrow> p\<^sub>0 \<noteq> p\<^sub>1"
-  using brute_force_closest'_distinct
+  assumes "1 < length ps" "distinct ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
+  shows "p\<^sub>0 \<noteq> p\<^sub>1"
+  using assms brute_force_closest'_distinct
   apply (induction ps rule: brute_force_closest.induct)
   apply (auto simp add: Let_def split: prod.splits if_splits)
-  apply (metis list.discI prod.inject set_ConsD)+
-  done
+  by (metis list.discI prod.inject set_ConsD)+
 
 lemma brute_force_closest_not_distinct:
-  "1 < length ps \<Longrightarrow> \<not> distinct ps \<Longrightarrow> (p\<^sub>0, p\<^sub>1) = brute_force_closest ps \<Longrightarrow> p\<^sub>0 = p\<^sub>1 \<and> p\<^sub>0 \<in> set (dups ps)"
+  assumes "1 < length ps" "\<not> distinct ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
+  shows "p\<^sub>0 = p\<^sub>1 \<and> p\<^sub>0 \<in> set (dups ps)"
+  using assms
 proof (induction ps arbitrary: p\<^sub>0 p\<^sub>1 rule: brute_force_closest.induct)
   case (4 x y z ps)
 
@@ -81,33 +88,35 @@ proof (induction ps arbitrary: p\<^sub>0 p\<^sub>1 rule: brute_force_closest.ind
   show ?case
   proof (cases "distinct ?ps'")
     case True
-    hence 0: "x \<in> set ?ps'"
+    hence *: "x \<in> set ?ps'"
       using "4.prems"(2) by auto
     have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
       using True brute_force_closest_distinct[of ?ps' ?c\<^sub>0 ?c\<^sub>1] by simp
     moreover have "brute_force_closest' x ?ps' = x"
-      using brute_force_closest'_not_distinct 0 by blast
+      using brute_force_closest'_not_distinct * by blast
     ultimately have "(x, x) = brute_force_closest (x # y # z # ps)"
       by (auto split: prod.splits)
     moreover have "x = p\<^sub>0" "x = p\<^sub>1"
       using calculation "4.prems"(3) by (metis prod.inject)+
     ultimately show ?thesis
-      using 0 by auto
+      using * by auto
   next
     case False
-    hence 0: "?c\<^sub>0 = ?c\<^sub>1 \<and> ?c\<^sub>0 \<in> set (dups ?ps')"
+    hence *: "?c\<^sub>0 = ?c\<^sub>1 \<and> ?c\<^sub>0 \<in> set (dups ?ps')"
       using "4.IH"[of ?c\<^sub>0 ?c\<^sub>1]  "4.prems"(1) by fastforce
     hence "(?c\<^sub>0, ?c\<^sub>1) = brute_force_closest (x # y # z # ps)"
       by (auto split: prod.splits)
     hence "p\<^sub>0 = ?c\<^sub>0" "p\<^sub>1 = ?c\<^sub>1"
       using "4.prems"(3) by (metis prod.inject)+
-    then show ?thesis
-      using 0 by fastforce
+    thus ?thesis
+      using * by fastforce
   qed
 qed auto
 
 lemma brute_force_closest_distinct_dist:
-  "1 < length ps \<Longrightarrow> cpop_distinct_dist (brute_force_closest ps) ps"
+  assumes "1 < length ps"
+  shows "cpop_distinct_dist (brute_force_closest ps) ps"
+  using assms
 proof (induction ps rule: brute_force_closest.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
 
@@ -116,21 +125,19 @@ proof (induction ps rule: brute_force_closest.induct)
   let ?c\<^sub>0 = "fst ?c"
   let ?c\<^sub>1 = "snd ?c"
 
-  have *: "cpop_distinct_dist (brute_force_closest ?ps') ?ps'"
-    using 4 by simp
-  have #: "\<forall>x \<in> set ?ps'. dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ?ps') \<le> dist p\<^sub>0 x"
+  have *: "\<forall>p \<in> set ?ps'. dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ?ps') \<le> dist p\<^sub>0 p"
     using brute_force_closest'_point by blast
 
   thus ?case
   proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ?ps')")
     case True
     hence "\<forall>p \<in> set ?ps'. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
-      using # by auto
-    thus ?thesis using * True
+      using * by auto
+    thus ?thesis using 4 True
       by (auto simp add: Let_def cpop_distinct_dist_id split: prod.splits if_splits)
   next
     case False
-    thus ?thesis using * #
+    thus ?thesis using 4 *
       by (auto simp add: cpop_distinct_dist_upd Let_def split: prod.splits if_splits)
   qed
 qed (auto simp add: dist_commute cpop_distinct_dist.simps)
@@ -139,12 +146,9 @@ qed (auto simp add: dist_commute cpop_distinct_dist.simps)
 
 
 theorem brute_force_closest_cpop_set:
-  "1 < length ps \<Longrightarrow> cpop_set (brute_force_closest ps) ps"
-  by (simp add: brute_force_closest_set)
-
-theorem brute_force_closest_cpop_distinct:
-  "1 < length ps \<Longrightarrow> cpop_distinct (brute_force_closest ps) ps"
-  by (metis brute_force_closest_distinct brute_force_closest_not_distinct cpop_distinct.elims(3))
+  assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
+  shows "cpop_set (p\<^sub>0, p\<^sub>1)  ps"
+  using assms brute_force_closest_distinct brute_force_closest_not_distinct brute_force_closest_set cpop_set.simps by blast
 
 theorem brute_force_closest_cpop_dist:
   assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"

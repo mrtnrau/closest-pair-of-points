@@ -181,31 +181,31 @@ proof (rule ccontr)
     using assms(1) by blast
   moreover have "4 < card ps"
     using * by simp
-  ultimately have "\<exists>p \<in> ps. \<exists>q \<in> ps. \<exists>s \<in> { ?ll, ?lu, ?rl, ?ru }. (p \<noteq> q \<and> p \<in> s \<and> q \<in> s)"
+  ultimately have "\<exists>p\<^sub>0 \<in> ps. \<exists>p\<^sub>1 \<in> ps. \<exists>S \<in> { ?ll, ?lu, ?rl, ?ru }. (p\<^sub>0 \<noteq> p\<^sub>1 \<and> p\<^sub>0 \<in> S \<and> p\<^sub>1 \<in> S)"
     using pigeonhole by fast
-  then obtain p q s where #: "p \<in> ps" "q \<in> ps" "s \<in> { ?ll, ?lu, ?rl, ?ru }" "p \<noteq> q" "p \<in> s" "q \<in> s"
+  then obtain S p\<^sub>0 p\<^sub>1 where #: "p\<^sub>0 \<in> ps" "p\<^sub>1 \<in> ps" "S \<in> { ?ll, ?lu, ?rl, ?ru }" "p\<^sub>0 \<noteq> p\<^sub>1" "p\<^sub>0 \<in> S" "p\<^sub>1 \<in> S"
     by blast
 
   have D: "0 \<le> d / 2"
     using assms(3) by simp
-  have LL: "\<forall>a \<in> ?ll. \<forall>b \<in> ?ll. dist a b \<le> sqrt 2 * (d / 2)"
+  have LL: "\<forall>p\<^sub>0 \<in> ?ll. \<forall>p\<^sub>1 \<in> ?ll. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (d / 2)"
     using maximum_dist_points_in_square[of "(x, y)" x y "(?x', ?y')" "d / 2"] D by auto
-  have LU: "\<forall>a \<in> ?lu. \<forall>b \<in> ?lu. dist a b \<le> sqrt 2 * (d / 2)"
+  have LU: "\<forall>p\<^sub>0 \<in> ?lu. \<forall>p\<^sub>1 \<in> ?lu. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (d / 2)"
     using maximum_dist_points_in_square[of "(x, ?y')" x ?y' "(?x', y + d)" "d / 2"] D by auto
-  have RL: "\<forall>a \<in> ?rl. \<forall>b \<in> ?rl. dist a b \<le> sqrt 2 * (d / 2)"
+  have RL: "\<forall>p\<^sub>0 \<in> ?rl. \<forall>p\<^sub>1 \<in> ?rl. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (d / 2)"
     using maximum_dist_points_in_square[of "(?x', y)" ?x' y "(x + d, ?y')" "d / 2"] D by auto
-  have RU: "\<forall>a \<in> ?ru. \<forall>b \<in> ?ru. dist a b \<le> sqrt 2 * (d / 2)"
+  have RU: "\<forall>p\<^sub>0 \<in> ?ru. \<forall>p\<^sub>1 \<in> ?ru. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (d / 2)"
     using maximum_dist_points_in_square[of "(?x', ?y')" ?x' ?y' "(x + d, y + d)" "d / 2"] D by auto
 
-  have "\<forall>a \<in> s. \<forall>b \<in> s. dist a b \<le> sqrt 2 * (d / 2)"
+  have "\<forall>p\<^sub>0 \<in> S. \<forall>p\<^sub>1 \<in> S. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (d / 2)"
     using # LL LU RL RU by blast
-  hence "dist p q \<le> (sqrt 2 / 2) * d"
+  hence "dist p\<^sub>0 p\<^sub>1 \<le> (sqrt 2 / 2) * d"
     using # by simp
   moreover have "(sqrt 2 / 2) * d < d"
     using sqrt2_less_2 assms(3) by simp
-  ultimately have "dist p q < d"
+  ultimately have "dist p\<^sub>0 p\<^sub>1 < d"
     by simp
-  moreover have "d \<le> dist p q"
+  moreover have "d \<le> dist p\<^sub>0 p\<^sub>1"
     using assms(2) sparse_def # by blast
   ultimately show False
     by simp
