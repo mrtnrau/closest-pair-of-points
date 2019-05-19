@@ -18,44 +18,29 @@ fun dups :: "'a list \<Rightarrow> 'a list" where
       dups xs
   )"
 
+
+
+
+lemma dups_decomp:
+  "x \<in> set (dups xs) \<longleftrightarrow> (\<exists>as bs cs. xs = as @ [x] @ bs @ [x] @ cs)"
+  by (induction xs) (auto simp add: Cons_eq_append_conv split_list split: if_splits)
+
 lemma dups_duplicate:
-  "x \<in> set (dups xs) \<longleftrightarrow> (\<exists>i j. i < length xs \<and> j < length xs \<and> i \<noteq> j \<and> x = xs!i \<and> x = xs!j)" (is "?A \<longleftrightarrow> ?B")
-proof standard
-  assume ?A
-  then show ?B
-  proof (induction xs)
-    case (Cons y xs)
-    thus ?case
-    proof (cases "x \<in> set (dups xs)")
-      case True
-      thus ?thesis
-        using Cons by fastforce
-    next
-      case False
-      hence 0: "x = y"
-        using Cons False by (metis dups.simps(2) set_ConsD)
-      hence "x \<in> set xs"
-        by (metis Cons.prems False dups.simps(2))
-      then obtain j where "j < length xs \<and> x = xs!j"
-        by (metis in_set_conv_nth)
-      hence "j + 1 < length (y#xs) \<and> x = (y#xs)!(j+1)"
-        by auto
-      moreover have "0 < length (y#xs) \<and> y = (y#xs)!0"
-        by simp
-      ultimately show ?thesis
-        using 0 by fastforce
-    qed
-  qed simp
-next
-  assume ?B
-  then show ?A
-  proof (induction xs)
-    case (Cons y xs)
-    then obtain i j where "i < length (y # xs) \<and> j < length (y # xs) \<and> i \<noteq> j \<and> x = (y # xs) ! i \<and> x = (y # xs) ! j"
-      by blast
-    thus ?case 
-      using Cons.IH less_Suc_eq_0_disj apply (auto) by fastforce+
-  qed simp
+  assumes "x \<in> set (dups xs)"
+  shows "\<exists>i j. i < length xs \<and> j < length xs \<and> i \<noteq> j \<and> x = xs!i \<and> x = xs!j"
+proof -
+  obtain as bs cs where *: "xs = as @ [x] @ bs @ [x] @ cs"
+    using assms dups_decomp by metis
+
+  let ?i = "length as"
+  let ?j = "length as + 1 + length bs"
+
+  have "xs = as @ [xs!?i] @ bs @ [xs!?j] @ cs" "?i < length xs" "?j < length xs" "?i \<noteq> ?j"
+    using * nth_append_length_plus[of "as @ [x] @ bs" "[x] @ cs" 0] by simp_all
+  moreover have "x = xs!?i" "x = xs!?j"
+    using * calculation by simp_all
+  ultimately show ?thesis
+    by blast
 qed
 
 

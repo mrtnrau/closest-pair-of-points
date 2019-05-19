@@ -53,9 +53,16 @@ qed
 lemma card_S_inter_T:
   assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> T \<or> y \<notin> T" 
   shows "card (S \<inter> T) \<le> 1"
-proof -
-  show ?thesis
-    using assms by (meson IntD1 IntD2 card_le_1_pairs_identical)
+proof (rule ccontr)
+  assume "\<not> (card (S \<inter> T) \<le> 1)"
+  then obtain x y where *: "x \<in> S \<inter> T \<and> y \<in> S \<inter> T \<and> x \<noteq> y"
+    by (meson card_le_1_pairs_identical)
+  hence "x \<in> T" "y \<in> T"
+    by simp_all
+  moreover have "x \<notin> T \<or> y \<notin> T"
+    using assms * by auto
+  ultimately show False
+    by blast
 qed
 
 lemma card_inter_2_le:
@@ -78,7 +85,7 @@ proof -
   have "card (S \<inter> (A \<union> B \<union> C \<union> D)) \<le> card (S \<inter> A) + card (S \<inter> (B \<union> C \<union> D))"
     by (simp add: card_inter_2_le sup_assoc)
   also have "... \<le> card (S \<inter> A) + card (S \<inter> B) + card (S \<inter> C) + card (S \<inter> D)"
-    using card_inter_3_le by (metis ab_semigroup_add_class.add_ac(1) nat_add_left_cancel_le)
+    using card_inter_3_le[of S B C D] by simp
   finally show ?thesis by simp
 qed
 
@@ -91,13 +98,13 @@ text \<open>
 
 lemma pigeonhole:
   assumes "S \<subseteq> \<Union>{ A, B, C, D }" "4 < card S"
-  shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>s \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> s \<and> y \<in> s"
+  shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>T \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> T \<and> y \<in> T"
 proof (rule ccontr)
-  assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>s \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> s \<and> y \<in> s)"
+  assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>T \<in> { A, B, C, D }. x \<noteq> y \<and> x \<in> T \<and> y \<in> T)"
 
-  hence "\<forall>X \<in> { A, B, C, D }. \<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> X \<or> y \<notin> X"
+  hence "\<forall>T \<in> { A, B, C, D }. \<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> T \<or> y \<notin> T"
     by auto
-  hence *: "\<forall>X \<in> { A, B, C, D }. card (S \<inter> X) \<le> 1"
+  hence *: "\<forall>T \<in> { A, B, C, D }. card (S \<inter> T) \<le> 1"
     using card_S_inter_T by auto
 
   have "4 < card (S \<inter> \<Union>{ A, B, C, D })"

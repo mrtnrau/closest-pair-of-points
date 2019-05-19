@@ -75,7 +75,6 @@ proof (induction ps arbitrary: p\<^sub>0 p\<^sub>1 rule: brute_force_closest.ind
 
   let ?ps' = "y # z # ps"
   let ?c = "brute_force_closest ?ps'"
-  let ?x' = "brute_force_closest' x ?ps'"
   let ?c\<^sub>0 = "fst ?c"
   let ?c\<^sub>1 = "snd ?c"
 
@@ -86,7 +85,7 @@ proof (induction ps arbitrary: p\<^sub>0 p\<^sub>1 rule: brute_force_closest.ind
       using "4.prems"(2) by auto
     have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
       using True brute_force_closest_distinct[of ?ps' ?c\<^sub>0 ?c\<^sub>1] by simp
-    moreover have "?x' = x"
+    moreover have "brute_force_closest' x ?ps' = x"
       using brute_force_closest'_not_distinct 0 by blast
     ultimately have "(x, x) = brute_force_closest (x # y # z # ps)"
       by (auto split: prod.splits)
@@ -126,7 +125,7 @@ proof (induction ps rule: brute_force_closest.induct)
   proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (brute_force_closest' p\<^sub>0 ?ps')")
     case True
     hence "\<forall>p \<in> set ?ps'. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
-      using "#" by auto
+      using # by auto
     thus ?thesis using * True
       by (auto simp add: Let_def cpop_distinct_dist_id split: prod.splits if_splits)
   next
