@@ -113,17 +113,19 @@ proof (induction "card S" arbitrary: S)
   finally show ?case .
 qed simp
 
+(* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B *) 
+lemma
+  assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
+  shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
+  using assms pigeonhole by (metis inj_onI rev_image_eqI)
+
 lemma pigeonhole:
   assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
   shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
 proof (rule ccontr)
   assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
-
-  hence "\<forall>X \<in> T. \<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> X \<or> y \<notin> X"
-    by auto
   hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
-    using card_S_inter_T by fast
-
+    using card_S_inter_T by metis
   have "card T < card (S \<inter> \<Union>T)"
     using Int_absorb2 assms by fastforce
   also have "... \<le> (\<Sum>X \<in> T. card (S \<inter> X))"
