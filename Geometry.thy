@@ -113,7 +113,7 @@ proof (induction "card S" arbitrary: S)
   finally show ?case .
 qed simp
 
-(* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B *) 
+(* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B especially for the pigeonhole lemma below? *) 
 lemma
   assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
   shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
@@ -206,6 +206,13 @@ proof (rule ccontr)
     by simp
 qed
 
+
+
+
+lemma
+  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + d, y + d)" "sparse d ps" "0 < d" "card ps = 4"
+  shows "ps = { (x, y), (x + d, y), (x, y + d), (x + d, y + d) }"
+  oops
 
 
 
