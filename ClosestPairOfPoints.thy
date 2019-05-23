@@ -40,7 +40,7 @@ fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
 | "find_closest _ [p\<^sub>1] = p\<^sub>1"
 | "find_closest p\<^sub>0 (p\<^sub>1 # ps) = (
     let p\<^sub>2 = find_closest p\<^sub>0 ps in
-    if dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>2 then
+    if dist p\<^sub>0 p\<^sub>1 < dist p\<^sub>0 p\<^sub>2 then
       p\<^sub>1
     else
       p\<^sub>2
@@ -142,5 +142,110 @@ proof (induction ps rule: brute_force_closest.induct)
       by (auto simp add: cpop_dist_upd split: prod.splits)
   qed
 qed (auto simp add: dist_commute cpop_dist)
+
+
+
+
+text \<open>
+  Sorted with respect to x or y axis aliases.
+\<close>
+
+definition sortX :: "point list \<Rightarrow> point list" where
+  "sortX ps = sort_key fst ps"
+
+definition sortedX :: "point list \<Rightarrow> bool" where
+  "sortedX ps = sorted_wrt (\<lambda>(x\<^sub>0, _) (x\<^sub>1, _). x\<^sub>0 \<le> x\<^sub>1) ps"
+
+definition sortY :: "point list \<Rightarrow> point list" where
+  "sortY ps = sort_key snd ps"
+
+definition sortedY :: "point list \<Rightarrow> bool" where
+  "sortedY ps = sorted_wrt (\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1) ps"
+
+
+
+
+text \<open>
+  Helper: Split list of points into two list depending on set membership while keeping them sorted.
+\<close>
+
+fun split :: "point set \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
+  "split _ [] = ([], [])"
+| "split ps\<^sub>L (y # ys) = (
+    let (ys\<^sub>L, ys\<^sub>R) = split ps\<^sub>L ys in
+    if y \<in> ps\<^sub>L then
+      (y # ys\<^sub>L, ys\<^sub>R)
+    else
+      (ys\<^sub>L, y # ys\<^sub>R)
+  )"
+
+
+
+
+text \<open>
+  Helper: Brute Force but only the 7 points following the one under question.
+\<close>
+
+fun closest_7 :: "point list \<Rightarrow> (point * point)" where
+  "closest_7 [] = undefined"
+| "closest_7 [_] = undefined"
+| "closest_7 [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "closest_7 (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_7 ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps) in
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+      (c\<^sub>0, c\<^sub>1)
+    else
+      (p\<^sub>0, p\<^sub>1) 
+  )"
+
+
+
+
+text \<open>
+  Closest' Pair of Points Algorithm
+\<close>
+
+function (sequential) closest' :: "point set \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point * point)" where
+  "closest' ps xs ys = (
+    let n = length xs in
+    if n \<le> 3 then
+      brute_force_closest xs
+    else
+      let xs\<^sub>L = take (n div 2) xs in
+      let xs\<^sub>R = drop (n div 2) xs in
+      let l = fst (hd xs\<^sub>R) in
+      let ps\<^sub>L = set xs\<^sub>L in
+      let ps\<^sub>R = set xs\<^sub>R in
+      let (ys\<^sub>L, ys\<^sub>R) = split ps\<^sub>L ys in
+      let (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest' ps\<^sub>L xs\<^sub>L ys\<^sub>L in
+      let (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest' ps\<^sub>R xs\<^sub>R ys\<^sub>R in
+      let \<delta> = min (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) in
+      let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
+      let ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys in
+      if length ys' < 2 then
+        (c\<^sub>0, c\<^sub>1)
+      else
+        let (p\<^sub>0, p\<^sub>1) = closest_7 ys' in
+        if dist p\<^sub>0 p\<^sub>1 < \<delta> then
+          (p\<^sub>0, p\<^sub>1)
+        else
+          (c\<^sub>0, c\<^sub>1)   
+  )"
+  by pat_completeness auto
+termination closest'
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs, _). length xs)")
+  apply (auto)
+  done
+
+
+
+
+text \<open>
+  Closest' Pair of Points Algorithm
+\<close>
+
+definition closest :: "point list \<Rightarrow> (point * point)" where
+  "closest ps = closest' (set ps) (sortX ps) (sortY ps)"
 
 end
