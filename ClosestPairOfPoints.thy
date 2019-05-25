@@ -46,9 +46,6 @@ fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
       p\<^sub>2
   )"
 
-
-
-
 lemma find_closest_dist:
   "\<forall>p\<^sub>1 \<in> set ps. dist p\<^sub>0 (find_closest p\<^sub>0 ps) \<le> dist p\<^sub>0 p\<^sub>1"
   by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
@@ -84,9 +81,6 @@ fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
     else
       (p\<^sub>0, p\<^sub>1) 
   )"
-
-
-
 
 lemma brute_force_closest_set_p0:
   assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
@@ -166,18 +160,8 @@ definition sortedY :: "point list \<Rightarrow> bool" where
 
 
 text \<open>
-  Helper: Split list of points into two list depending on set membership while keeping them sorted.
+  Random Auxiliary Lemmas
 \<close>
-
-fun split :: "point set \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
-  "split _ [] = ([], [])"
-| "split ps\<^sub>L (y # ys) = (
-    let (ys\<^sub>L, ys\<^sub>R) = split ps\<^sub>L ys in
-    if y \<in> ps\<^sub>L then
-      (y # ys\<^sub>L, ys\<^sub>R)
-    else
-      (ys\<^sub>L, y # ys\<^sub>R)
-  )"
 
 
 
@@ -199,6 +183,14 @@ fun closest_7 :: "point list \<Rightarrow> (point * point)" where
       (p\<^sub>0, p\<^sub>1) 
   )"
 
+lemma closest_7_set_p0:
+  assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = closest_7 ps"
+  shows "p\<^sub>0 \<in> set ps"
+  using assms
+  apply (induction ps arbitrary: p\<^sub>0 p\<^sub>1 rule: closest_7.induct)
+  apply (auto simp add: Let_def find_closest_set split!: prod.splits if_splits)
+  done
+
 
 
 
@@ -206,10 +198,43 @@ text \<open>
   Closest' Pair of Points Algorithm
 \<close>
 
+fun divide :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
+  "divide f xs ys = (
+    let xs' = f xs in
+    let ps = set xs' in
+    let ys' = filter (\<lambda>p. p \<in> ps) ys in
+    (xs', ys')
+  )"
+
+lemma divide_set:
+  assumes "set xs = set ys" "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
+  shows "set xs' = set ys'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_subset:
+  assumes "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
+  shows "set xs' \<subseteq> set xs"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_length_take:
+  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (take n) xs ys"
+  shows "length xs' < length xs"
+    and "1 < length xs'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_length_drop:
+  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (drop n) xs ys"
+  shows "length xs' < length xs"
+    and "1 < length xs'"
+  using assms by (auto simp add: Let_def)
+
+
+
+
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
-    let \<delta> = min (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) in
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
+    let \<delta> = dist c\<^sub>0 c\<^sub>1 in
     let ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys in
     if length ys' < 2 then
       (c\<^sub>0, c\<^sub>1)
@@ -221,6 +246,11 @@ fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real
         (c\<^sub>0, c\<^sub>1) 
   )"
 
+lemma combine_set_p0:
+  "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys \<Longrightarrow> p\<^sub>0 = p\<^sub>0\<^sub>L \<or> p\<^sub>0 = p\<^sub>0\<^sub>R \<or> p\<^sub>0 \<in> set ys"
+  apply (auto simp add: Let_def split: prod.splits if_splits)
+  apply (metis (mono_tags, lifting) closest_7_set_p0 filter_is_subset less_trans linorder_neqE_nat one_less_numeral_iff semiring_norm(76) subsetCE)+
+  done
 
 
 
@@ -231,23 +261,34 @@ function (sequential) closest' :: "point set \<Rightarrow> point list \<Rightarr
     if n \<le> 3 then
       brute_force_closest xs
     else
-      let xs\<^sub>L = take (n div 2) xs in
-      let xs\<^sub>R = drop (n div 2) xs in
-      let l = fst (hd xs\<^sub>R) in
-      let ps\<^sub>L = set xs\<^sub>L in
-      let ps\<^sub>R = set xs\<^sub>R in
-      let (ys\<^sub>L, ys\<^sub>R) = split ps\<^sub>L ys in
-      let (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest' ps\<^sub>L xs\<^sub>L ys\<^sub>L in
-      let (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest' ps\<^sub>R xs\<^sub>R ys\<^sub>R in
-      combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys 
+      let (xs\<^sub>L, ys\<^sub>L) = divide (take (n div 2)) xs ys in
+      let (xs\<^sub>R, ys\<^sub>R) = divide (drop (n div 2)) xs ys in
+
+      let (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest' (set xs\<^sub>L) xs\<^sub>L ys\<^sub>L in
+      let (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest' (set xs\<^sub>R) xs\<^sub>R ys\<^sub>R in
+
+      combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) (fst (hd xs\<^sub>R)) ys 
   )"
   by pat_completeness auto
 termination closest'
   apply (relation "Wellfounded.measure (\<lambda>(_, xs, _). length xs)")
-  apply (auto)
+  apply (auto simp add: Let_def)
   done
 
-declare split.simps closest_7.simps combine.simps [simp del]
+declare closest_7.simps divide.simps combine.simps [simp del]
+
+lemma closest'_simps:
+  assumes "n = length xs" "\<not> (n \<le> 3)"
+  shows "closest' ps xs ys = (
+    let (xs\<^sub>L, ys\<^sub>L) = divide (take (n div 2)) xs ys in
+    let (xs\<^sub>R, ys\<^sub>R) = divide (drop (n div 2)) xs ys in
+    let (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest' (set xs\<^sub>L) xs\<^sub>L ys\<^sub>L in
+    let (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest' (set xs\<^sub>R) xs\<^sub>R ys\<^sub>R in
+    combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) (fst (hd xs\<^sub>R)) ys
+  )"
+  using assms by (auto simp add: Let_def)
+
+declare closest'.simps [simp del]
 
 
 
@@ -265,58 +306,58 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     hence "(p\<^sub>0, p\<^sub>1) = brute_force_closest xs"
-      using "1.prems"(3) by simp
+      using "1.prems"(3) closest'.simps by simp
     thus ?thesis
       using "1.prems"(1) brute_force_closest_set_p0 by simp
   next
     case False
 
-    let ?xs\<^sub>L = "take (?n div 2) xs"
-    let ?xs\<^sub>R = "drop (?n div 2) xs"
-    let ?l = "fst (hd ?xs\<^sub>R)"
-    let ?ps\<^sub>L = "set ?xs\<^sub>L"
-    let ?ps\<^sub>R = "set ?xs\<^sub>R"
-    let ?ys\<^sub>L\<^sub>R = "split ?ps\<^sub>L ys"
-    let ?ys\<^sub>L = "fst ?ys\<^sub>L\<^sub>R"
-    let ?ys\<^sub>R = "snd ?ys\<^sub>L\<^sub>R"
-    let ?p\<^sub>0\<^sub>1\<^sub>L = "closest' ?ps\<^sub>L ?xs\<^sub>L ?ys\<^sub>L"
+    let ?xys\<^sub>L = "divide (take (?n div 2)) xs ys"
+    let ?xs\<^sub>L = "fst ?xys\<^sub>L"
+    let ?ys\<^sub>L = "snd ?xys\<^sub>L"
+    let ?xys\<^sub>R = "divide (drop (?n div 2)) xs ys"
+    let ?xs\<^sub>R = "fst ?xys\<^sub>R"
+    let ?ys\<^sub>R = "snd ?xys\<^sub>R"
+
+    let ?p\<^sub>0\<^sub>1\<^sub>L = "closest' (set ?xs\<^sub>L) ?xs\<^sub>L ?ys\<^sub>L"
     let ?p\<^sub>0\<^sub>L = "fst ?p\<^sub>0\<^sub>1\<^sub>L"
     let ?p\<^sub>1\<^sub>L = "snd ?p\<^sub>0\<^sub>1\<^sub>L"
-    let ?p\<^sub>0\<^sub>1\<^sub>R = "closest' ?ps\<^sub>R ?xs\<^sub>R ?ys\<^sub>R"
+    let ?p\<^sub>0\<^sub>1\<^sub>R = "closest' (set ?xs\<^sub>R) ?xs\<^sub>R ?ys\<^sub>R"
     let ?p\<^sub>0\<^sub>R = "fst ?p\<^sub>0\<^sub>1\<^sub>R"
     let ?p\<^sub>1\<^sub>R = "snd ?p\<^sub>0\<^sub>1\<^sub>R"
 
-    have "length ?xs\<^sub>L < ?n" "1 < length ?xs\<^sub>L"
-      using False by simp_all
-    moreover have "(?p\<^sub>0\<^sub>L, ?p\<^sub>1\<^sub>L) = closest' ?ps\<^sub>L ?xs\<^sub>L ?ys\<^sub>L"
+    have "set ?xs\<^sub>L = set ?ys\<^sub>L"
+      using "1.prems"(2) divide_set by (smt prod.collapse set_take_subset)
+    moreover have "length ?xs\<^sub>L < ?n" "1 < length ?xs\<^sub>L"
+      using False divide_length_take by (smt prod.collapse not_le_imp_less)+
+    moreover have "(?p\<^sub>0\<^sub>L, ?p\<^sub>1\<^sub>L) = closest' (set ?xs\<^sub>L) ?xs\<^sub>L ?ys\<^sub>L"
       by simp
-    moreover have "set ?xs\<^sub>L = set ?ys\<^sub>L"
-      sorry
-    ultimately have "?p\<^sub>0\<^sub>L \<in> ?ps\<^sub>L"
+    ultimately have "?p\<^sub>0\<^sub>L \<in> set ?xs\<^sub>L"
       using 1 by blast
     hence IHL: "?p\<^sub>0\<^sub>L \<in> set xs"
-      by (meson in_set_takeD)
+      using divide_subset by (meson prod.collapse set_take_subset subset_code(1))
 
-    have "length ?xs\<^sub>R < ?n" "1 < length ?xs\<^sub>R"
-      using False by simp_all
-    moreover have "(?p\<^sub>0\<^sub>R, ?p\<^sub>1\<^sub>R) = closest' ?ps\<^sub>R ?xs\<^sub>R ?ys\<^sub>R"
+    have "set ?xs\<^sub>R = set ?ys\<^sub>R"
+      using "1.prems"(2) divide_set by (smt prod.collapse set_drop_subset)
+    moreover have "length ?xs\<^sub>R < ?n" "1 < length ?xs\<^sub>R"
+      using False divide_length_drop by (smt prod.collapse not_le_imp_less)+
+    moreover have "(?p\<^sub>0\<^sub>R, ?p\<^sub>1\<^sub>R) = closest' (set ?xs\<^sub>R) ?xs\<^sub>R ?ys\<^sub>R"
       by simp
-    moreover have "set ?xs\<^sub>R = set ?ys\<^sub>R"
-      sorry
-    ultimately have "?p\<^sub>0\<^sub>R \<in> ?ps\<^sub>R"
+    ultimately have "?p\<^sub>0\<^sub>R \<in> set ?xs\<^sub>R"
       using 1 by blast
     hence IHR: "?p\<^sub>0\<^sub>R \<in> set xs"
-      by (meson in_set_dropD)
+      using divide_subset by (meson prod.collapse set_drop_subset subset_code(1))
 
-    let ?c\<^sub>0\<^sub>1 = "combine ?p\<^sub>0\<^sub>1\<^sub>L ?p\<^sub>0\<^sub>1\<^sub>R ?l ys"
-    let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-    let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+    let ?p\<^sub>0\<^sub>1 = "combine ?p\<^sub>0\<^sub>1\<^sub>L ?p\<^sub>0\<^sub>1\<^sub>R (fst (hd ?xs\<^sub>R)) ys"
+    let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
+    let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
 
-    have "(?c\<^sub>0, ?c\<^sub>1) = closest' (set xs) xs ys"
-      using "1.prems" False by (auto simp add: Let_def split!: prod.splits if_splits)
-
-    show ?thesis
-      sorry
+    have "(?p\<^sub>0, ?p\<^sub>1) = closest' (set xs) xs ys"
+      using "1.prems" False by (auto simp add: closest'_simps Let_def)
+    moreover have "?p\<^sub>0 \<in> set xs"
+      using combine_set_p0 "1.prems"(2) IHL IHR by (metis (no_types, lifting) prod.collapse)
+    ultimately show ?thesis
+      using "1.prems"(3) by (metis Pair_inject)
   qed
 qed
 
