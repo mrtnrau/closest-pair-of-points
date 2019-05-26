@@ -82,7 +82,7 @@ fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
       (p\<^sub>0, p\<^sub>1) 
   )"
 
-lemma brute_force_closest_set_p0:
+lemma brute_force_closest_p0:
   assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
   shows "p\<^sub>0 \<in> set ps"
   using assms
@@ -90,7 +90,7 @@ lemma brute_force_closest_set_p0:
   apply (auto simp add: Let_def find_closest_set split!: prod.splits if_splits)
   done
 
-lemma brute_force_closest_set_p1:
+lemma brute_force_closest_p1:
   assumes "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
   shows "p\<^sub>1 \<in> set ps"
   using assms find_closest_set
@@ -99,7 +99,7 @@ lemma brute_force_closest_set_p1:
   apply (meson list.discI set_ConsD)
   done
 
-lemma brute_force_closest_set_p0_ne_p1:
+lemma brute_force_closest_p0_ne_p1:
   assumes "distinct ps" "1 < length ps" "(p\<^sub>0, p\<^sub>1) = brute_force_closest ps"
   shows "p\<^sub>0 \<noteq> p\<^sub>1"
   using assms find_closest_ne
@@ -194,6 +194,7 @@ text \<open>
   Helper: Brute Force but only the 7 points following the one under question.
 \<close>
 
+(* combine brute_force_closest and closest_7 ? *)
 fun closest_7 :: "point list \<Rightarrow> (point * point)" where
   "closest_7 [] = undefined"
 | "closest_7 [_] = undefined"
@@ -298,19 +299,95 @@ fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real
         (c\<^sub>0, c\<^sub>1) 
   )"
 
-lemma combine_set_p0:
-  "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys \<Longrightarrow> p\<^sub>0 = p\<^sub>0\<^sub>L \<or> p\<^sub>0 = p\<^sub>0\<^sub>R \<or> p\<^sub>0 \<in> set ys"
-  apply (auto simp add: Let_def split!: prod.splits if_splits)
-  apply (metis (mono_tags, lifting) closest_7_set_p0 filter_is_subset less_trans linorder_neqE_nat one_less_numeral_iff semiring_norm(76) subsetCE)+
-  done
+(*
+lemma 
+  assumes "S = A \<union> B" "\<And>x y. P x y = P y x" "\<And>x y z. P x y \<Longrightarrow> P y z \<Longrightarrow> P x z"
+  assumes "\<forall>x \<in> A. \<forall>y \<in> A. x \<noteq> y \<longrightarrow> P x y"
+  assumes "\<forall>x \<in> B. \<forall>y \<in> B. x \<noteq> y \<longrightarrow> P x y"
+  assumes "\<forall>x \<in> A. \<forall>y \<in> B. x \<noteq> y \<longrightarrow> P x y"
+  shows "\<forall>x \<in> S. \<forall>y \<in> S. x \<noteq> y \<longrightarrow> P x y"
+  using assms by (metis Un_iff)
+*)
 
-lemma combine_set_p1:
-  "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys \<Longrightarrow> p\<^sub>1 = p\<^sub>1\<^sub>L \<or> p\<^sub>1 = p\<^sub>1\<^sub>R \<or> p\<^sub>1 \<in> set ys"
-  apply (auto simp add: Let_def split!: prod.splits if_splits)
-  apply (metis (mono_tags, lifting) closest_7_set_p1 filter_is_subset less_trans linorder_neqE_nat one_less_numeral_iff semiring_norm(76) subsetCE)+
-  done
+lemma combine_p0:
+  assumes "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+  shows "p\<^sub>0 = p\<^sub>0\<^sub>L \<or> p\<^sub>0 = p\<^sub>0\<^sub>R \<or> p\<^sub>0 \<in> set ys"
+proof -
+  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
+  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
+  let ?ys' = "filter (\<lambda>(x, _). l - ?\<delta> \<le> x \<and> x \<le> l + ?\<delta>) ys"
+  let ?p\<^sub>0\<^sub>1 = "closest_7 ?ys'"
+  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
+  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
 
-lemma combine_set_p0_ne_p1:
+  show ?thesis
+  proof cases
+    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
+    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence "(p\<^sub>0, p\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
+      using assms(1) by argo
+    moreover have "?c\<^sub>0 = p\<^sub>0\<^sub>L \<or> ?c\<^sub>0 = p\<^sub>0\<^sub>R"
+      by simp
+    ultimately show ?thesis
+      using * by blast
+  next
+    assume assm: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
+    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence #: "(p\<^sub>0, p\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
+      using assms(1) by argo
+    have "(?p\<^sub>0, ?p\<^sub>1) = closest_7 ?ys'"
+      by auto
+    hence "?p\<^sub>0 \<in> set ?ys'"
+      using assm closest_7_set_p0[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith+
+    thus ?thesis
+      using * # by fastforce
+  qed
+qed
+
+lemma combine_p1:
+  assumes "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+  shows "p\<^sub>1 = p\<^sub>1\<^sub>L \<or> p\<^sub>1 = p\<^sub>1\<^sub>R \<or> p\<^sub>1 \<in> set ys"
+proof -
+  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
+  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
+  let ?ys' = "filter (\<lambda>(x, _). l - ?\<delta> \<le> x \<and> x \<le> l + ?\<delta>) ys"
+  let ?p\<^sub>0\<^sub>1 = "closest_7 ?ys'"
+  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
+  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+
+  show ?thesis
+  proof cases
+    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
+    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence "(p\<^sub>0, p\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
+      using assms(1) by argo
+    moreover have "?c\<^sub>1 = p\<^sub>1\<^sub>L \<or> ?c\<^sub>1 = p\<^sub>1\<^sub>R"
+      by simp
+    ultimately show ?thesis
+      using * by blast
+  next
+    assume assm: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
+    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence #: "(p\<^sub>0, p\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
+      using assms(1) by argo
+    have "(?p\<^sub>0, ?p\<^sub>1) = closest_7 ?ys'"
+      by auto
+    hence "?p\<^sub>1 \<in> set ?ys'"
+      using assm closest_7_set_p1[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith
+    thus ?thesis
+      using * # by fastforce
+  qed
+qed
+
+lemma combine_p0_ne_p1:
   assumes "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R" "distinct ys"
   shows "p\<^sub>0 \<noteq> p\<^sub>1"
 proof -
@@ -325,27 +402,29 @@ proof -
 
   show ?thesis
   proof cases
-    assume *: "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
-    have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
+    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
+    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence "(p\<^sub>0, p\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
+      using assms(1) by argo
+    moreover have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
       using assms(2,3) by auto
-    moreover have "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      using * by (auto simp add: Let_def split!: prod.splits)
-    moreover have "(p\<^sub>0, p\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
-      using assms(1) calculation by auto
     ultimately show ?thesis
-      by blast
+      using * by blast
   next
-    assume *: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
-    hence "distinct ?ys'" "2 \<le> length ?ys'"
-      using assms(4) by auto
-    hence "?p\<^sub>0 \<noteq> ?p\<^sub>1"
-      using closest_7_set_p0_ne_p1 by auto
-    moreover have "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      using * by (auto simp add: Let_def split!: prod.splits)
-    moreover have "(p\<^sub>0, p\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
-      using assms(1) calculation by auto
-    ultimately show ?thesis
-      by blast
+    assume assm: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
+    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    hence #: "(p\<^sub>0, p\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
+      using assms(1) by argo
+    have "distinct ?ys'" "2 \<le> length ?ys'"
+      using assms(4) assm by auto
+    moreover have "(?p\<^sub>0, ?p\<^sub>1) = closest_7 ?ys'"
+      by auto
+    ultimately have "?p\<^sub>0 \<noteq> ?p\<^sub>1"
+      using closest_7_set_p0_ne_p1[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith
+    thus ?thesis
+      using * # by fastforce
   qed
 qed
 
@@ -390,7 +469,7 @@ declare closest'.simps [simp del]
 
 
 
-lemma closest'_set:
+lemma closest'_p0_p1:
   assumes "1 < length xs" "(p\<^sub>0, p\<^sub>1) = closest' (set xs) xs ys"
   assumes "set xs = set ys" "distinct xs" "distinct ys"
   shows "p\<^sub>0 \<in> set xs \<and> p\<^sub>1 \<in> set xs \<and> p\<^sub>0 \<noteq> p\<^sub>1"
@@ -406,7 +485,7 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
     hence "(p\<^sub>0, p\<^sub>1) = brute_force_closest xs"
       using "1.prems"(2) closest'.simps by simp
     thus ?thesis
-      using "1.prems"(1,4) brute_force_closest_set_p0 brute_force_closest_set_p1 brute_force_closest_set_p0_ne_p1 by simp
+      using "1.prems"(1,4) brute_force_closest_p0 brute_force_closest_p1 brute_force_closest_p0_ne_p1 by simp
   next
     case False
 
@@ -423,6 +502,10 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
     let ?p\<^sub>0\<^sub>1\<^sub>R = "closest' (set ?xs\<^sub>R) ?xs\<^sub>R ?ys\<^sub>R"
     let ?p\<^sub>0\<^sub>R = "fst ?p\<^sub>0\<^sub>1\<^sub>R"
     let ?p\<^sub>1\<^sub>R = "snd ?p\<^sub>0\<^sub>1\<^sub>R"
+
+    let ?p\<^sub>0\<^sub>1 = "combine ?p\<^sub>0\<^sub>1\<^sub>L ?p\<^sub>0\<^sub>1\<^sub>R (fst (hd ?xs\<^sub>R)) ys"
+    let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
+    let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
 
     have "set ?xs\<^sub>L = set ?ys\<^sub>L"
       using "1.prems"(3) divide_set by (smt prod.collapse set_take_subset)
@@ -450,16 +533,12 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
     hence IHR: "?p\<^sub>0\<^sub>R \<in> set xs" "?p\<^sub>1\<^sub>R \<in> set xs" "?p\<^sub>0\<^sub>R \<noteq> ?p\<^sub>1\<^sub>R"
       using divide_subset by (meson prod.collapse set_drop_subset subset_code(1))+
 
-    let ?p\<^sub>0\<^sub>1 = "combine ?p\<^sub>0\<^sub>1\<^sub>L ?p\<^sub>0\<^sub>1\<^sub>R (fst (hd ?xs\<^sub>R)) ys"
-    let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-    let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
-
     have "(?p\<^sub>0, ?p\<^sub>1) = closest' (set xs) xs ys"
       using "1.prems" False by (auto simp add: closest'_simps Let_def)
     moreover have "?p\<^sub>0 \<in> set xs" "?p\<^sub>1 \<in> set xs" "?p\<^sub>0 \<noteq> ?p\<^sub>1"
-      using combine_set_p0 "1.prems"(3) IHL(1) IHR(1) apply (metis (no_types, lifting) prod.collapse)
-      using combine_set_p1 "1.prems"(3) IHL(2) IHR(2) apply (metis (no_types, lifting) prod.collapse)
-      using combine_set_p0_ne_p1 "1.prems"(5) IHL(3) IHR(3) by (metis (no_types, lifting) prod.collapse)
+      using combine_p0 "1.prems"(3) IHL(1) IHR(1) apply (metis (no_types, lifting) prod.collapse)
+      using combine_p1 "1.prems"(3) IHL(2) IHR(2) apply (metis (no_types, lifting) prod.collapse)
+      using combine_p0_ne_p1 "1.prems"(5) IHL(3) IHR(3) by (metis (no_types, lifting) prod.collapse)
     ultimately show ?thesis
       using "1.prems"(2) by (metis Pair_inject)
   qed
@@ -470,7 +549,7 @@ qed
 
 
 text \<open>
-  Closest' Pair of Points Algorithm
+  Closest Pair of Points Algorithm
 \<close>
 
 definition closest :: "point list \<Rightarrow> (point * point)" where
@@ -493,7 +572,7 @@ proof -
   moreover have "(p\<^sub>0, p\<^sub>1) = closest' (set ps) (sortX ps) (sortY ps)"
     using closest_def assms(3) by simp
   ultimately show "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1"
-    using closest'_set by simp_all
+    using closest'_p0_p1 by simp_all
 qed
 
 end
