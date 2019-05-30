@@ -452,16 +452,6 @@ fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real
         (c\<^sub>0, c\<^sub>1) 
   )"
 
-(*
-lemma 
-  assumes "S = A \<union> B" "\<And>x y. P x y = P y x" "\<And>x y z. P x y \<Longrightarrow> P y z \<Longrightarrow> P x z"
-  assumes "\<forall>x \<in> A. \<forall>y \<in> A. x \<noteq> y \<longrightarrow> P x y"
-  assumes "\<forall>x \<in> B. \<forall>y \<in> B. x \<noteq> y \<longrightarrow> P x y"
-  assumes "\<forall>x \<in> A. \<forall>y \<in> B. x \<noteq> y \<longrightarrow> P x y"
-  shows "\<forall>x \<in> S. \<forall>y \<in> S. x \<noteq> y \<longrightarrow> P x y"
-  using assms by (metis Un_iff)
-*)
-
 lemma combine_p0:
   assumes "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
   shows "p\<^sub>0 = p\<^sub>0\<^sub>L \<or> p\<^sub>0 = p\<^sub>0\<^sub>R \<or> p\<^sub>0 \<in> set ys"
@@ -581,6 +571,120 @@ proof -
   qed
 qed
 
+lemma AUX3:
+  assumes "fst (p\<^sub>0 :: real * real) < l - \<delta>" "l + \<delta> < fst p\<^sub>1" 
+  shows "2 * \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+proof -
+  have "2 * \<delta> \<le> dist (fst p\<^sub>0) (fst p\<^sub>1)"
+    using assms dist_real_def by auto
+  also have "... \<le> dist p\<^sub>0 p\<^sub>1"
+    using dist_fst_le by blast
+  finally show ?thesis .
+qed
+
+lemma AUX2:
+  "p \<in> set ys \<Longrightarrow> p \<notin> set (filter (\<lambda>(x, _). (l::real) - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys) \<Longrightarrow> fst p < l - \<delta> \<or> l + \<delta> < fst p"
+  apply (induction ys)
+   apply (auto split: if_splits)
+  done
+
+lemma AUX1:
+  assumes "(p\<^sub>0 :: real * real) \<in> set ys" "p\<^sub>1 \<in> set ys" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>"
+  assumes "ys\<^sub>L \<inter> ys\<^sub>R = {}" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
+  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
+  assumes "ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys"
+  shows "p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys'"
+proof (rule ccontr)
+  assume *: "\<not> (p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys')"
+
+  have 0: "0 < \<delta>"
+    using assms(3,4) le_less_trans zero_le_dist by blast
+
+  consider (A) "p\<^sub>0 \<in> ys\<^sub>L \<and> p\<^sub>1 \<in> ys\<^sub>L" | (B) "p\<^sub>0 \<in> ys\<^sub>L \<and> p\<^sub>1 \<in> ys\<^sub>R" | (C) "p\<^sub>0 \<in> ys\<^sub>R \<and> p\<^sub>1 \<in> ys\<^sub>L" | (D) "p\<^sub>0 \<in> ys\<^sub>R \<and> p\<^sub>1 \<in> ys\<^sub>R"
+    using assms(1,2,6) by auto
+  thus False
+  proof cases
+    case A
+    thus ?thesis
+      using assms(3,4,7) by force
+  next
+    case B
+    consider (B1) "p\<^sub>0 \<notin> set ys' \<and> p\<^sub>1 \<notin> set ys'"| (B2) "p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<notin> set ys'" | (B3) "p\<^sub>0 \<notin> set ys' \<and> p\<^sub>1 \<in> set ys'"
+      using * by blast
+    then show ?thesis
+    proof cases
+      case B1
+      hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0" "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+        using B AUX2 assms(1,2,11) by blast+
+      hence "fst p\<^sub>0 < l - \<delta>" "l + \<delta> < fst p\<^sub>1"
+        using assms(9,10) B by force+
+      then show ?thesis
+        using AUX3 assms(4) 0 by fastforce
+    next
+      case B2
+      then show ?thesis sorry
+    next
+      case B3
+      then show ?thesis sorry
+    qed
+  next
+    case C
+    then show ?thesis sorry
+  next
+    case D
+    then show ?thesis
+      using assms(3,4,8) by force
+  qed
+qed
+
+lemma AUX0:
+  assumes "\<exists>(p\<^sub>0 :: real * real) p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
+  assumes "ys\<^sub>L \<inter> ys\<^sub>R = {}" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
+  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
+  assumes "ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys"
+  shows "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys' \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
+proof -
+  obtain p\<^sub>0 p\<^sub>1 where *: "p\<^sub>0 \<in> set ys" "p\<^sub>1 \<in> set ys" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>"
+    using assms(1) by blast
+  hence "p\<^sub>0 \<in> set ys'" "p\<^sub>1 \<in> set ys'"
+    using AUX1 assms(2,3,4,5,6,7,8) by blast+
+  thus ?thesis
+    using * by blast
+qed
+
+lemma AUX00:
+  assumes "ys\<^sub>L \<inter> ys\<^sub>R = {}" "set (ys :: (real * real) list) = ys\<^sub>L \<union> ys\<^sub>R"
+  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
+  assumes "ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys"
+  shows "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<and> dist x y < \<delta> \<longrightarrow> x \<in> set ys' \<and> y \<in> set ys'"
+proof (rule ccontr)
+  assume "\<not> (\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<and> dist x y < \<delta> \<longrightarrow> x \<in> set ys' \<and> y \<in> set ys')"
+  hence "\<exists>x y. x \<in> set ys \<and> y \<in> set ys \<and> x \<noteq> y \<and> dist x y < \<delta> \<and> (x \<notin> set ys' \<or> x \<notin> set ys')"
+    by (metis dist_commute)
+  then obtain x y where "x \<in> set ys" "y \<in> set ys" "x \<noteq> y" "dist x y < \<delta>" and *: "x \<notin> set ys' \<or> x \<notin> set ys'"
+    by blast
+  hence "x \<in> set ys' \<and> y \<in> set ys'"
+    using AUX1 assms by blast
+  thus False
+    using * by blast
+qed
+
+lemma BUX1:
+  "set xs = A \<union> B \<Longrightarrow> set (filter P xs) = { x \<in> A. P x } \<union> { x \<in> B. P x}"
+  apply (induction xs)
+   apply (auto)
+   apply (metis UnI1 insert_iff)
+  by (metis UnI2 insert_iff)
+
+lemma BUX0:
+  "\<exists>x y. x \<in> set xs \<and> y \<in> set xs \<and> x \<noteq> y \<Longrightarrow> 2 \<le> length xs"
+  apply (induction xs)
+   apply (auto simp add: Suc_le_eq)
+  done
+
 lemma combine_dist:
   assumes "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R"
   assumes "distinct ys" "sortedY ys"
@@ -589,49 +693,97 @@ lemma combine_dist:
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
   shows "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y"
 proof -
-  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
-  let ?ys' = "filter (\<lambda>(x, _). l - ?\<delta> \<le> x \<and> x \<le> l + ?\<delta>) ys"
-  let ?p\<^sub>0\<^sub>1 = "closest_7 ?ys'"
-  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+  define c\<^sub>0\<^sub>1 where "c\<^sub>0\<^sub>1 = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+  define c\<^sub>0 where "c\<^sub>0 = fst c\<^sub>0\<^sub>1"
+  define c\<^sub>1 where "c\<^sub>1 = snd c\<^sub>0\<^sub>1"
+  define \<delta> where "\<delta> = dist c\<^sub>0 c\<^sub>1"
+  define ys' where "ys' = filter (\<lambda>(x, _). l - \<delta> \<le> x \<and> x \<le> l + \<delta>) ys"
+  define p\<^sub>0\<^sub>1 where "p\<^sub>0\<^sub>1 = closest_7 ys'"
+  define lp\<^sub>0 where "lp\<^sub>0 = fst p\<^sub>0\<^sub>1"
+  define lp\<^sub>1 where "lp\<^sub>1 = snd p\<^sub>0\<^sub>1"
 
-  have 0: "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(8,9) apply auto by force+
+  note defs = c\<^sub>0\<^sub>1_def c\<^sub>0_def c\<^sub>1_def \<delta>_def ys'_def p\<^sub>0\<^sub>1_def lp\<^sub>0_def lp\<^sub>1_def
+
+  have 0: "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(8,9) defs apply auto by force+
 
   show ?thesis
-  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < ?\<delta>")
+  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
     case True
-    then show ?thesis sorry
+    hence 1: "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys' \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
+      using AUX0 0 assms defs by blast
+    hence "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys' \<and> p\<^sub>0 \<noteq> p\<^sub>1"
+      by blast
+    hence 2: "2 \<le> length ys'"
+      using BUX0[of ys'] by blast
+    moreover have "distinct ys'"
+      using assms(4) ys'_def by simp
+    moreover have "sortedY ys'"
+      using assms(5) sortedY_def sorted_wrt_filter ys'_def by blast
+    moreover have "0 < \<delta>"
+      using defs by (simp add: assms(2,3))
+    moreover have "set ys' = { (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> } \<union> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }"
+      using assms(7) BUX1 defs by auto
+    moreover have "{ (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> } \<inter> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> } = {}"
+      using assms(6) by blast
+    moreover have "\<forall>(x, y) \<in> set ys'. l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
+      using defs by simp
+    moreover have "\<forall>p\<^sub>0 \<in> { (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. \<forall>p\<^sub>1 \<in> { (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using \<delta>_def 0 c\<^sub>0_def c\<^sub>1_def c\<^sub>0\<^sub>1_def by blast
+    moreover have "\<forall>p\<^sub>0 \<in> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. \<forall>p\<^sub>1 \<in> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using \<delta>_def 0 c\<^sub>0_def c\<^sub>1_def c\<^sub>0\<^sub>1_def by blast
+    moreover have "(lp\<^sub>0, lp\<^sub>1) = closest_7 ys'"
+      using defs by auto
+    ultimately have "\<forall>x \<in> set ys'. \<forall>y \<in> set ys'. x \<noteq> y \<longrightarrow> dist lp\<^sub>0 lp\<^sub>1 \<le> dist x y"
+      using closest_7_dist[of ys' \<delta> "{ (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }" "{ (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }"] 1 by auto
+    moreover have "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<and> dist x y < \<delta> \<longrightarrow> x \<in> set ys' \<and> y \<in> set ys'"
+      using AUX00[of ys\<^sub>L ys\<^sub>R ys \<delta> l ys'] assms(6,7,8,9,10,11) 0 \<delta>_def ys'_def by auto
+    ultimately have 3: "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<longrightarrow> dist lp\<^sub>0 lp\<^sub>1 \<le> dist x y"
+      by (smt True)
+    hence 4: "dist lp\<^sub>0 lp\<^sub>1 < \<delta>"
+      using defs by (smt True)
+    
+    show ?thesis
+    proof cases
+      assume "length ys' < 2 \<or> \<not> (dist lp\<^sub>0 lp\<^sub>1 < \<delta>)"
+      thus ?thesis
+        using 2 4 by linarith
+    next
+      assume #: "\<not> (length ys' < 2 \<or> \<not> (dist lp\<^sub>0 lp\<^sub>1 < \<delta>))"
+      hence *: "(lp\<^sub>0, lp\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+        using defs by (auto simp add: Let_def split!: prod.splits)
+      moreover have "lp\<^sub>0 = p\<^sub>0" "lp\<^sub>1 = p\<^sub>1" 
+        using assms(1) calculation by (metis (no_types, lifting) prod.inject)+
+      ultimately show ?thesis
+        using 3 by blast
+    qed
   next
     case False
-    hence 1: "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist x y"
-      using 0 by (meson leI)
+    hence 1: "\<forall>x \<in> set ys. \<forall>y \<in> set ys. x \<noteq> y \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist x y"
+      using 0 defs by (meson leI)
     then show ?thesis
     proof cases
-      assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
-      hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-        by (auto simp add: Let_def split!: prod.splits)
-      hence "(p\<^sub>0, p\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
+      assume "length ys' < 2 \<or> \<not> (dist lp\<^sub>0 lp\<^sub>1 < \<delta>)"
+      hence *: "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+        using defs by (auto simp add: Let_def split!: prod.splits)
+      hence "(p\<^sub>0, p\<^sub>1) = (c\<^sub>0, c\<^sub>1)"
         using assms(1) by argo
       thus ?thesis
         using * 1 by blast
     next
-      assume #: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
-      hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-        by (auto simp add: Let_def split!: prod.splits)
-      have "(?p\<^sub>0, ?p\<^sub>1) = closest_7 ?ys'"
-        by auto
-      hence "?p\<^sub>0 \<in> set ?ys'" "?p\<^sub>1 \<in> set ?ys'"
-        using # closest_7_set_p0[of ?ys' ?p\<^sub>0 ?p\<^sub>1] closest_7_set_p1[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith+
-      hence "?p\<^sub>0 \<in> set ys" "?p\<^sub>1 \<in> set ys"
-        using filter_is_subset by fast+
-      moreover have "?p\<^sub>0 \<noteq> ?p\<^sub>1"
+      assume #: "\<not> (length ys' < 2 \<or> \<not> (dist lp\<^sub>0 lp\<^sub>1 < \<delta>))"
+      hence *: "(lp\<^sub>0, lp\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+        using defs by (auto simp add: Let_def split!: prod.splits)
+      have "(lp\<^sub>0, lp\<^sub>1) = closest_7 ys'"
+        using defs by auto
+      hence "lp\<^sub>0 \<in> set ys'" "lp\<^sub>1 \<in> set ys'"
+        using # defs closest_7_set_p0[of ys' lp\<^sub>0 lp\<^sub>1] closest_7_set_p1[of ys' lp\<^sub>0 lp\<^sub>1] by linarith+
+      hence "lp\<^sub>0 \<in> set ys" "lp\<^sub>1 \<in> set ys"
+        using filter_is_subset defs by fast+
+      moreover have "lp\<^sub>0 \<noteq> lp\<^sub>1"
         using combine_p0_ne_p1 * assms(2,3,4) by blast
-      ultimately have "?\<delta> \<le> dist ?p\<^sub>0 ?p\<^sub>1"
-        using 1 by blast
+      ultimately have "\<delta> \<le> dist lp\<^sub>0 lp\<^sub>1"
+        using 1 defs by blast
       thus ?thesis
         using # by argo
     qed
