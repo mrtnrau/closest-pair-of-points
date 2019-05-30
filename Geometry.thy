@@ -114,6 +114,9 @@ proof (induction "card S" arbitrary: S)
 qed simp
 
 (* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B especially for the pigeonhole lemma below? *) 
+
+term Collect
+
 lemma
   assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
   shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
