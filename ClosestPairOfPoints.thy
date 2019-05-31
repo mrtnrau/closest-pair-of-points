@@ -160,6 +160,145 @@ lemma find_closest_ne:
   shows "find_closest p ps \<noteq> p"
   using assms by (induction p ps rule: find_closest.induct) (auto simp add: Let_def)
 
+lemma T4:
+  assumes "distinct xs" "i < length xs" "\<forall>j \<le> i. xs!j \<in> A"
+  shows "i < card (set (filter (\<lambda>x. x \<in> A) xs))"
+  sorry
+
+lemma T3:
+  "x \<in> set xs \<Longrightarrow> x \<notin> set (take n xs) \<Longrightarrow> \<exists>i. x = xs!i \<and> n \<le> i"
+  sorry
+
+lemma T2:
+  assumes "dist x x' < \<delta>" "sortedY (x # ys)" "x' \<in> set ys"
+  shows "snd x' \<le> snd x + \<delta>"
+proof -
+  have "snd x \<le> snd x'"
+    using sortedY_def assms(2,3) by auto
+  moreover have "dist (snd x) (snd x') < \<delta>"
+    using assms(1) dist_snd_le le_less_trans by blast
+  ultimately show ?thesis
+    by (simp add: dist_real_def)
+qed
+
+lemma T1:
+  assumes "distinct (x # ys)" "sortedY (x # ys)" "0 < length ys" "0 < \<delta>"
+  assumes "set (x # ys) = ys\<^sub>L \<union> ys\<^sub>R" "ys\<^sub>L \<inter> ys\<^sub>R = {}"
+  assumes "\<forall>(x, y) \<in> set (x # ys). l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
+  assumes "\<forall>(x, y) \<in> ys\<^sub>L. x \<le> l" "\<forall>(x, y) \<in> ys\<^sub>R. l \<le> x"
+  assumes "\<forall>x \<in> ys\<^sub>L. \<forall>y \<in> ys\<^sub>L. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y" "\<forall>x \<in> ys\<^sub>R. \<forall>y \<in> ys\<^sub>R. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y"
+  assumes "x' \<in> set ys" "dist x x' < \<delta>"
+  shows "x' \<in> set (take 8 ys)"
+proof -
+  define rectangle where "rectangle = cbox (l - \<delta>, snd x) (l + \<delta>, snd x + \<delta>)"
+  define lsquare where "lsquare = cbox (l - \<delta>, snd x) (l, snd x + \<delta>)"
+  define rsquare where "rsquare = cbox (l, snd x) (l + \<delta>, snd x + \<delta>)"
+  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) ys"
+  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) ys"
+
+  note defs = rectangle_def lsquare_def rsquare_def lys_def rys_def
+
+  have "l - \<delta> \<le> fst x'" "fst x' \<le> l + \<delta>"
+    using assms(7,12) by auto
+  moreover have "snd x \<le> snd x'"
+    using sortedY_def assms(2,12) by auto
+  moreover have "snd x' \<le> snd x + \<delta>"
+    using T2 assms(2,12,13) by blast
+  ultimately have 0: "x' \<in> rectangle"
+    using mem_cbox_2D[of "l - \<delta>" "fst x'" "l + \<delta>" "snd x" "snd x'" "snd x + \<delta>"] defs by simp
+
+  have 1: "rectangle = lsquare \<union> rsquare"
+    using defs cbox_right_un by auto
+
+  have "\<forall>p \<in> ys\<^sub>L. p \<in> rsquare \<longrightarrow> fst p = l"
+    using rsquare_def assms(8) by auto
+  hence X: "\<forall>p \<in> ys\<^sub>L. p \<in> rsquare \<longrightarrow> p \<in> lsquare"
+    using rsquare_def lsquare_def by auto
+
+  have "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> fst p = l"
+    using lsquare_def assms(9) by auto
+  hence Y: "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> p \<in> rsquare"
+    using rsquare_def lsquare_def by auto
+
+  have 2: "set (filter (\<lambda>p. p \<in> rectangle) ys) = set lys \<union> set rys"
+  proof standard
+    show "set (filter (\<lambda>p. p \<in> rectangle) ys) \<subseteq> set lys \<union> set rys"
+      using 1 X Y assms(5) lys_def rys_def by auto
+  next
+    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) ys)"
+      using 1 lys_def rys_def by auto
+  qed
+
+  have "set lys \<subseteq> ys\<^sub>L"
+    using defs by auto
+  hence "sparse \<delta> (set lys)"
+    using assms(10) sparse_def by blast
+  moreover have "\<forall>p \<in> set lys. p \<in> lsquare"
+    using defs by auto
+  ultimately have 3: "card (set lys) \<le> 4"
+    using max_points_square[of "set lys" "l - \<delta>" "snd x" \<delta>] assms(4) lsquare_def by auto
+
+  have "set rys \<subseteq> ys\<^sub>R"
+    using defs by auto
+  hence "sparse \<delta> (set rys)"
+    using assms(11) sparse_def by blast
+  moreover have "\<forall>p \<in> set rys. p \<in> rsquare"
+    using defs by auto
+  ultimately have 4: "card (set rys) \<le> 4"
+    using max_points_square[of "set rys" l "snd x" \<delta>] assms(4) rsquare_def by auto
+
+  have 5: "card (set lys \<union> set rys) \<le> 8"
+    using 3 4 card_Un_le[of "set lys" "set rys"] by simp
+
+  have 6: "x' \<in> set lys \<union> set rys"
+    using 0 2 assms(12) by auto
+
+  have 7: "set lys \<union> set rys \<subseteq> set (take 8 ys)"
+  proof (rule ccontr)
+    assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 ys))"
+    then obtain p where #: "p \<in> set ys" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 ys)"
+      using lys_def rys_def by auto
+    then obtain i where "p = ys!i" "8 \<le> i"
+      using T3 by metis
+    hence "ys!i \<in> rectangle"
+      using 1 # \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
+    hence "\<forall>j \<le> i. ys!j \<in> rectangle"
+      sorry
+    hence "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) ys))"
+      using T4[of ys] assms(1) sorry
+    hence "9 \<le> card (set lys \<union> set rys)"
+      using 2 by simp
+    thus False
+      using 5 by simp
+  qed 
+
+  show ?thesis
+    using 6 7 by blast
+qed
+  
+
+lemma find_closest_dist_take_7:
+  assumes "distinct (x # ys)" "sortedY (x # ys)" "0 < length ys" "0 < \<delta>"
+  assumes "set (x # ys) = ys\<^sub>L \<union> ys\<^sub>R" "ys\<^sub>L \<inter> ys\<^sub>R = {}"
+  assumes "\<forall>(x, y) \<in> set (x # ys). l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
+  assumes "\<forall>(x, y) \<in> ys\<^sub>L. x \<le> l" "\<forall>(x, y) \<in> ys\<^sub>R. l \<le> x"
+  assumes "\<forall>x \<in> ys\<^sub>L. \<forall>y \<in> ys\<^sub>L. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y" "\<forall>x \<in> ys\<^sub>R. \<forall>y \<in> ys\<^sub>R. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y"
+  assumes "\<exists>x' \<in> set ys. dist x x' < \<delta>"
+  shows "\<forall>x' \<in> set ys. dist x (find_closest x (take 7 ys)) \<le> dist x x'"
+proof -
+  have "dist x (find_closest x ys) < \<delta>"
+    using assms(12) dual_order.strict_trans2 find_closest_dist by blast
+  moreover have "find_closest x ys \<in> set ys"
+    using assms(3) find_closest_set by blast
+  ultimately have "find_closest x ys \<in> set (take 7 ys)"
+    using T1[of x ys \<delta> ys\<^sub>L ys\<^sub>R l "find_closest x ys"] assms by blast
+  moreover have "\<forall>p \<in> set (take 7 ys). dist x (find_closest x (take 7 ys)) \<le> dist x p"
+    using find_closest_dist by blast
+  ultimately have "\<forall>p \<in> set ys. dist x (find_closest x (take 7 ys)) \<le> dist x p"
+    using find_closest_dist order.trans by blast
+  thus ?thesis .
+qed
+
 declare find_closest.simps [simp del]
 
 
