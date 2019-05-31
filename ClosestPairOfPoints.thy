@@ -489,6 +489,7 @@ lemma closest_7_dist:
   assumes "distinct ys" "sortedY ys" "1 < length ys" "0 < \<delta>"
   assumes "set ys = ys\<^sub>L \<union> ys\<^sub>R" "ys\<^sub>L \<inter> ys\<^sub>R = {}"
   assumes "\<forall>(x, y) \<in> set ys. l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
+  assumes "\<forall>(x, y )\<in> ys\<^sub>L. x \<le> l" "\<forall>(x, y) \<in> ys\<^sub>R. l \<le> x"
   assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
   assumes "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
   assumes "(c\<^sub>0, c\<^sub>1) = closest_7 ys"
@@ -500,56 +501,85 @@ proof (induction ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: c
   have "(p\<^sub>0, p\<^sub>1) = closest_7 [p\<^sub>0, p\<^sub>1]"
     by simp
   moreover have "(c\<^sub>0, c\<^sub>1) = closest_7 [p\<^sub>0, p\<^sub>1]"
-    using "3.prems"(11) by simp
+    using "3.prems"(13) by simp
   ultimately have "p\<^sub>0 = c\<^sub>0" "p\<^sub>1 = c\<^sub>1"
     by simp_all
   thus ?case
     by (simp add: dist_commute set_ConsD)
 next
-  case (4 x y z ys')
+  case (4 x y z zs)
 
-  let ?ys' = "y # z # ys'"
-  let ?c\<^sub>0\<^sub>1 = "closest_7 ?ys'"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?ys\<^sub>L' = "ys\<^sub>L - { x }"
-  let ?ys\<^sub>R' = "ys\<^sub>R - { x }"
-
-  thm "4.IH"
+  let ?lys = "y # z # zs"
+  let ?c\<^sub>0\<^sub>1 = "closest_7 ?lys"
+  let ?lc\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
+  let ?lc\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+  let ?lp\<^sub>1 = "find_closest x (take 7 ?lys)"
+  let ?lys\<^sub>L = "ys\<^sub>L - { x }"
+  let ?lys\<^sub>R = "ys\<^sub>R - { x }"
 
   show ?case
-  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ?ys' \<and> p\<^sub>1 \<in> set ?ys' \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
+  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ?lys \<and> p\<^sub>1 \<in> set ?lys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
     case True
-    moreover have "distinct ?ys'"
+    moreover have "distinct ?lys"
       using "4.prems"(1) by simp
-    moreover have "sortedY ?ys'"
+    moreover have "sortedY ?lys"
       using "4.prems"(2) sorted_wrt.simps(2) sortedY_def by simp
-    moreover have "1 < length ?ys'"
+    moreover have "1 < length ?lys"
       by simp
-    moreover have "set ?ys' = ?ys\<^sub>L' \<union> ?ys\<^sub>R'"
+    moreover have "set ?lys = ?lys\<^sub>L \<union> ?lys\<^sub>R"
       using "4.prems"(1,5) by auto
-    moreover have "?ys\<^sub>L' \<inter> ?ys\<^sub>R' = {}"
+    moreover have "?lys\<^sub>L \<inter> ?lys\<^sub>R = {}"
       using "4.prems"(6) by auto
-    moreover have "\<forall>(x, y) \<in> set ?ys'. l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
+    moreover have "\<forall>(x, y) \<in> set ?lys. l - \<delta> \<le> x \<and> x \<le> l + \<delta>"
       using "4.prems"(7) by simp
-    moreover have "\<forall>p\<^sub>0 \<in> ?ys\<^sub>L'. \<forall>p\<^sub>1 \<in> ?ys\<^sub>L'. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    moreover have "\<forall>(x, y) \<in> ?lys\<^sub>L. x \<le> l"
       using "4.prems"(8) by simp
-    moreover have "\<forall>p\<^sub>0 \<in> ?ys\<^sub>R'. \<forall>p\<^sub>1 \<in> ?ys\<^sub>R'. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    moreover have "\<forall>(x, y) \<in> ?lys\<^sub>R. l \<le> x"
       using "4.prems"(9) by simp
-    moreover have "(?c\<^sub>0, ?c\<^sub>1) = closest_7 ?ys'"
-      by simp  
-    ultimately have "\<forall>p\<^sub>0 \<in> set ?ys'. \<forall>p\<^sub>1 \<in> set ?ys'. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.IH"[of ?ys\<^sub>L' ?ys\<^sub>R' ?c\<^sub>0 ?c\<^sub>1] "4.prems"(4) by blast
-    hence "dist ?c\<^sub>0 ?c\<^sub>1 < \<delta>"
+    moreover have "\<forall>p\<^sub>0 \<in> ?lys\<^sub>L. \<forall>p\<^sub>1 \<in> ?lys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.prems"(10) by simp
+    moreover have "\<forall>p\<^sub>0 \<in> ?lys\<^sub>R. \<forall>p\<^sub>1 \<in> ?lys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.prems"(11) by simp
+    moreover have "(?lc\<^sub>0, ?lc\<^sub>1) = closest_7 ?lys"
+      by simp
+    ultimately have *: "\<forall>p\<^sub>0 \<in> set ?lys. \<forall>p\<^sub>1 \<in> set ?lys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.IH"[of ?lys\<^sub>L ?lys\<^sub>R ?lc\<^sub>0 ?lc\<^sub>1] "4.prems"(4) by fast
+    hence #: "dist ?lc\<^sub>0 ?lc\<^sub>1 < \<delta>"
       using True by (meson le_less_trans)
 
-    show ?thesis sorry
+    show ?thesis
+    proof (cases "\<exists>x' \<in> set ?lys. dist x x' < \<delta>")
+      case True
+      then show ?thesis sorry
+    next
+      case False
+      hence "\<forall>p\<^sub>0 \<in> set (x # ?lys). \<forall>p\<^sub>1 \<in> set (x # ?lys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+        using * # by (smt dist_commute set_ConsD)
+      then show ?thesis
+        sorry
+    qed
   next
     case False
-    hence "\<exists>x'. x' \<in> set ?ys' \<and> x \<noteq> x' \<and> dist x x' < \<delta>"
-      using "4.prems"(10) by (metis dist_commute insert_iff list.set(2))
-
-    then show ?thesis sorry
+    hence "\<exists>x' \<in> set ?lys. dist x x' < \<delta>"
+      using "4.prems"(12) by (metis dist_commute insert_iff list.set(2))
+    hence "\<forall>x' \<in> set ?lys. dist x ?lp\<^sub>1 \<le> dist x x'"
+      using find_closest_dist_take_7[of x ?lys \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
+    moreover have "dist x ?lp\<^sub>1 < \<delta>"
+      using \<open>\<exists>x'\<in>set ?lys. dist x x' < \<delta>\<close> calculation by auto
+    ultimately have *: "\<forall>p\<^sub>0 \<in> set (x # ?lys). \<forall>p\<^sub>1 \<in> set (x # ?lys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x ?lp\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+      using False by (smt dist_commute insert_iff list.simps(15))
+    have "?lc\<^sub>0 \<in> set ?lys" "?lc\<^sub>1 \<in> set ?lys" "?lc\<^sub>0 \<noteq> ?lc\<^sub>1"
+      using closest_7_set_p0[of ?lys ?lc\<^sub>0 ?lc\<^sub>1] apply simp
+      using closest_7_set_p1[of ?lys ?lc\<^sub>0 ?lc\<^sub>1] apply simp
+      using closest_7_set_p0_ne_p1[of ?lys ?lc\<^sub>0 ?lc\<^sub>1] by (metis "4.prems"(1) distinct.simps(2) le_eq_less_or_eq length_Cons lessI less_one nat.simps(3) not_less surjective_pairing)
+    hence "dist x ?lp\<^sub>1 < dist ?lc\<^sub>0 ?lc\<^sub>1"
+      by (smt False \<open>dist x (find_closest x (take 7 (y # z # zs))) < \<delta>\<close>)
+    hence "(x, ?lp\<^sub>1) = closest_7 (x # ?lys)"
+      by (auto split: prod.splits)
+    moreover have "c\<^sub>0 = x" "c\<^sub>1 = ?lp\<^sub>1"
+      using "4.prems"(13) calculation by (metis prod.inject)+
+    ultimately show ?thesis
+      using * by blast
   qed
 qed auto
 
