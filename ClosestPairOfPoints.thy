@@ -85,6 +85,11 @@ lemma sorted_wrt_filter:
   "sorted_wrt f xs \<Longrightarrow> sorted_wrt f (filter P xs)"
   by (induction xs) auto
 
+lemma sorted_wrt_take_drop:
+  assumes "sorted_wrt f xs"
+  shows "\<forall>x \<in> set (take n xs). \<forall>y \<in> set (drop n xs). f x y"
+  using assms by (metis append_take_drop_id sorted_wrt_append)
+
 lemma sorted_wrt_take_less_hd_drop:
   assumes "sorted_wrt f xs" "n < length xs"
   shows "\<forall>x \<in> set (take n xs). f x (hd (drop n xs))"
@@ -160,14 +165,13 @@ lemma find_closest_ne:
   shows "find_closest p ps \<noteq> p"
   using assms by (induction p ps rule: find_closest.induct) (auto simp add: Let_def)
 
-lemma T4:
-  assumes "distinct xs" "i < length xs" "\<forall>j \<le> i. xs!j \<in> A"
-  shows "i < card (set (filter (\<lambda>x. x \<in> A) xs))"
-  sorry
-
 lemma T3:
-  "x \<in> set xs \<Longrightarrow> x \<notin> set (take n xs) \<Longrightarrow> \<exists>i. x = xs!i \<and> n \<le> i"
-  sorry
+  "sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set xs. f x y"
+  by simp
+
+lemma T4:
+  "sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set (take n xs). f x y"
+  using T3 by (metis in_set_takeD)
 
 lemma T2:
   assumes "dist x x' < \<delta>" "sortedY (x # ys)" "x' \<in> set ys"
@@ -258,14 +262,44 @@ proof -
     assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 ys))"
     then obtain p where #: "p \<in> set ys" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 ys)"
       using lys_def rys_def by auto
-    then obtain i where "p = ys!i" "8 \<le> i"
-      using T3 by metis
-    hence "ys!i \<in> rectangle"
-      using 1 # \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
-    hence "\<forall>j \<le> i. ys!j \<in> rectangle"
-      sorry
-    hence "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) ys))"
-      using T4[of ys] assms(1) sorry
+    hence B: "p \<in> set (drop 8 ys)"
+      by (metis Un_iff append_take_drop_id set_append)
+
+    hence "\<forall>a \<in> set (take 8 ys). \<forall>b \<in> set (drop 8 ys). snd a \<le> snd b"
+      using sorted_wrt_take_drop[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" ys 8] assms(2) sortedY_def by fastforce
+    hence C: "\<forall>q \<in> set (take 8 ys). snd q \<le> snd p"
+      using B by simp
+
+    have A: "p \<in> rectangle"
+      using #(2) 1 \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
+    moreover have "\<forall>p \<in> set (take 8 ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+      using assms(7) by (metis (mono_tags, lifting) case_prod_unfold in_set_takeD insert_iff list.set(2))
+    moreover have "\<forall>p \<in> set (take 8 ys). snd x \<le> snd p"
+      using T4[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" x ys 8] assms(2) sortedY_def by auto
+    moreover have "snd p \<le> snd x + \<delta>"
+      using A rectangle_def by (metis mem_cbox_2D prod.collapse)
+    moreover have "\<forall>p \<in> set (take 8 ys). snd p \<le> snd x + \<delta>"
+      using C calculation by fastforce
+    ultimately have "\<forall>q \<in> set (take 8 ys). q \<in> rectangle"
+      using rectangle_def mem_cbox_2D by fastforce
+    hence P: "{ p } \<union> set (take 8 ys) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) ys)"
+      using # A by (smt filter_set insertE insert_is_Un member_filter set_take_subset subsetCE subsetI)
+
+    have "8 \<le> length ys"
+      using #(1,3) nat_le_linear by fastforce
+    hence Q: "length (take 8 ys) = 8"
+      by simp
+
+    have "finite { p }" "finite (set (take 8 ys))"
+      by simp_all
+    hence "card ({ p } \<union> set (take 8 ys)) = card ({ p }) + card (set (take 8 ys))"
+      using #(3) by simp
+    hence "card ({ p } \<union> set (take 8 ys)) = 9"
+      using assms(1) Q by (auto simp add: distinct_card)
+    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) ys))"
+      by simp
+    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) ys))"
+      using P card_mono by metis
     hence "9 \<le> card (set lys \<union> set rys)"
       using 2 by simp
     thus False
