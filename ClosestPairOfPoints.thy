@@ -47,6 +47,18 @@ definition sortY :: "point list \<Rightarrow> point list" where
 definition sortedY :: "point list \<Rightarrow> bool" where
   "sortedY ps = sorted_wrt (\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1) ps"
 
+lemma sortedX_insort_key:
+  "sortedX ps \<Longrightarrow> sortedX (insort_key fst p ps)"
+  unfolding sortedX_def
+  apply (induction ps)
+   apply (auto)
+  by (smt case_prod_conv fst_conv insertE le_cases order.trans set_insort_key)
+
+lemma sortedX_sortX:
+  "sortedX (sortX ps)"
+  using sortX_def sortedX_def sortedX_insort_key
+  by (induction ps) auto
+
 lemma sortX_set:
   "set ps = set (sortX ps)"
   using sortX_def by simp
@@ -58,6 +70,18 @@ lemma sortX_length:
 lemma sortX_distinct:
   "distinct ps \<Longrightarrow> distinct (sortX ps)"
   using sortX_def by simp
+
+lemma sortedY_insort_key:
+  "sortedY ps \<Longrightarrow> sortedY (insort_key snd p ps)"
+  unfolding sortedY_def
+  apply (induction ps)
+   apply (auto)
+  by (smt case_prod_conv snd_conv insertE le_cases order.trans set_insort_key)
+
+lemma sortedY_sortY:
+  "sortedY (sortY ps)"
+  using sortY_def sortedY_def sortedY_insort_key
+  by (induction ps) auto
 
 lemma sortY_set:
   "set ps = set (sortY ps)"
@@ -166,11 +190,11 @@ lemma find_closest_ne:
   using assms by (induction p ps rule: find_closest.induct) (auto simp add: Let_def)
 
 lemma T3:
-  "sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set xs. f x y"
+  "\<And>x. f x x \<Longrightarrow> sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set (x # xs). f x y"
   by simp
 
 lemma T4:
-  "sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set (take n xs). f x y"
+  "\<And>x. f x x \<Longrightarrow> sorted_wrt f (x # xs) \<Longrightarrow> \<forall>y \<in> set (take n (x # xs)). f x y"
   using T3 by (metis in_set_takeD)
 
 lemma T2:
@@ -192,13 +216,13 @@ lemma T1:
   assumes "\<forall>(x, y) \<in> ys\<^sub>L. x \<le> l" "\<forall>(x, y) \<in> ys\<^sub>R. l \<le> x"
   assumes "\<forall>x \<in> ys\<^sub>L. \<forall>y \<in> ys\<^sub>L. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y" "\<forall>x \<in> ys\<^sub>R. \<forall>y \<in> ys\<^sub>R. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y"
   assumes "x' \<in> set ys" "dist x x' < \<delta>"
-  shows "x' \<in> set (take 8 ys)"
+  shows "x' \<in> set (take 7 ys)"
 proof -
   define rectangle where "rectangle = cbox (l - \<delta>, snd x) (l + \<delta>, snd x + \<delta>)"
   define lsquare where "lsquare = cbox (l - \<delta>, snd x) (l, snd x + \<delta>)"
   define rsquare where "rsquare = cbox (l, snd x) (l + \<delta>, snd x + \<delta>)"
-  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) ys"
-  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) ys"
+  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) (x # ys)"
+  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) (x # ys)"
 
   note defs = rectangle_def lsquare_def rsquare_def lys_def rys_def
 
@@ -224,12 +248,12 @@ proof -
   hence Y: "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> p \<in> rsquare"
     using rsquare_def lsquare_def by auto
 
-  have 2: "set (filter (\<lambda>p. p \<in> rectangle) ys) = set lys \<union> set rys"
+  have 2: "set (filter (\<lambda>p. p \<in> rectangle) (x # ys)) = set lys \<union> set rys"
   proof standard
-    show "set (filter (\<lambda>p. p \<in> rectangle) ys) \<subseteq> set lys \<union> set rys"
+    show "set (filter (\<lambda>p. p \<in> rectangle) (x # ys)) \<subseteq> set lys \<union> set rys"
       using 1 X Y assms(5) lys_def rys_def by auto
   next
-    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) ys)"
+    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) (x # ys))"
       using 1 lys_def rys_def by auto
   qed
 
@@ -255,50 +279,50 @@ proof -
     using 3 4 card_Un_le[of "set lys" "set rys"] by simp
 
   have 6: "x' \<in> set lys \<union> set rys"
-    using 0 2 assms(12) by auto
+    using 0 2 assms(12) by (metis filter_set member_filter set_subset_Cons subsetCE)
 
-  have 7: "set lys \<union> set rys \<subseteq> set (take 8 ys)"
+  have 7: "set lys \<union> set rys \<subseteq> set (take 8 (x # ys))"
   proof (rule ccontr)
-    assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 ys))"
-    then obtain p where #: "p \<in> set ys" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 ys)"
-      using lys_def rys_def by auto
-    hence B: "p \<in> set (drop 8 ys)"
+    assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 (x # ys)))"
+    then obtain p where #: "p \<in> set (x # ys)" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 (x # ys))"
+      using lys_def rys_def 2 by(smt filter_is_subset subsetCE subsetI)
+    hence B: "p \<in> set (drop 8 (x # ys))"
       by (metis Un_iff append_take_drop_id set_append)
 
-    hence "\<forall>a \<in> set (take 8 ys). \<forall>b \<in> set (drop 8 ys). snd a \<le> snd b"
-      using sorted_wrt_take_drop[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" ys 8] assms(2) sortedY_def by fastforce
-    hence C: "\<forall>q \<in> set (take 8 ys). snd q \<le> snd p"
+    hence "\<forall>a \<in> set (take 8 (x # ys)). \<forall>b \<in> set (drop 8 (x # ys)). snd a \<le> snd b"
+      using sorted_wrt_take_drop[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" "x # ys" 8] assms(2) sortedY_def by fastforce
+    hence C: "\<forall>q \<in> set (take 8 (x # ys)). snd q \<le> snd p"
       using B by simp
 
     have A: "p \<in> rectangle"
       using #(2) 1 \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
-    moreover have "\<forall>p \<in> set (take 8 ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using assms(7) by (metis (mono_tags, lifting) case_prod_unfold in_set_takeD insert_iff list.set(2))
-    moreover have "\<forall>p \<in> set (take 8 ys). snd x \<le> snd p"
-      using T4[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" x ys 8] assms(2) sortedY_def by auto
+    moreover have "\<forall>p \<in> set (take 8 (x # ys)). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+      using assms(7) by (metis (mono_tags, lifting) case_prod_unfold in_set_takeD)
+    moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd x \<le> snd p"
+      using T4[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" x ys 8] assms(2) sortedY_def by fastforce
     moreover have "snd p \<le> snd x + \<delta>"
       using A rectangle_def by (metis mem_cbox_2D prod.collapse)
-    moreover have "\<forall>p \<in> set (take 8 ys). snd p \<le> snd x + \<delta>"
+    moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd p \<le> snd x + \<delta>"
       using C calculation by fastforce
-    ultimately have "\<forall>q \<in> set (take 8 ys). q \<in> rectangle"
+    ultimately have "\<forall>q \<in> set (take 8 (x # ys)). q \<in> rectangle"
       using rectangle_def mem_cbox_2D by fastforce
-    hence P: "{ p } \<union> set (take 8 ys) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) ys)"
+    hence P: "{ p } \<union> set (take 8 (x # ys)) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) (x # ys))"
       using # A by (smt filter_set insertE insert_is_Un member_filter set_take_subset subsetCE subsetI)
 
-    have "8 \<le> length ys"
+    have "8 \<le> length (x # ys)"
       using #(1,3) nat_le_linear by fastforce
-    hence Q: "length (take 8 ys) = 8"
+    hence Q: "length (take 8 (x # ys)) = 8"
       by simp
 
-    have "finite { p }" "finite (set (take 8 ys))"
+    have "finite { p }" "finite (set (take 8 (x # ys)))"
       by simp_all
-    hence "card ({ p } \<union> set (take 8 ys)) = card ({ p }) + card (set (take 8 ys))"
-      using #(3) by simp
-    hence "card ({ p } \<union> set (take 8 ys)) = 9"
-      using assms(1) Q by (auto simp add: distinct_card)
-    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) ys))"
+    hence "card ({ p } \<union> set (take 8 (x # ys))) = card ({ p }) + card (set (take 8 (x # ys)))"
+      using #(3) card_Un_disjoint by blast
+    hence "card ({ p } \<union> set (take 8 (x # ys))) = 9"
+      using assms(1) Q distinct_card[of "take 8 (x # ys)"] distinct_take[of "x # ys"] by fastforce
+    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) (x # ys)))"
       by simp
-    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) ys))"
+    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) (x # ys)))"
       using P card_mono by metis
     hence "9 \<le> card (set lys \<union> set rys)"
       using 2 by simp
@@ -306,8 +330,12 @@ proof -
       using 5 by simp
   qed 
 
-  show ?thesis
+  have "x' \<in> set (take 8 (x # ys))"
     using 6 7 by blast
+  hence "x' \<in> set (take 7 ys)"
+    using assms(1,12) by auto
+  thus ?thesis
+    by auto
 qed
   
 
@@ -1190,7 +1218,7 @@ text \<open>
 definition closest :: "point list \<Rightarrow> (point * point)" where
   "closest ps = closest' (set ps) (sortX ps) (sortY ps)"
 
-lemma closest_set:
+theorem closest_set:
   assumes "1 < length ps" "distinct ps" "(p\<^sub>0, p\<^sub>1) = closest ps"
   shows "p\<^sub>0 \<in> set ps"
     and "p\<^sub>1 \<in> set ps"
@@ -1208,6 +1236,28 @@ proof -
     using closest_def assms(3) by simp
   ultimately show "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1"
     using closest'_p0_p1 by simp_all
+qed
+
+theorem closest_dist:
+  assumes "1 < length ps" "distinct ps" "(p\<^sub>0, p\<^sub>1) = closest ps"
+  shows "\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y"
+proof -
+  have "set (sortX ps) = set (sortY ps)"
+    using sortX_set sortY_set by blast
+  moreover have "set ps = set (sortX ps)"
+    using sortX_set by simp
+  moreover have "1 < length (sortX ps)"
+    using assms(1) sortX_length by simp
+  moreover have "distinct (sortX ps)" "distinct (sortY ps)"
+    using sortX_distinct sortY_distinct assms(2) by simp_all
+  moreover have "(p\<^sub>0, p\<^sub>1) = closest' (set ps) (sortX ps) (sortY ps)"
+    using closest_def assms(3) by simp
+  moreover have "sortedX (sortX ps)"
+    using sortedX_sortX by blast
+  moreover have "sortedY (sortY ps)"
+    using sortedY_sortY by blast
+  ultimately show "\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y"
+    using closest'_dist[of "sortX ps" p\<^sub>0 p\<^sub>1 "sortY ps"] by presburger
 qed
 
 end
