@@ -879,14 +879,77 @@ proof (rule ccontr)
         using AUX3 assms(4) 0 by fastforce
     next
       case B2
-      then show ?thesis sorry
+      hence "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+        using assms(2,11) by auto
+      hence "l + \<delta> < fst p\<^sub>1"
+        using B assms(10) 0 by auto
+      moreover have "fst p\<^sub>0 \<le> l"
+        using assms(9) B by simp
+      ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+        using dist_real_def by simp
+      hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+        using dist_fst_le less_le_trans by blast
+      thus ?thesis
+        using assms(4) by simp
     next
       case B3
-      then show ?thesis sorry
+      hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0"
+        using assms(1,11) by auto
+      hence "fst p\<^sub>0 < l - \<delta>"
+        using B assms(9) 0 by auto
+      moreover have "l \<le> fst p\<^sub>1"
+        using assms(10) B by simp
+      ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+        using dist_real_def by simp
+      hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+        using dist_fst_le less_le_trans by blast
+      thus ?thesis
+        using assms(4) by simp
     qed
   next
     case C
-    then show ?thesis sorry
+    consider (C1) "p\<^sub>0 \<notin> set ys' \<and> p\<^sub>1 \<notin> set ys'"| (C2) "p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<notin> set ys'" | (C3) "p\<^sub>0 \<notin> set ys' \<and> p\<^sub>1 \<in> set ys'"
+      using * by blast
+    then show ?thesis
+    proof cases
+      case C1
+      hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0" "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+        using C AUX2 assms(1,2,11) by blast+
+      hence "fst p\<^sub>1 < l - \<delta>" "l + \<delta> < fst p\<^sub>0"
+        using assms(9,10) C by force+
+      hence "2 * \<delta> \<le> dist p\<^sub>1 p\<^sub>0"
+        using AUX3 by simp
+      then show ?thesis
+        using assms(4) 0 by (simp add: dist_commute)
+    next
+      case C2
+      hence "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+        using assms(2,11) by auto
+      hence "fst p\<^sub>1 < l - \<delta>"
+        using C assms(9) 0 by auto
+      moreover have "l \<le> fst p\<^sub>0"
+        using assms(10) C by simp
+      ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+        using dist_real_def by simp
+      hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+        using dist_fst_le less_le_trans by blast
+      thus ?thesis
+        using assms(4) by simp
+    next
+      case C3
+      hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0"
+        using assms(1,11) by auto
+      hence "l + \<delta> < fst p\<^sub>0"
+        using C assms(10) 0 by auto
+      moreover have "fst p\<^sub>1 \<le> l"
+        using assms(9) C by simp
+      ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+        using dist_real_def by simp
+      hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+        using dist_fst_le less_le_trans by blast
+      thus ?thesis
+        using assms(4) by simp
+    qed
   next
     case D
     then show ?thesis
