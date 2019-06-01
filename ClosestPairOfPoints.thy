@@ -1,13 +1,111 @@
+section "Closest Pair Of Points"
+
 theory ClosestPairOfPoints
   imports "HOL-Analysis.Analysis" "Geometry"
 begin
 
 
+subsection "Lemmas about sortedness"
+
+definition sortX :: "point list \<Rightarrow> point list" where
+  "sortX ps = sort_key fst ps"
+
+definition sortedX :: "point list \<Rightarrow> bool" where
+  "sortedX ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1) ps"
+
+definition sortY :: "point list \<Rightarrow> point list" where
+  "sortY ps = sort_key snd ps"
+
+definition sortedY :: "point list \<Rightarrow> bool" where
+  "sortedY ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1) ps"
+
+lemma sortedX_insort_key:
+  "sortedX (insort_key fst p ps) = sortedX ps"
+  by (induction ps) (auto simp add: sortedX_def set_insort_key)
+
+lemma sortedX_sortX:
+  "sortedX (sortX ps)"
+  using sortedX_insort_key
+  by (induction ps) (auto simp add: sortedX_def sortX_def)
+
+lemma set_sortX:
+  "set ps = set (sortX ps)"
+  by (simp add: sortX_def)
+
+lemma length_sortX:
+  "length ps = length (sortX ps)"
+  by (simp add: sortX_def)
+
+lemma distinct_sortX:
+  "distinct ps \<Longrightarrow> distinct (sortX ps)"
+  by (simp add: sortX_def)
+
+lemmas sortX = sortedX_sortX set_sortX length_sortX distinct_sortX
+
+lemma sortedY_insort_key:
+  "sortedY (insort_key snd p ps) = sortedY ps"
+  by (induction ps) (auto simp add: sortedY_def set_insort_key)
+
+lemma sortedY_sortY:
+  "sortedY (sortY ps)"
+  using sortedY_insort_key
+  by (induction ps) (auto simp add: sortedY_def sortY_def)
+
+lemma set_sortY:
+  "set ps = set (sortY ps)"
+  by (simp add: sortY_def)
+
+lemma length_sortY:
+  "length ps = length (sortY ps)"
+  by (simp add: sortY_def)
+
+lemma distinct_sortY:
+  "distinct ps \<Longrightarrow> distinct (sortY ps)"
+  by (simp add: sortY_def)
+
+lemmas sortY = sortedY_sortY set_sortY length_sortY distinct_sortY
+
+lemma
+  assumes "sorted_wrt f xs"
+  shows sorted_wrt_take: "sorted_wrt f (take n xs)"
+  and sorted_wrt_drop: "sorted_wrt f (drop n xs)"
+  using assms sorted_wrt_append[of f "take n xs" "drop n xs"] by simp_all
+
+lemma sorted_wrt_filter:
+  "sorted_wrt f xs \<Longrightarrow> sorted_wrt f (filter P xs)"
+  by (induction xs) auto
+
+lemma sorted_wrt_take_drop:
+  "sorted_wrt f xs \<Longrightarrow> \<forall>x \<in> set (take n xs). \<forall>y \<in> set (drop n xs). f x y"
+  using sorted_wrt_append[of f "take n xs" "drop n xs"] by simp
+
+lemma sorted_wrt_take_less_hd_drop:
+  assumes "sorted_wrt f xs" "n < length xs"
+  shows "\<forall>x \<in> set (take n xs). f x (hd (drop n xs))"
+  using sorted_wrt_take_drop assms by fastforce
+
+lemma sorted_wrt_hd_less:
+  assumes "sorted_wrt f xs" "\<And>x. f x x"
+  shows "\<forall>x \<in> set xs. f (hd xs) x"
+  using assms by (cases xs) auto
+
+lemma sorted_wrt_hd_drop_less_drop:
+  assumes "sorted_wrt f xs" "\<And>x. f x x"
+  shows "\<forall>x \<in> set (drop n xs). f (hd (drop n xs)) x"
+  using assms sorted_wrt_drop sorted_wrt_hd_less by blast
+
+lemma sortedX_take_less_hd_drop:
+  assumes "sortedX ps" "n < length ps"
+  shows "\<forall>p \<in> set (take n ps). fst p \<le> fst (hd (drop n ps))"
+  using assms sorted_wrt_take_less_hd_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
+
+lemma sortedX_hd_drop_less_drop:
+  assumes "sortedX ps"
+  shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
+  using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
 
 
-text \<open>
-  Closest Pair of Points Distance Criteria
-\<close>
+subsection "Closest Pair of Points Distance Criteria"
 
 fun cpop_dist :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
   "cpop_dist (p\<^sub>0, p\<^sub>1) ps \<longleftrightarrow> (\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y)"
@@ -29,140 +127,7 @@ lemma cpop_dist_upd:
 declare cpop_dist.simps [simp del]
 
 
-
-
-text \<open>
-  Sorted with respect to x or y axis aliases.
-\<close>
-
-definition sortX :: "point list \<Rightarrow> point list" where
-  "sortX ps = sort_key fst ps"
-
-definition sortedX :: "point list \<Rightarrow> bool" where
-  "sortedX ps = sorted_wrt (\<lambda>(x\<^sub>0, _) (x\<^sub>1, _). x\<^sub>0 \<le> x\<^sub>1) ps"
-
-definition sortY :: "point list \<Rightarrow> point list" where
-  "sortY ps = sort_key snd ps"
-
-definition sortedY :: "point list \<Rightarrow> bool" where
-  "sortedY ps = sorted_wrt (\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1) ps"
-
-lemma sortedX_insort_key:
-  "sortedX ps \<Longrightarrow> sortedX (insort_key fst p ps)"
-  unfolding sortedX_def
-  apply (induction ps)
-   apply (auto)
-  by (smt case_prod_conv fst_conv insertE le_cases order.trans set_insort_key)
-
-lemma sortedX_sortX:
-  "sortedX (sortX ps)"
-  using sortX_def sortedX_def sortedX_insort_key
-  by (induction ps) auto
-
-lemma sortX_set:
-  "set ps = set (sortX ps)"
-  using sortX_def by simp
-
-lemma sortX_length:
-  "length ps = length (sortX ps)"
-  using sortX_def by simp
-
-lemma sortX_distinct:
-  "distinct ps \<Longrightarrow> distinct (sortX ps)"
-  using sortX_def by simp
-
-lemma sortedY_insort_key:
-  "sortedY ps \<Longrightarrow> sortedY (insort_key snd p ps)"
-  unfolding sortedY_def
-  apply (induction ps)
-   apply (auto)
-  by (smt case_prod_conv snd_conv insertE le_cases order.trans set_insort_key)
-
-lemma sortedY_sortY:
-  "sortedY (sortY ps)"
-  using sortY_def sortedY_def sortedY_insort_key
-  by (induction ps) auto
-
-lemma sortY_set:
-  "set ps = set (sortY ps)"
-  using sortY_def by simp
-
-lemma sortY_length:
-  "length ps = length (sortY ps)"
-  using sortY_def by simp
-
-lemma sortY_distinct:
-  "distinct ps \<Longrightarrow> distinct (sortY ps)"
-  using sortY_def by simp
-
-lemma
-  assumes "sorted_wrt f xs"
-  shows sorted_wrt_take: "sorted_wrt f (take n xs)"
-  and sorted_wrt_drop: "sorted_wrt f (drop n xs)"
-proof -
-  from assms have "sorted_wrt f (take n xs @ drop n xs)" by simp
-  then show "sorted_wrt f (take n xs)" and "sorted_wrt f (drop n xs)"
-    unfolding sorted_wrt_append by simp_all
-qed
-
-lemma sorted_wrt_filter:
-  "sorted_wrt f xs \<Longrightarrow> sorted_wrt f (filter P xs)"
-  by (induction xs) auto
-
-lemma sorted_wrt_take_drop:
-  assumes "sorted_wrt f xs"
-  shows "\<forall>x \<in> set (take n xs). \<forall>y \<in> set (drop n xs). f x y"
-  using assms by (metis append_take_drop_id sorted_wrt_append)
-
-lemma sorted_wrt_take_less_hd_drop:
-  assumes "sorted_wrt f xs" "n < length xs"
-  shows "\<forall>x \<in> set (take n xs). f x (hd (drop n xs))"
-proof -
-  have "\<forall>i < n. f (xs!i) (xs!n)"
-    using assms by (simp add: sorted_wrt_iff_nth_less)
-  hence "\<forall>i < n. f (xs!i) (hd (drop n xs))"
-    using assms(2) hd_drop_conv_nth by metis
-  moreover have "\<forall>i < n. xs!i = (take n xs)!i"
-    using assms(1) by simp
-  ultimately have "\<forall>i < n. f ((take n xs)!i) (hd (drop n xs))"
-    by metis
-  moreover have "n = length (take n xs)"
-    using assms(2) by simp
-  ultimately show ?thesis
-    by (metis in_set_conv_nth)
-qed
-
-lemma sorted_wrt_hd_drop_less_drop:
-  assumes "sorted_wrt f xs" "n < length xs" "(\<And>x. f x x)"
-  shows "\<forall>x \<in> set (drop n xs). f (hd (drop n xs)) x"
-proof -
-  let ?xs' = "drop n xs"
-  have "sorted_wrt f ?xs'"
-    using assms(1) by (simp add: sorted_wrt_drop)
-  hence "\<forall>i < length ?xs'. f (?xs'!0) (?xs'!i)"
-    using assms(2,3) sorted_wrt_nth_less by (metis linorder_neqE_nat not_less_zero)
-  hence "\<forall>i < length ?xs'. f (hd ?xs') (?xs'!i)"
-    by (simp add: hd_conv_nth)
-  thus ?thesis
-    by (metis in_set_conv_nth)
-qed
-
-lemma sortedX_take_less_hd_drop:
-  assumes "sortedX ps" "n < length ps"
-  shows "\<forall>p \<in> set (take n ps). fst p \<le> fst (hd (drop n ps))"
-  using assms sorted_wrt_take_less_hd_drop[of "(\<lambda>(x\<^sub>0, _) (x\<^sub>1, _). x\<^sub>0 \<le> x\<^sub>1)"] sortedX_def by fastforce
-
-lemma sortedX_hd_drop_less_drop:
-  assumes "sortedX ps" "n < length ps"
-  shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
-  using assms sorted_wrt_hd_drop_less_drop[of "(\<lambda>(x\<^sub>0, _) (x\<^sub>1, _). x\<^sub>0 \<le> x\<^sub>1)"] sortedX_def by fastforce
-
-
-
-
-text \<open>
-  Helper: Find the closest point to \<open>p\<^sub>0\<close> within ps.
-\<close>
+subsection "Find the closest point to \<open>p\<^sub>0\<close> within ps"
 
 fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
   "find_closest _ [] = undefined"
@@ -290,7 +255,7 @@ proof -
       by (metis Un_iff append_take_drop_id set_append)
 
     hence "\<forall>a \<in> set (take 8 (x # ys)). \<forall>b \<in> set (drop 8 (x # ys)). snd a \<le> snd b"
-      using sorted_wrt_take_drop[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" "x # ys" 8] assms(2) sortedY_def by fastforce
+      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" "x # ys" 8] assms(2) sortedY_def by fastforce
     hence C: "\<forall>q \<in> set (take 8 (x # ys)). snd q \<le> snd p"
       using B by simp
 
@@ -299,7 +264,7 @@ proof -
     moreover have "\<forall>p \<in> set (take 8 (x # ys)). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
       using assms(7) by (metis (mono_tags, lifting) case_prod_unfold in_set_takeD)
     moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd x \<le> snd p"
-      using T4[of "(\<lambda>(_, y\<^sub>0) (_, y\<^sub>1). y\<^sub>0 \<le> y\<^sub>1)" x ys 8] assms(2) sortedY_def by fastforce
+      using T4[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" x ys 8] assms(2) sortedY_def by fastforce
     moreover have "snd p \<le> snd x + \<delta>"
       using A rectangle_def by (metis mem_cbox_2D prod.collapse)
     moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd p \<le> snd x + \<delta>"
@@ -338,7 +303,6 @@ proof -
     by auto
 qed
   
-
 lemma find_closest_dist_take_7:
   assumes "distinct (x # ys)" "sortedY (x # ys)" "0 < length ys" "0 < \<delta>"
   assumes "set (x # ys) = ys\<^sub>L \<union> ys\<^sub>R" "ys\<^sub>L \<inter> ys\<^sub>R = {}"
@@ -364,11 +328,7 @@ qed
 declare find_closest.simps [simp del]
 
 
-
-
-text \<open>
-  Brute Force Algorithm
-\<close>
+subsection "Brute Force Algorithm"
 
 fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
   "brute_force_closest [] = undefined"
@@ -439,11 +399,7 @@ proof (induction ps rule: brute_force_closest.induct)
 qed (auto simp add: dist_commute cpop_dist)
 
 
-
-
-text \<open>
-  Helper: Brute Force but only the 7 points following the one under question.
-\<close>
+subsection "Brute Force but only the 7 points following the one under question"
 
 (* combine brute_force_closest and closest_7 ? *)
 fun closest_7 :: "point list \<Rightarrow> (point * point)" where
@@ -609,11 +565,7 @@ next
 qed auto
 
 
-
-
-text \<open>
-  Closest' Pair of Points Algorithm
-\<close>
+subsection "Closest' Pair of Points Algorithm - Divide"
 
 fun divide :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
   "divide f xs ys = (
@@ -691,7 +643,7 @@ lemma divide_hd_drop_le_drop:
   using assms divide_take divide_drop sortedX_hd_drop_less_drop by blast
 
 
-
+subsection "Closest' Pair of Points Algorithm - Combine"
 
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
@@ -1114,7 +1066,7 @@ proof -
 qed
 
 
-
+subsection "Closest' Pair of Points Algorithm"
 
 function (sequential) closest' :: "point set \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "closest' ps xs ys = (
@@ -1150,8 +1102,6 @@ lemma closest'_simps:
   using assms by (auto simp add: Let_def)
 
 declare closest'.simps [simp del]
-
-
 
 
 lemma closest'_p0_p1:
@@ -1331,55 +1281,21 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
 qed
 
 
-
-
-text \<open>
-  Closest Pair of Points Algorithm
-\<close>
+subsection "Closest Pair of Points Algorithm"
 
 definition closest :: "point list \<Rightarrow> (point * point)" where
   "closest ps = closest' (set ps) (sortX ps) (sortY ps)"
 
 theorem closest_set:
-  assumes "1 < length ps" "distinct ps" "(p\<^sub>0, p\<^sub>1) = closest ps"
-  shows "p\<^sub>0 \<in> set ps"
-    and "p\<^sub>1 \<in> set ps"
-    and "p\<^sub>0 \<noteq> p\<^sub>1"
-proof -
-  have "set (sortX ps) = set (sortY ps)"
-    using sortX_set sortY_set by blast
-  moreover have "set ps = set (sortX ps)"
-    using sortX_set by simp
-  moreover have "1 < length (sortX ps)"
-    using assms(1) sortX_length by simp
-  moreover have "distinct (sortX ps)" "distinct (sortY ps)"
-    using sortX_distinct sortY_distinct assms(2) by simp_all
-  moreover have "(p\<^sub>0, p\<^sub>1) = closest' (set ps) (sortX ps) (sortY ps)"
-    using closest_def assms(3) by simp
-  ultimately show "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1"
-    using closest'_p0_p1 by simp_all
-qed
+  assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest ps"
+  shows "c\<^sub>0 \<in> set ps" "c\<^sub>1 \<in> set ps" "c\<^sub>0 \<noteq> c\<^sub>1"
+  using assms sortX sortY closest'_p0_p1[of "sortX ps" c\<^sub>0 c\<^sub>1 "sortY ps"]
+  unfolding closest_def by simp_all
 
 theorem closest_dist:
-  assumes "1 < length ps" "distinct ps" "(p\<^sub>0, p\<^sub>1) = closest ps"
-  shows "\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y"
-proof -
-  have "set (sortX ps) = set (sortY ps)"
-    using sortX_set sortY_set by blast
-  moreover have "set ps = set (sortX ps)"
-    using sortX_set by simp
-  moreover have "1 < length (sortX ps)"
-    using assms(1) sortX_length by simp
-  moreover have "distinct (sortX ps)" "distinct (sortY ps)"
-    using sortX_distinct sortY_distinct assms(2) by simp_all
-  moreover have "(p\<^sub>0, p\<^sub>1) = closest' (set ps) (sortX ps) (sortY ps)"
-    using closest_def assms(3) by simp
-  moreover have "sortedX (sortX ps)"
-    using sortedX_sortX by blast
-  moreover have "sortedY (sortY ps)"
-    using sortedY_sortY by blast
-  ultimately show "\<forall>x \<in> set ps. \<forall>y \<in> set ps. x \<noteq> y \<longrightarrow> dist p\<^sub>0 p\<^sub>1 \<le> dist x y"
-    using closest'_dist[of "sortX ps" p\<^sub>0 p\<^sub>1 "sortY ps"] by presburger
-qed
+  assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest ps"
+  shows "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  using assms sortX sortY closest'_dist[of "sortX ps" c\<^sub>0 c\<^sub>1 "sortY ps"]
+  unfolding closest_def by presburger
 
 end
