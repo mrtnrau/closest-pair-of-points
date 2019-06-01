@@ -550,13 +550,38 @@ next
     show ?thesis
     proof (cases "\<exists>x' \<in> set ?lys. dist x x' < \<delta>")
       case True
-      then show ?thesis sorry
+      hence 0: "\<forall>x' \<in> set ?lys. dist x ?lp\<^sub>1 \<le> dist x x'"
+        using find_closest_dist_take_7[of x ?lys \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
+      then show ?thesis
+      proof cases
+        assume asm: "dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist x ?lp\<^sub>1"
+        hence "(?lc\<^sub>0, ?lc\<^sub>1) = closest_7 (x # ?lys)"
+          by (auto split: prod.splits)
+        moreover have "c\<^sub>0 = ?lc\<^sub>0" "c\<^sub>1 = ?lc\<^sub>1"
+          using "4.prems"(13) calculation by (metis prod.inject)+
+        ultimately show ?thesis
+          using * 0 asm by (smt dist_commute set_ConsD)
+      next
+        assume asm: "\<not> (dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist x ?lp\<^sub>1)"
+        hence "(x, ?lp\<^sub>1) = closest_7 (x # ?lys)"
+          by (auto split: prod.splits)
+        moreover have "c\<^sub>0 = x" "c\<^sub>1 = ?lp\<^sub>1"
+          using "4.prems"(13) calculation by (metis prod.inject)+
+        ultimately show ?thesis
+          using * 0 asm by (smt dist_commute set_ConsD) 
+      qed
     next
       case False
-      hence "\<forall>p\<^sub>0 \<in> set (x # ?lys). \<forall>p\<^sub>1 \<in> set (x # ?lys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+      hence 0: "\<forall>p\<^sub>0 \<in> set (x # ?lys). \<forall>p\<^sub>1 \<in> set (x # ?lys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
         using * # by (smt dist_commute set_ConsD)
-      then show ?thesis
-        sorry
+      hence "dist ?lc\<^sub>0 ?lc\<^sub>1 \<le> dist x ?lp\<^sub>1"
+        by (smt "#" False find_closest_set length_greater_0_conv list.discI set_take_subset subsetCE take_Cons_numeral)
+      hence "(?lc\<^sub>0, ?lc\<^sub>1) = closest_7 (x # ?lys)"
+        by (auto split: prod.splits)
+      moreover have "c\<^sub>0 = ?lc\<^sub>0" "c\<^sub>1 = ?lc\<^sub>1"
+        using "4.prems"(13) calculation by (metis prod.inject)+
+      ultimately show ?thesis
+        using 0 by blast
     qed
   next
     case False
@@ -963,6 +988,10 @@ proof -
       using \<delta>_def 0 c\<^sub>0_def c\<^sub>1_def c\<^sub>0\<^sub>1_def by blast
     moreover have "\<forall>p\<^sub>0 \<in> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. \<forall>p\<^sub>1 \<in> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
       using \<delta>_def 0 c\<^sub>0_def c\<^sub>1_def c\<^sub>0\<^sub>1_def by blast
+    moreover have "\<forall>p \<in> { (x, y) \<in> ys\<^sub>L. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. fst p \<le> l"
+      using assms(10) by blast
+    moreover have "\<forall>p \<in> { (x, y) \<in> ys\<^sub>R. l - \<delta> \<le> x \<and> x \<le> l + \<delta> }. l \<le> fst p"
+      using assms(11) by blast
     moreover have "(lp\<^sub>0, lp\<^sub>1) = closest_7 ys'"
       using defs by auto
     ultimately have "\<forall>x \<in> set ys'. \<forall>y \<in> set ys'. x \<noteq> y \<longrightarrow> dist lp\<^sub>0 lp\<^sub>1 \<le> dist x y"
