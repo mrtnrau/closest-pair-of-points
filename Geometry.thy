@@ -1,5 +1,5 @@
 theory Geometry
-  imports "HOL-Analysis.Analysis" "HOL-Library.Multiset"
+  imports "HOL-Analysis.Analysis"
 begin
 
 
