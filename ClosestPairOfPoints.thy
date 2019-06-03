@@ -1,11 +1,14 @@
 section "Closest Pair Of Points"
 
 theory ClosestPairOfPoints
-  imports "HOL-Analysis.Analysis" "Geometry"
+  imports "HOL-Analysis.Analysis"
 begin
 
 
-subsection "Lemmas about sortedness"
+type_synonym point = "real * real"
+
+
+subsection "Sortedness"
 
 definition sortX :: "point list \<Rightarrow> point list" where
   "sortX ps = sort_key fst ps"
@@ -216,6 +219,190 @@ proof (induction ps rule: brute_force_closest.induct)
 qed (auto simp add: dist_commute dist_criterion.simps)
 
 
+subsection "2D-Boxes and Points"
+
+lemma cbox_2D: 
+  "cbox (x\<^sub>0::real, y\<^sub>0::real) (x\<^sub>1, y\<^sub>1) = { (x, y). x\<^sub>0 \<le> x \<and> x \<le> x\<^sub>1 \<and> y\<^sub>0 \<le> y \<and> y \<le> y\<^sub>1}"
+  by fastforce
+
+lemma mem_cbox_2D:
+  "x\<^sub>0 \<le> x \<and> x \<le> x\<^sub>1 \<and> y\<^sub>0 \<le> y \<and> y \<le> y\<^sub>1 \<longleftrightarrow> (x::real, y::real) \<in> cbox (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1)"
+  by fastforce
+
+lemma cbox_top_un:
+  assumes "y\<^sub>0 \<le> y\<^sub>1" "y\<^sub>1 \<le> y\<^sub>2"
+  shows "cbox (x\<^sub>0::real, y\<^sub>0::real) (x\<^sub>1, y\<^sub>1) \<union> cbox (x\<^sub>0, y\<^sub>1) (x\<^sub>1, y\<^sub>2) = cbox (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>2)"
+  using assms by auto
+
+lemma cbox_right_un:
+  assumes "x\<^sub>0 \<le> x\<^sub>1" "x\<^sub>1 \<le> x\<^sub>2"
+  shows "cbox (x\<^sub>0::real, y\<^sub>0::real) (x\<^sub>1, y\<^sub>1) \<union> cbox (x\<^sub>1, y\<^sub>0) (x\<^sub>2, y\<^sub>1) = cbox (x\<^sub>0, y\<^sub>0) (x\<^sub>2, y\<^sub>1)"
+  using assms by auto
+
+lemma cbox_max_dist:
+  assumes "p\<^sub>0 = (x, y)" "p\<^sub>1 = (x + \<delta>, y + \<delta>)" "(x\<^sub>0, y\<^sub>0) \<in> cbox p\<^sub>0 p\<^sub>1" "(x\<^sub>1, y\<^sub>1) \<in> cbox p\<^sub>0 p\<^sub>1" "0 \<le> \<delta>"
+  shows "dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) \<le> sqrt 2 * \<delta>"
+proof -
+  have X: "dist x\<^sub>0 x\<^sub>1 \<le> \<delta>"
+    using assms dist_real_def by auto
+  have Y: "dist y\<^sub>0 y\<^sub>1 \<le> \<delta>"
+    using assms dist_real_def by auto
+
+  have "dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) = sqrt ((dist x\<^sub>0 x\<^sub>1)\<^sup>2 + (dist y\<^sub>0 y\<^sub>1)\<^sup>2)"
+    using dist_Pair_Pair by auto
+  also have "... \<le> sqrt (\<delta>\<^sup>2 + (dist y\<^sub>0 y\<^sub>1)\<^sup>2)"
+    using X power_mono by fastforce
+  also have "... \<le> sqrt (\<delta>\<^sup>2 + \<delta>\<^sup>2)"
+    using Y power_mono by fastforce
+  also have "... = sqrt 2 * sqrt (\<delta>\<^sup>2)"
+    using real_sqrt_mult by simp
+  also have "... = sqrt 2 * \<delta>"
+    using assms(5) by simp
+  finally show ?thesis .
+qed
+
+
+subsection "Pigeonhole Argument"
+
+lemma card_le_1_pairs_identical:
+  assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y"
+  shows "card S \<le> 1"
+proof (rule ccontr)
+  assume "\<not> card S \<le> 1"
+  hence "2 \<le> card S"
+    by simp
+  then obtain T where *: "T \<subseteq> S \<and> card T = 2"
+    using ex_card by metis
+  then obtain x y where "x \<in> T \<and> y \<in> T \<and> x \<noteq> y"
+    using card_2_exists by metis
+  then show False
+    using * assms by blast
+qed
+
+lemma card_S_inter_T:
+  assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> T \<or> y \<notin> T" 
+  shows "card (S \<inter> T) \<le> 1"
+proof (rule ccontr)
+  assume "\<not> (card (S \<inter> T) \<le> 1)"
+  then obtain x y where *: "x \<in> S \<inter> T \<and> y \<in> S \<inter> T \<and> x \<noteq> y"
+    by (meson card_le_1_pairs_identical)
+  hence "x \<in> T" "y \<in> T"
+    by simp_all
+  moreover have "x \<notin> T \<or> y \<notin> T"
+    using assms * by auto
+  ultimately show False
+    by blast
+qed
+
+lemma card_Int_Un_le_Sum:
+  assumes "finite S"
+  shows "card (A \<inter> \<Union>S) \<le> (\<Sum>B \<in> S. card (A \<inter> B))"
+  using assms
+proof (induction "card S" arbitrary: S)
+  case (Suc n)
+  then obtain B T where *: "S = { B } \<union> T" "card T = n" "B \<notin> T"
+    by (metis card_Suc_eq Suc_eq_plus1 insert_is_Un)
+  hence "card (A \<inter> \<Union>S) = card (A \<inter> \<Union>({ B } \<union> T))"
+    using * by blast
+  also have "... \<le> card (A \<inter> B) + card (A \<inter> \<Union>T)"
+    by (simp add: card_Un_le inf_sup_distrib1)
+  also have "... \<le> card (A \<inter> B) + (\<Sum>B \<in> T. card (A \<inter> B))"
+    using Suc * by simp
+  also have "... \<le> (\<Sum>B \<in> S. card (A \<inter> B))"
+    using Suc.prems * by simp
+  finally show ?case .
+qed simp
+
+(* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B especially for the pigeonhole lemma below? *) 
+lemma (*TODO*)
+  assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
+  shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
+  using assms pigeonhole by (metis inj_onI rev_image_eqI)
+
+lemma pigeonhole:
+  assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
+  shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
+proof (rule ccontr)
+  assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
+  hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
+    using card_S_inter_T by metis
+  have "card T < card (S \<inter> \<Union>T)"
+    using Int_absorb2 assms by fastforce
+  also have "... \<le> (\<Sum>X \<in> T. card (S \<inter> X))"
+    using assms(1) card_Int_Un_le_Sum by blast
+  also have "... \<le> card T"
+    using * sum_mono by fastforce
+  finally show False by simp
+qed
+
+
+subsection "\<delta> Sparse Points within a Square"
+
+lemma max_points_square:
+  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "0 < \<delta>"
+  shows "card ps \<le> 4"
+proof (rule ccontr)
+  assume *: "\<not> (card ps \<le> 4)"
+
+  let ?x' = "x + \<delta> / 2"
+  let ?y' = "y + \<delta> / 2"
+
+  let ?ll = "cbox ( x ,  y ) (?x'   , ?y'   )"
+  let ?lu = "cbox ( x , ?y') (?x'   ,  y + \<delta>)"
+  let ?rl = "cbox (?x',  y ) ( x + \<delta>, ?y'   )"
+  let ?ru = "cbox (?x', ?y') ( x + \<delta>,  y + \<delta>)"
+
+  let ?sq = "{ ?ll, ?lu, ?rl, ?ru }"
+
+  have card_le_4: "card ?sq \<le> 4"
+    by (simp add: card_insert_le_m1)
+
+  have "cbox (x, y) (?x', y + \<delta>) = ?ll \<union> ?lu"
+    using cbox_top_un assms(3) by auto
+  moreover have "cbox (?x', y) (x + \<delta>, y + \<delta>) = ?rl \<union> ?ru"
+    using cbox_top_un assms(3) by auto
+  moreover have "cbox (x, y) (?x', y + \<delta>) \<union> cbox (?x', y) (x + \<delta>, y + \<delta>) = cbox (x, y) (x + \<delta>, y + \<delta>)"
+    using cbox_right_un assms(3) by simp
+  ultimately have "?ll \<union> ?lu \<union> ?rl \<union> ?ru = cbox (x, y) (x + \<delta>, y + \<delta>)"
+    by blast
+
+  hence "ps \<subseteq> \<Union>?sq"
+    using assms(1) by auto
+  moreover have "card ?sq < card ps"
+    using * card_insert_le_m1 card_le_4 by simp
+  moreover have "finite ?sq"
+    by simp
+  ultimately have "\<exists>p\<^sub>0 \<in> ps. \<exists>p\<^sub>1 \<in> ps. \<exists>S \<in> ?sq. (p\<^sub>0 \<noteq> p\<^sub>1 \<and> p\<^sub>0 \<in> S \<and> p\<^sub>1 \<in> S)"
+    using pigeonhole[of ?sq ps] by blast
+  then obtain S p\<^sub>0 p\<^sub>1 where #: "p\<^sub>0 \<in> ps" "p\<^sub>1 \<in> ps" "S \<in> ?sq" "p\<^sub>0 \<noteq> p\<^sub>1" "p\<^sub>0 \<in> S" "p\<^sub>1 \<in> S"
+    by blast
+
+  have D: "0 \<le> \<delta> / 2"
+    using assms(3) by simp
+  have LL: "\<forall>p\<^sub>0 \<in> ?ll. \<forall>p\<^sub>1 \<in> ?ll. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+    using cbox_max_dist[of "(x, y)" x y "(?x', ?y')" "\<delta> / 2"] D by auto
+  have LU: "\<forall>p\<^sub>0 \<in> ?lu. \<forall>p\<^sub>1 \<in> ?lu. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+    using cbox_max_dist[of "(x, ?y')" x ?y' "(?x', y + \<delta>)" "\<delta> / 2"] D by auto
+  have RL: "\<forall>p\<^sub>0 \<in> ?rl. \<forall>p\<^sub>1 \<in> ?rl. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+    using cbox_max_dist[of "(?x', y)" ?x' y "(x + \<delta>, ?y')" "\<delta> / 2"] D by auto
+  have RU: "\<forall>p\<^sub>0 \<in> ?ru. \<forall>p\<^sub>1 \<in> ?ru. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+    using cbox_max_dist[of "(?x', ?y')" ?x' ?y' "(x + \<delta>, y + \<delta>)" "\<delta> / 2"] D by auto
+
+  have "\<forall>p\<^sub>0 \<in> S. \<forall>p\<^sub>1 \<in> S. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+    using # LL LU RL RU by blast
+  hence "dist p\<^sub>0 p\<^sub>1 \<le> (sqrt 2 / 2) * \<delta>"
+    using # by simp
+  moreover have "(sqrt 2 / 2) * \<delta> < \<delta>"
+    using sqrt2_less_2 assms(3) by simp
+  ultimately have "dist p\<^sub>0 p\<^sub>1 < \<delta>"
+    by simp
+  moreover have "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(2) # by blast
+  ultimately show False
+    by simp
+qed
+
+
 subsection "The Lemma"
 
 lemma T3:
@@ -239,119 +426,119 @@ proof -
 qed
 
 lemma T1:
-  assumes "distinct (x # ys)" "sortedY (x # ys)" "0 < length ys" "0 < \<delta>"
-  assumes "set (x # ys) = ys\<^sub>L \<union> ys\<^sub>R" "ys\<^sub>L \<inter> ys\<^sub>R = {}"
-  assumes "\<forall>p \<in> set (x # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+  assumes "distinct (y\<^sub>0 # ys)" "sortedY (y\<^sub>0 # ys)" "0 < \<delta>" "set (y\<^sub>0 # ys) = ys\<^sub>L \<union> ys\<^sub>R"
+  assumes "\<forall>p \<in> set (y\<^sub>0 # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  assumes "\<forall>x \<in> ys\<^sub>L. \<forall>y \<in> ys\<^sub>L. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y" "\<forall>x \<in> ys\<^sub>R. \<forall>y \<in> ys\<^sub>R. x \<noteq> y \<longrightarrow> \<delta> \<le> dist x y"
-  assumes "x' \<in> set ys" "dist x x' < \<delta>"
-  shows "x' \<in> set (take 7 ys)"
+  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "y\<^sub>1 \<in> set ys" "dist y\<^sub>0 y\<^sub>1 < \<delta>"
+  shows "y\<^sub>1 \<in> set (take 7 ys)"
 proof -
-  define rectangle where "rectangle = cbox (l - \<delta>, snd x) (l + \<delta>, snd x + \<delta>)"
-  define lsquare where "lsquare = cbox (l - \<delta>, snd x) (l, snd x + \<delta>)"
-  define rsquare where "rsquare = cbox (l, snd x) (l + \<delta>, snd x + \<delta>)"
-  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) (x # ys)"
-  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) (x # ys)"
+  define yys where "yys = y\<^sub>0 # ys"
+  define rectangle where "rectangle = cbox (l - \<delta>, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
+  define lsquare where "lsquare = cbox (l - \<delta>, snd y\<^sub>0) (l, snd y\<^sub>0 + \<delta>)"
+  define rsquare where "rsquare = cbox (l, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
+  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) yys"
+  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) yys"
 
-  note defs = rectangle_def lsquare_def rsquare_def lys_def rys_def
+  note defs = yys_def rectangle_def lsquare_def rsquare_def lys_def rys_def
 
-  have "l - \<delta> \<le> fst x'" "fst x' \<le> l + \<delta>"
-    using assms(7,12) by auto
-  moreover have "snd x \<le> snd x'"
-    using sortedY_def assms(2,12) by auto
-  moreover have "snd x' \<le> snd x + \<delta>"
-    using T2 assms(2,12,13) by blast
-  ultimately have 0: "x' \<in> rectangle"
-    using mem_cbox_2D[of "l - \<delta>" "fst x'" "l + \<delta>" "snd x" "snd x'" "snd x + \<delta>"] defs by simp
+  have "l - \<delta> \<le> fst y\<^sub>1" "fst y\<^sub>1 \<le> l + \<delta>"
+    using assms(5,10) by auto
+  moreover have "snd y\<^sub>0 \<le> snd y\<^sub>1"
+    using sortedY_def assms(2,10) by auto
+  moreover have "snd y\<^sub>1 \<le> snd y\<^sub>0 + \<delta>"
+    using T2 assms(2,10,11) by blast
+  ultimately have 0: "y\<^sub>1 \<in> rectangle"
+    using mem_cbox_2D[of "l - \<delta>" "fst y\<^sub>1" "l + \<delta>" "snd y\<^sub>0" "snd y\<^sub>1" "snd y\<^sub>0 + \<delta>"] defs by simp
 
   have 1: "rectangle = lsquare \<union> rsquare"
     using defs cbox_right_un by auto
 
   have "\<forall>p \<in> ys\<^sub>L. p \<in> rsquare \<longrightarrow> fst p = l"
-    using rsquare_def assms(8) by auto
+    using rsquare_def assms(6) by auto
   hence X: "\<forall>p \<in> ys\<^sub>L. p \<in> rsquare \<longrightarrow> p \<in> lsquare"
     using rsquare_def lsquare_def by auto
 
   have "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> fst p = l"
-    using lsquare_def assms(9) by auto
+    using lsquare_def assms(7) by auto
   hence Y: "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> p \<in> rsquare"
     using rsquare_def lsquare_def by auto
 
-  have 2: "set (filter (\<lambda>p. p \<in> rectangle) (x # ys)) = set lys \<union> set rys"
+  have 2: "set (filter (\<lambda>p. p \<in> rectangle) yys) = set lys \<union> set rys"
   proof standard
-    show "set (filter (\<lambda>p. p \<in> rectangle) (x # ys)) \<subseteq> set lys \<union> set rys"
-      using 1 X Y assms(5) lys_def rys_def by auto
+    show "set (filter (\<lambda>p. p \<in> rectangle) yys) \<subseteq> set lys \<union> set rys"
+      using 1 X Y assms(4) yys_def lys_def rys_def by auto
   next
-    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) (x # ys))"
-      using 1 lys_def rys_def by auto
+    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) yys)"
+      using 1 lys_def rys_def yys_def by auto
   qed
 
   have "set lys \<subseteq> ys\<^sub>L"
     using defs by auto
-  hence "sparse \<delta> (set lys)"
-    using assms(10) sparse_def by blast
+  hence "\<forall>p\<^sub>0 \<in> set lys. \<forall>p\<^sub>1 \<in> set lys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(8) by blast
   moreover have "\<forall>p \<in> set lys. p \<in> lsquare"
     using defs by auto
   ultimately have 3: "card (set lys) \<le> 4"
-    using max_points_square[of "set lys" "l - \<delta>" "snd x" \<delta>] assms(4) lsquare_def by auto
+    using max_points_square[of "set lys" "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) lsquare_def by auto
 
   have "set rys \<subseteq> ys\<^sub>R"
     using defs by auto
-  hence "sparse \<delta> (set rys)"
-    using assms(11) sparse_def by blast
+  hence "\<forall>p\<^sub>0 \<in> set rys. \<forall>p\<^sub>1 \<in> set rys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(9) by blast
   moreover have "\<forall>p \<in> set rys. p \<in> rsquare"
     using defs by auto
   ultimately have 4: "card (set rys) \<le> 4"
-    using max_points_square[of "set rys" l "snd x" \<delta>] assms(4) rsquare_def by auto
+    using max_points_square[of "set rys" l "snd y\<^sub>0" \<delta>] assms(3) rsquare_def by auto
 
   have 5: "card (set lys \<union> set rys) \<le> 8"
     using 3 4 card_Un_le[of "set lys" "set rys"] by simp
 
-  have 6: "x' \<in> set lys \<union> set rys"
-    using 0 2 assms(12) by (metis filter_set member_filter set_subset_Cons subsetCE)
+  have 6: "y\<^sub>1 \<in> set lys \<union> set rys"
+    using 0 2 assms(10) yys_def by (metis filter_set member_filter set_subset_Cons subsetCE)
 
-  have 7: "set lys \<union> set rys \<subseteq> set (take 8 (x # ys))"
+  have 7: "set lys \<union> set rys \<subseteq> set (take 8 yys)"
   proof (rule ccontr)
-    assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 (x # ys)))"
-    then obtain p where #: "p \<in> set (x # ys)" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 (x # ys))"
+    assume *: "\<not> (set lys \<union> set rys \<subseteq> set (take 8 yys))"
+    then obtain p where #: "p \<in> set yys" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 yys)"
       using lys_def rys_def 2 by(smt filter_is_subset subsetCE subsetI)
-    hence B: "p \<in> set (drop 8 (x # ys))"
+    hence B: "p \<in> set (drop 8 yys)"
       by (metis Un_iff append_take_drop_id set_append)
 
-    hence "\<forall>a \<in> set (take 8 (x # ys)). \<forall>b \<in> set (drop 8 (x # ys)). snd a \<le> snd b"
-      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" "x # ys" 8] assms(2) sortedY_def by fastforce
-    hence C: "\<forall>q \<in> set (take 8 (x # ys)). snd q \<le> snd p"
+    hence "\<forall>a \<in> set (take 8 yys). \<forall>b \<in> set (drop 8 yys). snd a \<le> snd b"
+      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" yys 8] assms(2) sortedY_def yys_def by fastforce
+    hence C: "\<forall>q \<in> set (take 8 yys). snd q \<le> snd p"
       using B by simp
 
     have A: "p \<in> rectangle"
       using #(2) 1 \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
-    moreover have "\<forall>p \<in> set (take 8 (x # ys)). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using assms(7) by (metis (mono_tags, lifting) case_prod_unfold in_set_takeD)
-    moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd x \<le> snd p"
-      using T4[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" x ys 8] assms(2) sortedY_def by fastforce
-    moreover have "snd p \<le> snd x + \<delta>"
+    moreover have "\<forall>p \<in> set (take 8 yys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+      using assms(5) yys_def by (meson in_set_takeD)
+    moreover have "\<forall>p \<in> set (take 8 yys). snd y\<^sub>0 \<le> snd p"
+      using T4[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" y\<^sub>0 ys 8] assms(2) sortedY_def yys_def by fastforce
+    moreover have "snd p \<le> snd y\<^sub>0 + \<delta>"
       using A rectangle_def by (metis mem_cbox_2D prod.collapse)
-    moreover have "\<forall>p \<in> set (take 8 (x # ys)). snd p \<le> snd x + \<delta>"
+    moreover have "\<forall>p \<in> set (take 8 yys). snd p \<le> snd y\<^sub>0 + \<delta>"
       using C calculation by fastforce
-    ultimately have "\<forall>q \<in> set (take 8 (x # ys)). q \<in> rectangle"
+    ultimately have "\<forall>q \<in> set (take 8 yys). q \<in> rectangle"
       using rectangle_def mem_cbox_2D by fastforce
-    hence P: "{ p } \<union> set (take 8 (x # ys)) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) (x # ys))"
+    hence P: "{ p } \<union> set (take 8 yys) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) yys)"
       using # A by (smt filter_set insertE insert_is_Un member_filter set_take_subset subsetCE subsetI)
 
-    have "8 \<le> length (x # ys)"
+    have "8 \<le> length yys"
       using #(1,3) nat_le_linear by fastforce
-    hence Q: "length (take 8 (x # ys)) = 8"
+    hence Q: "length (take 8 yys) = 8"
       by simp
 
-    have "finite { p }" "finite (set (take 8 (x # ys)))"
+    have "finite { p }" "finite (set (take 8 yys))"
       by simp_all
-    hence "card ({ p } \<union> set (take 8 (x # ys))) = card ({ p }) + card (set (take 8 (x # ys)))"
+    hence "card ({ p } \<union> set (take 8 yys)) = card ({ p }) + card (set (take 8 yys))"
       using #(3) card_Un_disjoint by blast
-    hence "card ({ p } \<union> set (take 8 (x # ys))) = 9"
-      using assms(1) Q distinct_card[of "take 8 (x # ys)"] distinct_take[of "x # ys"] by fastforce
-    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) (x # ys)))"
+    hence "card ({ p } \<union> set (take 8 yys)) = 9"
+      using assms(1) Q distinct_card[of "take 8 yys"] distinct_take[of yys] yys_def by fastforce
+    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) yys))"
       by simp
-    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) (x # ys)))"
+    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) yys))"
       using P card_mono by metis
     hence "9 \<le> card (set lys \<union> set rys)"
       using 2 by simp
@@ -359,10 +546,10 @@ proof -
       using 5 by simp
   qed 
 
-  have "x' \<in> set (take 8 (x # ys))"
+  have "y\<^sub>1 \<in> set (take 8 yys)"
     using 6 7 by blast
-  hence "x' \<in> set (take 7 ys)"
-    using assms(1,12) by auto
+  hence "y\<^sub>1 \<in> set (take 7 ys)"
+    using assms(1,10) yys_def by auto
   thus ?thesis
     by auto
 qed
