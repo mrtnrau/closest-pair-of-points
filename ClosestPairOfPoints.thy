@@ -596,6 +596,14 @@ qed auto
 
 (* TODO *)
 
+lemma AUX:
+  assumes "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "\<forall>p \<in> set ps. dist x y \<le> dist x p"
+  assumes "dist c\<^sub>0 c\<^sub>1 \<le> dist x y"
+  shows "\<forall>p\<^sub>0 \<in> set (x # ps). \<forall>p\<^sub>1 \<in> set (x # ps). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  using assms apply (auto simp add: dist_commute) done
+    
+
 lemma closest_7_dist:
   assumes "distinct ys" "sortedY ys" "1 < length ys" "0 < \<delta>" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "\<forall>p \<in> set ys. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
@@ -618,176 +626,97 @@ proof (induction ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: c
 next
   case (4 x y z zs)
 
-  let ?ys = "y # z # zs"
-  let ?c\<^sub>0\<^sub>1 = "closest_pair_7 ?ys"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "find_closest x (take 7 ?ys)"
-  let ?ys\<^sub>L = "ys\<^sub>L - { x }"
-  let ?ys\<^sub>R = "ys\<^sub>R - { x }"
+  define YS where "YS = y # z # zs"
+  define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = closest_pair_7 YS"
+  define C\<^sub>0 where "C\<^sub>0 = fst C\<^sub>0\<^sub>1"
+  define C\<^sub>1 where "C\<^sub>1 = snd C\<^sub>0\<^sub>1"
+  define P\<^sub>1 where "P\<^sub>1 = find_closest x (take 7 YS)"
+  define YS\<^sub>L where "YS\<^sub>L = ys\<^sub>L - { x }"
+  define YS\<^sub>R where "YS\<^sub>R = ys\<^sub>R - { x }"
+  note defs = YS_def C\<^sub>0\<^sub>1_def C\<^sub>0_def C\<^sub>1_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
 
   show ?case
-  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ?ys \<and> p\<^sub>1 \<in> set ?ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
+  proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set YS \<and> p\<^sub>1 \<in> set YS \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
     case True
-    moreover have "distinct ?ys" "sortedY ?ys"
-      using "4.prems"(1,2) sorted_wrt.simps(2) sortedY_def by simp_all
-    moreover have "1 < length ?ys" "set ?ys = ?ys\<^sub>L \<union> ?ys\<^sub>R"
-      using "4.prems"(1,5) by auto
-    moreover have "\<forall>p \<in> set ?ys. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using "4.prems"(6) by simp
-    moreover have "\<forall>p \<in> ?ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ?ys\<^sub>R. l \<le> fst p"
-      using "4.prems"(7,8) by simp_all
-    moreover have "\<forall>p\<^sub>0 \<in> ?ys\<^sub>L. \<forall>p\<^sub>1 \<in> ?ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.prems"(9) by simp
-    moreover have "\<forall>p\<^sub>0 \<in> ?ys\<^sub>R. \<forall>p\<^sub>1 \<in> ?ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.prems"(10) by simp
-    moreover have "(?c\<^sub>0, ?c\<^sub>1) = closest_pair_7 ?ys"
-      by simp
-    ultimately have *: "\<forall>p\<^sub>0 \<in> set ?ys. \<forall>p\<^sub>1 \<in> set ?ys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.IH"[of ?ys\<^sub>L ?ys\<^sub>R ?c\<^sub>0 ?c\<^sub>1] "4.prems"(4) by fast
-    hence #: "dist ?c\<^sub>0 ?c\<^sub>1 < \<delta>"
-      using True by (meson le_less_trans)
+    moreover have "distinct YS" "sortedY YS"
+      using "4.prems"(1,2) sorted_wrt.simps(2) sortedY_def YS_def by simp_all
+    moreover have "1 < length YS" "set YS = YS\<^sub>L \<union> YS\<^sub>R"
+      using "4.prems"(1,5) YS_def YS\<^sub>L_def YS\<^sub>R_def by auto
+    moreover have "\<forall>p \<in> set YS. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+      using "4.prems"(6) YS_def by simp
+    moreover have "\<forall>p \<in> YS\<^sub>L. fst p \<le> l" "\<forall>p \<in> YS\<^sub>R. l \<le> fst p"
+      using "4.prems"(7,8) YS\<^sub>L_def YS\<^sub>R_def by simp_all
+    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>L. \<forall>p\<^sub>1 \<in> YS\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.prems"(9) YS\<^sub>L_def by simp
+    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>R. \<forall>p\<^sub>1 \<in> YS\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.prems"(10) YS\<^sub>R_def by simp
+    moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 YS"
+      using defs by simp
+    ultimately have *: "\<forall>p\<^sub>0 \<in> set YS. \<forall>p\<^sub>1 \<in> set YS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+      using "4.IH"[of YS\<^sub>L YS\<^sub>R C\<^sub>0 C\<^sub>1] "4.prems"(4) defs by fast
+    hence DC0C1: "dist C\<^sub>0 C\<^sub>1 < \<delta>"
+      using True le_less_trans by blast
     show ?thesis
-    proof (cases "\<exists>x' \<in> set ?ys. dist x x' < \<delta>")
+    proof (cases "\<exists>x' \<in> set YS. dist x x' < \<delta>")
       case True
-      hence 0: "\<forall>x' \<in> set ?ys. dist x ?p\<^sub>1 \<le> dist x x'"
-        using find_closest_dist_take_7[of x ?ys \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
-      then show ?thesis
+      hence #: "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
+        using find_closest_dist_take_7 "4.prems" defs by blast
+      show ?thesis
       proof cases
-        assume asm: "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist x ?p\<^sub>1"
-        hence "(?c\<^sub>0, ?c\<^sub>1) = closest_pair_7 (x # ?ys)"
-          by (auto split: prod.splits)
-        moreover have "c\<^sub>0 = ?c\<^sub>0" "c\<^sub>1 = ?c\<^sub>1"
-          using "4.prems"(12) calculation by (metis prod.inject)+
+        assume ASM: "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
+        hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+          using * # by (auto simp add: dist_commute)
+        moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
+          using ASM defs by (auto split: prod.splits)
         ultimately show ?thesis
-          using * 0 asm by (smt dist_commute set_ConsD)
+          using "4.prems"(12) YS_def by (metis fst_conv snd_conv)
       next
-        assume asm: "\<not> (dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist x ?p\<^sub>1)"
-        hence "(x, ?p\<^sub>1) = closest_pair_7 (x # ?ys)"
-          by (auto split: prod.splits)
-        moreover have "c\<^sub>0 = x" "c\<^sub>1 = ?p\<^sub>1"
-          using "4.prems"(12) calculation by (metis prod.inject)+
+        assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1)"
+        hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+          using * # apply (auto simp add: dist_commute) by force+
+        moreover have "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
+          using ASM defs by (auto split: prod.splits)
         ultimately show ?thesis
-          using * 0 asm by (smt dist_commute set_ConsD) 
+          using "4.prems"(12) YS_def by (metis fst_conv snd_conv)       
       qed
     next
       case False
-      hence 0: "\<forall>p\<^sub>0 \<in> set (x # ?ys). \<forall>p\<^sub>1 \<in> set (x # ?ys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-        using * # by (smt dist_commute set_ConsD)
-      hence "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist x ?p\<^sub>1"
-        by (smt "#" False find_closest_set length_greater_0_conv list.discI set_take_subset subsetCE take_Cons_numeral)
-      hence "(?c\<^sub>0, ?c\<^sub>1) = closest_pair_7 (x # ?ys)"
-        by (auto split: prod.splits)
-      moreover have "c\<^sub>0 = ?c\<^sub>0" "c\<^sub>1 = ?c\<^sub>1"
-        using "4.prems"(12) calculation by (metis prod.inject)+
+      have "P\<^sub>1 \<in> set YS"
+        using P\<^sub>1_def YS_def find_closest_set[of "take 7 YS" x] set_take_subset[of 7 YS] by auto
+      hence "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
+        using DC0C1 False by auto
+      hence "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
+        using defs by (auto split: prod.splits)
+      moreover have "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+        using * DC0C1 False by (auto simp add: dist_commute)
       ultimately show ?thesis
-        using 0 by blast
+        using "4.prems"(12) YS_def by (metis fst_conv snd_conv)    
     qed
   next
     case False
-    hence "\<exists>x' \<in> set ?ys. dist x x' < \<delta>"
-      using "4.prems"(11) by (metis dist_commute insert_iff list.set(2))
-    hence "\<forall>x' \<in> set ?ys. dist x ?p\<^sub>1 \<le> dist x x'"
-      using find_closest_dist_take_7[of x ?ys \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
-    moreover have "dist x ?p\<^sub>1 < \<delta>"
-      using \<open>\<exists>x'\<in>set ?ys. dist x x' < \<delta>\<close> calculation by auto
-    ultimately have *: "\<forall>p\<^sub>0 \<in> set (x # ?ys). \<forall>p\<^sub>1 \<in> set (x # ?ys). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x ?p\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using False by (smt dist_commute insert_iff list.simps(15))
-    have "?c\<^sub>0 \<in> set ?ys" "?c\<^sub>1 \<in> set ?ys" "?c\<^sub>0 \<noteq> ?c\<^sub>1"
-      using closest_pair_7_c0[of ?ys ?c\<^sub>0 ?c\<^sub>1] apply simp
-      using closest_pair_7_c1[of ?ys ?c\<^sub>0 ?c\<^sub>1] apply simp
-      using closest_pair_7_c0_ne_c1[of ?ys ?c\<^sub>0 ?c\<^sub>1] by (metis "4.prems"(1) distinct.simps(2) le_eq_less_or_eq length_Cons lessI less_one nat.simps(3) not_less surjective_pairing)
-    hence "dist x ?p\<^sub>1 < dist ?c\<^sub>0 ?c\<^sub>1"
-      by (smt False \<open>dist x (find_closest x (take 7 (y # z # zs))) < \<delta>\<close>)
-    hence "(x, ?p\<^sub>1) = closest_pair_7 (x # ?ys)"
-      by (auto split: prod.splits)
-    moreover have "c\<^sub>0 = x" "c\<^sub>1 = ?p\<^sub>1"
-      using "4.prems"(12) calculation by (metis prod.inject)+
-    ultimately show ?thesis
-      using * by blast
+    have "distinct YS" "1 < length YS"
+      using YS_def "4.prems"(1) by simp_all
+    hence C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
+      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def closest_pair_7_c0 closest_pair_7_c1 closest_pair_7_c0_ne_c1 prod.collapse by blast+
+    have 0: "\<exists>x' \<in> set YS. dist x x' < \<delta>"
+      using False YS_def "4.prems"(11) by (auto simp add: dist_commute)
+    hence "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
+      using defs find_closest_dist_take_7[of x YS \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
+    moreover have "dist x P\<^sub>1 < \<delta>"
+      using 0 calculation by auto
+    ultimately have *: "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+      using False apply (auto simp add: dist_commute) by force+
+    hence "dist x P\<^sub>1 < dist C\<^sub>0 C\<^sub>1"
+      using C01 \<open>dist x P\<^sub>1 < \<delta>\<close> False by (meson not_less order.strict_trans2)
+    hence "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
+      using defs by (auto split: prod.splits)
+    thus ?thesis
+      using "4.prems"(12) * YS_def by (metis fst_conv snd_conv)
   qed
 qed auto
 
 
-subsection "Closest' Pair of Points Algorithm - Divide"
-
-fun divide :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
-  "divide f xs ys = (
-    let xs' = f xs in
-    let ps = set xs' in
-    let ys' = filter (\<lambda>p. p \<in> ps) ys in
-    (xs', ys')
-  )"
-
-lemma divide_take:
-  assumes "(xs', ys') = divide (take n) xs ys"
-  shows "xs' = take n xs"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_drop:
-  assumes "(xs', ys') = divide (drop n) xs ys"
-  shows "xs' = drop n xs"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_set:
-  assumes "set xs = set ys" "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
-  shows "set xs' = set ys'"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_subset:
-  assumes "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
-  shows "set xs' \<subseteq> set xs"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_distinct_xs:
-  assumes "(xs', ys') = divide f xs ys" "distinct (f xs)"
-  shows "distinct xs'"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_distinct_ys:
-  assumes "(xs', ys') = divide f xs ys" "distinct ys"
-  shows "distinct ys'"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_length_take:
-  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (take n) xs ys"
-  shows "length xs' < length xs"
-    and "1 < length xs'"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_length_drop:
-  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (drop n) xs ys"
-  shows "length xs' < length xs"
-    and "1 < length xs'"
-  using assms by (auto simp add: Let_def)
-
-lemma divide_sortedX_take:
-  assumes "sortedX xs" "(xs', ys') = divide (take n) xs ys"
-  shows "sortedX xs'"
-  using assms sorted_wrt_take sortedX_def by (auto simp add: Let_def)
-
-lemma divide_sortedX_drop:
-  assumes "sortedX xs" "(xs', ys') = divide (drop n) xs ys"
-  shows "sortedX xs'"
-  using assms sorted_wrt_drop sortedX_def by (auto simp add: Let_def)
-
-lemma divide_sortedY:
-  assumes "sortedY ys" "(xs', ys') = divide f xs ys"
-  shows "sortedY ys'"
-  using assms sorted_wrt_take sortedY_def by (auto simp add: sorted_wrt_filter Let_def)
-
-lemma divide_take_le_hd_drop:
-  assumes "sortedX xs" "n < length xs" "(xs\<^sub>L, ys\<^sub>L) = divide (take n) xs ys" "(xs\<^sub>R, ys\<^sub>R) = divide (drop n) xs ys"
-  shows "\<forall>p \<in> set xs\<^sub>L. fst p \<le> fst (hd xs\<^sub>R)"
-  using assms divide_take divide_drop sortedX_take_less_hd_drop by blast
-
-lemma divide_hd_drop_le_drop:
-  assumes "sortedX xs" "n < length xs" "(xs\<^sub>R, ys\<^sub>R) = divide (drop n) xs ys"
-  shows "\<forall>p \<in> set xs\<^sub>R. fst (hd xs\<^sub>R) \<le> fst p"
-  using assms divide_take divide_drop sortedX_hd_drop_less_drop by blast
-
-
-subsection "Closest' Pair of Points Algorithm - Combine"
+subsection "Combine TODO"
 
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
@@ -1124,6 +1053,84 @@ proof -
     qed
   qed
 qed
+
+
+subsection "Closest' Pair of Points Algorithm - Divide"
+
+fun divide :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> (point list * point list)" where
+  "divide f xs ys = (
+    let xs' = f xs in
+    let ps = set xs' in
+    let ys' = filter (\<lambda>p. p \<in> ps) ys in
+    (xs', ys')
+  )"
+
+lemma divide_take:
+  assumes "(xs', ys') = divide (take n) xs ys"
+  shows "xs' = take n xs"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_drop:
+  assumes "(xs', ys') = divide (drop n) xs ys"
+  shows "xs' = drop n xs"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_set:
+  assumes "set xs = set ys" "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
+  shows "set xs' = set ys'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_subset:
+  assumes "set (f xs) \<subseteq> set xs" "(xs', ys') = divide f xs ys"
+  shows "set xs' \<subseteq> set xs"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_distinct_xs:
+  assumes "(xs', ys') = divide f xs ys" "distinct (f xs)"
+  shows "distinct xs'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_distinct_ys:
+  assumes "(xs', ys') = divide f xs ys" "distinct ys"
+  shows "distinct ys'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_length_take:
+  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (take n) xs ys"
+  shows "length xs' < length xs"
+    and "1 < length xs'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_length_drop:
+  assumes "n = length xs div 2" "3 < length xs" "(xs', ys') = divide (drop n) xs ys"
+  shows "length xs' < length xs"
+    and "1 < length xs'"
+  using assms by (auto simp add: Let_def)
+
+lemma divide_sortedX_take:
+  assumes "sortedX xs" "(xs', ys') = divide (take n) xs ys"
+  shows "sortedX xs'"
+  using assms sorted_wrt_take sortedX_def by (auto simp add: Let_def)
+
+lemma divide_sortedX_drop:
+  assumes "sortedX xs" "(xs', ys') = divide (drop n) xs ys"
+  shows "sortedX xs'"
+  using assms sorted_wrt_drop sortedX_def by (auto simp add: Let_def)
+
+lemma divide_sortedY:
+  assumes "sortedY ys" "(xs', ys') = divide f xs ys"
+  shows "sortedY ys'"
+  using assms sorted_wrt_take sortedY_def by (auto simp add: sorted_wrt_filter Let_def)
+
+lemma divide_take_le_hd_drop:
+  assumes "sortedX xs" "n < length xs" "(xs\<^sub>L, ys\<^sub>L) = divide (take n) xs ys" "(xs\<^sub>R, ys\<^sub>R) = divide (drop n) xs ys"
+  shows "\<forall>p \<in> set xs\<^sub>L. fst p \<le> fst (hd xs\<^sub>R)"
+  using assms divide_take divide_drop sortedX_take_less_hd_drop by blast
+
+lemma divide_hd_drop_le_drop:
+  assumes "sortedX xs" "n < length xs" "(xs\<^sub>R, ys\<^sub>R) = divide (drop n) xs ys"
+  shows "\<forall>p \<in> set xs\<^sub>R. fst (hd xs\<^sub>R) \<le> fst p"
+  using assms divide_take divide_drop sortedX_hd_drop_less_drop by blast
 
 
 subsection "Closest' Pair of Points Algorithm"
