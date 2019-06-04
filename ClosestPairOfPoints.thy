@@ -139,12 +139,12 @@ lemma find_closest_ne:
   by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
 
 
-fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
-  "brute_force_closest [] = undefined"
-| "brute_force_closest [_] = undefined"
-| "brute_force_closest [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
-| "brute_force_closest (p\<^sub>0 # ps) = (
-    let (c\<^sub>0, c\<^sub>1) = brute_force_closest ps in
+fun bf_closest_pair :: "point list \<Rightarrow> (point * point)" where
+  "bf_closest_pair [] = undefined"
+| "bf_closest_pair [_] = undefined"
+| "bf_closest_pair [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "bf_closest_pair (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps in
     let p\<^sub>1 = find_closest p\<^sub>0 ps in
     if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
       (c\<^sub>0, c\<^sub>1)
@@ -152,31 +152,31 @@ fun brute_force_closest :: "point list \<Rightarrow> (point * point)" where
       (p\<^sub>0, p\<^sub>1) 
   )"
 
-lemma brute_force_closest_c0:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = brute_force_closest ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: brute_force_closest.induct)
+lemma bf_closest_pair_c0:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   thus ?case using find_closest_set[of "p\<^sub>1 # p\<^sub>2 # ps" p\<^sub>0]
     by (auto simp add: Let_def split!: if_splits prod.splits)
 qed auto
 
-lemma brute_force_closest_c1:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = brute_force_closest ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: brute_force_closest.induct)
+lemma bf_closest_pair_c1:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   thus ?case using find_closest_set[of "p\<^sub>1 # p\<^sub>2 # ps" p\<^sub>0]
     by (auto simp add: Let_def split!: if_splits prod.splits)
 qed auto
 
-lemma brute_force_closest_c0_ne_c1:
-  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = brute_force_closest ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: brute_force_closest.induct)
+lemma bf_closest_pair_c0_ne_c1:
+  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   thus ?case using find_closest_ne[of "p\<^sub>2 # ps" p\<^sub>0]
     by (auto simp add: Let_def split!: prod.splits if_splits)
 qed auto
 
-lemmas brute_force_closest_c0_c1 = brute_force_closest_c0 brute_force_closest_c1 brute_force_closest_c0_ne_c1
+lemmas bf_closest_pair_c0_c1 = bf_closest_pair_c0 bf_closest_pair_c1 bf_closest_pair_c0_ne_c1
 
 fun dist_criterion :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
   "dist_criterion (c\<^sub>0, c\<^sub>1) ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1)"
@@ -193,32 +193,31 @@ lemma dist_criterion_update:
 
 declare dist_criterion.simps [simp del]
 
-lemma brute_force_closest_dist:
+lemma bf_closest_pair_dist:
   assumes "1 < length ps"
-  shows "dist_criterion (brute_force_closest ps) ps"
+  shows "dist_criterion (bf_closest_pair ps) ps"
   using assms
-proof (induction ps rule: brute_force_closest.induct)
+proof (induction ps rule: bf_closest_pair.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
 
-  define lps where "lps = p\<^sub>1 # p\<^sub>2 # ps"
-  define lc where "lc = brute_force_closest lps"
-  define lc\<^sub>0 where "lc\<^sub>0 = fst lc"
-  define lc\<^sub>1 where "lc\<^sub>1 = snd lc"
-  note defs = lps_def lc_def lc\<^sub>0_def lc\<^sub>1_def
+  let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
+  let ?c = "bf_closest_pair ?ps"
+  let ?c\<^sub>0 = "fst ?c"
+  let ?c\<^sub>1 = "snd ?c"
 
-  have *: "\<forall>p \<in> set lps. dist p\<^sub>0 (find_closest p\<^sub>0 lps) \<le> dist p\<^sub>0 p"
+  have *: "\<forall>p \<in> set ?ps. dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist p\<^sub>0 p"
     using find_closest_dist by blast
 
   thus ?case using 4
-  proof (cases "dist lc\<^sub>0 lc\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 lps)")
+  proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
     case True
-    hence "\<forall>p \<in> set lps. dist lc\<^sub>0 lc\<^sub>1 \<le> dist p\<^sub>0 p"
+    hence "\<forall>p \<in> set ?ps. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
       using * by auto
-    thus ?thesis using 4 True defs
+    thus ?thesis using 4 True
       by (auto simp add: dist_criterion_identity split: prod.splits)
   next
     case False
-    thus ?thesis using 4 * defs
+    thus ?thesis using 4 *
       by (auto simp add: dist_criterion_update split: prod.splits)
   qed
 qed (auto simp add: dist_commute dist_criterion.simps)
@@ -410,7 +409,7 @@ qed
 
 subsection "The Runtime Argument"
 
-lemma closest_in_take_7:
+lemma closest_pair_in_take_7:
   assumes "distinct (y\<^sub>0 # ys)" "sortedY (y\<^sub>0 # ys)" "0 < \<delta>" "set (y\<^sub>0 # ys) = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "\<forall>p \<in> set (y\<^sub>0 # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
@@ -418,89 +417,93 @@ lemma closest_in_take_7:
   assumes "y\<^sub>1 \<in> set ys" "dist y\<^sub>0 y\<^sub>1 < \<delta>"
   shows "y\<^sub>1 \<in> set (take 7 ys)"
 proof -
-  define yys where "yys = y\<^sub>0 # ys"
-  define rectangle where "rectangle = cbox (l - \<delta>, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define lsquare where "lsquare = cbox (l - \<delta>, snd y\<^sub>0) (l, snd y\<^sub>0 + \<delta>)"
-  define rsquare where "rsquare = cbox (l, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define lys where "lys = filter (\<lambda>p. p \<in> lsquare \<and> p \<in> ys\<^sub>L) yys"
-  define rys where "rys = filter (\<lambda>p. p \<in> rsquare \<and> p \<in> ys\<^sub>R) yys"
-  note defs = yys_def rectangle_def lsquare_def rsquare_def lys_def rys_def
+  define YS where "YS = y\<^sub>0 # ys"
+  define RECT where "RECT = cbox (l - \<delta>, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
+  define LSQ where "LSQ = cbox (l - \<delta>, snd y\<^sub>0) (l, snd y\<^sub>0 + \<delta>)"
+  define RSQ where "RSQ = cbox (l, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
+  define LSQYS where "LSQYS = filter (\<lambda>p. p \<in> LSQ \<and> p \<in> ys\<^sub>L) YS"
+  define RSQYS where "RSQYS = filter (\<lambda>p. p \<in> RSQ \<and> p \<in> ys\<^sub>R) YS"
+  note defs = YS_def RECT_def LSQ_def RSQ_def LSQYS_def RSQYS_def
 
-  have "rectangle = lsquare \<union> rsquare"
+  have "RECT = LSQ \<union> RSQ"
     using defs cbox_right_un by auto
 
-  have overlap\<^sub>L: "\<forall>p \<in> ys\<^sub>L. p \<in> rsquare \<longrightarrow> p \<in> lsquare"
-    using rsquare_def lsquare_def assms(6) by auto
-  have overlap\<^sub>R: "\<forall>p \<in> ys\<^sub>R. p \<in> lsquare \<longrightarrow> p \<in> rsquare"
-    using rsquare_def lsquare_def assms(7) by auto
-  have set_eq_filter_rect_squares: "set (filter (\<lambda>p. p \<in> rectangle) yys) = set lys \<union> set rys"
+  have overlap\<^sub>L: "\<forall>p \<in> ys\<^sub>L. p \<in> RSQ \<longrightarrow> p \<in> LSQ"
+    using RSQ_def LSQ_def assms(6) by auto
+  have overlap\<^sub>R: "\<forall>p \<in> ys\<^sub>R. p \<in> LSQ \<longrightarrow> p \<in> RSQ"
+    using RSQ_def LSQ_def assms(7) by auto
+  have set_eq_filter_rect_squares: "set (filter (\<lambda>p. p \<in> RECT) YS) = set LSQYS \<union> set RSQYS"
   proof standard
-    show "set (filter (\<lambda>p. p \<in> rectangle) yys) \<subseteq> set lys \<union> set rys"
-      using \<open>rectangle = lsquare \<union> rsquare\<close> overlap\<^sub>L overlap\<^sub>R assms(4) yys_def lys_def rys_def by auto
+    have "set (filter (\<lambda>p. p \<in> LSQ) YS) \<subseteq> set LSQYS \<union> set RSQYS"
+      using overlap\<^sub>L overlap\<^sub>R YS_def LSQYS_def RSQYS_def assms(4) by auto
+    moreover have "set (filter (\<lambda>p. p \<in> RSQ) YS) \<subseteq> set LSQYS \<union> set RSQYS"
+      using overlap\<^sub>L overlap\<^sub>R YS_def LSQYS_def RSQYS_def assms(4) by auto
+    ultimately show "set (filter (\<lambda>p. p \<in> RECT) YS) \<subseteq> set LSQYS \<union> set RSQYS"
+      using \<open>RECT = LSQ \<union> RSQ\<close> by auto
   next
-    show "set lys \<union> set rys \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) yys)"
-      using \<open>rectangle = lsquare \<union> rsquare\<close> lys_def rys_def yys_def by auto
+    show "set LSQYS \<union> set RSQYS \<subseteq> set (filter (\<lambda>p. p \<in> RECT) YS)"
+      using \<open>RECT = LSQ \<union> RSQ\<close> LSQYS_def RSQYS_def YS_def by auto
   qed
 
-  have "\<forall>p\<^sub>0 \<in> set lys. \<forall>p\<^sub>1 \<in> set lys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(8) lys_def by simp
-  moreover have "\<forall>p \<in> set lys. p \<in> lsquare"
-    using lys_def by auto
-  ultimately have card_lys: "card (set lys) \<le> 4"
-    using max_points_square[of "set lys" "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) lsquare_def by auto
-  have "\<forall>p\<^sub>0 \<in> set rys. \<forall>p\<^sub>1 \<in> set rys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(9) rys_def by simp
-  moreover have "\<forall>p \<in> set rys. p \<in> rsquare"
-    using rys_def by auto
-  ultimately have card_rys: "card (set rys) \<le> 4"
-    using max_points_square[of "set rys" l "snd y\<^sub>0" \<delta>] assms(3) rsquare_def by auto
-  have card_lys_rys: "card (set lys \<union> set rys) \<le> 8"
-    using card_lys card_rys card_Un_le[of "set lys" "set rys"] by simp
+  have "\<forall>p\<^sub>0 \<in> set LSQYS. \<forall>p\<^sub>1 \<in> set LSQYS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(8) LSQYS_def by simp
+  moreover have "\<forall>p \<in> set LSQYS. p \<in> LSQ"
+    using LSQYS_def by auto
+  ultimately have card_lys: "card (set LSQYS) \<le> 4"
+    using max_points_square[of "set LSQYS" "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) LSQ_def by auto
+  have "\<forall>p\<^sub>0 \<in> set RSQYS. \<forall>p\<^sub>1 \<in> set RSQYS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+    using assms(9) RSQYS_def by simp
+  moreover have "\<forall>p \<in> set RSQYS. p \<in> RSQ"
+    using RSQYS_def by auto
+  ultimately have card_rys: "card (set RSQYS) \<le> 4"
+    using max_points_square[of "set RSQYS" l "snd y\<^sub>0" \<delta>] assms(3) RSQ_def by auto
+  have card_lys_rys: "card (set LSQYS \<union> set RSQYS) \<le> 8"
+    using card_lys card_rys card_Un_le[of "set LSQYS" "set RSQYS"] by simp
 
-  have "set lys \<union> set rys \<subseteq> set (take 8 yys)"
+  have "set LSQYS \<union> set RSQYS \<subseteq> set (take 8 YS)"
   proof (rule ccontr)
-    assume "\<not> (set lys \<union> set rys \<subseteq> set (take 8 yys))"
-    then obtain p where *: "p \<in> set yys" "p \<in> set lys \<union> set rys" "p \<notin> set (take 8 yys)"
-      using lys_def rys_def set_eq_filter_rect_squares filter_is_subset by auto
-    hence "p \<in> rectangle"
-      using \<open>rectangle = lsquare \<union> rsquare\<close> \<open>\<forall>p \<in> set lys. p \<in> lsquare\<close> \<open>\<forall>p \<in> set rys. p \<in> rsquare\<close> by auto
+    assume "\<not> (set LSQYS \<union> set RSQYS \<subseteq> set (take 8 YS))"
+    then obtain p where *: "p \<in> set YS" "p \<in> set LSQYS \<union> set RSQYS" "p \<notin> set (take 8 YS)"
+      using LSQYS_def RSQYS_def set_eq_filter_rect_squares filter_is_subset by auto
+    hence "p \<in> RECT"
+      using \<open>RECT = LSQ \<union> RSQ\<close> \<open>\<forall>p \<in> set LSQYS. p \<in> LSQ\<close> \<open>\<forall>p \<in> set RSQYS. p \<in> RSQ\<close> by auto
 
-    have "\<forall>p\<^sub>0 \<in> set (take 8 yys). \<forall>p\<^sub>1 \<in> set (drop 8 yys). snd p\<^sub>0 \<le> snd p\<^sub>1"
-      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" yys 8] assms(2) sortedY_def yys_def by fastforce
-    hence "\<forall>p' \<in> set (take 8 yys). snd p' \<le> snd p"
+    have "\<forall>p\<^sub>0 \<in> set (take 8 YS). \<forall>p\<^sub>1 \<in> set (drop 8 YS). snd p\<^sub>0 \<le> snd p\<^sub>1"
+      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" YS 8] assms(2) sortedY_def YS_def by fastforce
+    hence "\<forall>p' \<in> set (take 8 YS). snd p' \<le> snd p"
       using append_take_drop_id set_append Un_iff *(1,3) by metis
     moreover have "snd p \<le> snd y\<^sub>0 + \<delta>"
-      using \<open>p \<in> rectangle\<close> rectangle_def by (metis mem_cbox_2D prod.collapse)
-    ultimately have "\<forall>p \<in> set (take 8 yys). snd p \<le> snd y\<^sub>0 + \<delta>"
+      using \<open>p \<in> RECT\<close> RECT_def by (metis mem_cbox_2D prod.collapse)
+    ultimately have "\<forall>p \<in> set (take 8 YS). snd p \<le> snd y\<^sub>0 + \<delta>"
       by fastforce
-    moreover have "\<forall>p \<in> set (take 8 yys). snd y\<^sub>0 \<le> snd p"
-      using sorted_wrt_hd_less_take[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" y\<^sub>0 ys 8] assms(2) sortedY_def yys_def by fastforce
-    moreover have "\<forall>p \<in> set (take 8 yys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using assms(5) yys_def by (meson in_set_takeD)
-    ultimately have "\<forall>p \<in> set (take 8 yys). p \<in> rectangle"
-      using rectangle_def mem_cbox_2D by fastforce
+    moreover have "\<forall>p \<in> set (take 8 YS). snd y\<^sub>0 \<le> snd p"
+      using sorted_wrt_hd_less_take[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" y\<^sub>0 ys 8] assms(2) sortedY_def YS_def by fastforce
+    moreover have "\<forall>p \<in> set (take 8 YS). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+      using assms(5) YS_def by (meson in_set_takeD)
+    ultimately have "\<forall>p \<in> set (take 8 YS). p \<in> RECT"
+      using RECT_def mem_cbox_2D by fastforce
 
-    hence "set (take 8 yys) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) yys)"
+    hence "set (take 8 YS) \<subseteq> set (filter (\<lambda>p. p \<in> RECT) YS)"
       using set_take_subset by fastforce
-    hence nine_point_set: "{ p } \<union> set (take 8 yys) \<subseteq> set (filter (\<lambda>p. p \<in> rectangle) yys)"
-      using *(1) \<open>p \<in> rectangle\<close> by simp
+    hence nine_point_set: "{ p } \<union> set (take 8 YS) \<subseteq> set (filter (\<lambda>p. p \<in> RECT) YS)"
+      using *(1) \<open>p \<in> RECT\<close> by simp
 
-    have "8 \<le> length yys"
+    have "8 \<le> length YS"
       using *(1,3) nat_le_linear by fastforce
-    hence "length (take 8 yys) = 8"
+    hence "length (take 8 YS) = 8"
       by simp
 
-    have "finite { p }" "finite (set (take 8 yys))"
+    have "finite { p }" "finite (set (take 8 YS))"
       by simp_all
-    hence "card ({ p } \<union> set (take 8 yys)) = card ({ p }) + card (set (take 8 yys))"
+    hence "card ({ p } \<union> set (take 8 YS)) = card ({ p }) + card (set (take 8 YS))"
       using *(3) card_Un_disjoint by blast
-    hence "card ({ p } \<union> set (take 8 yys)) = 9"
-      using assms(1) \<open>length (take 8 yys) = 8\<close> distinct_card[of "take 8 yys"] distinct_take[of yys] yys_def by fastforce
-    moreover have "finite (set (filter (\<lambda>p. p \<in> rectangle) yys))"
+    hence "card ({ p } \<union> set (take 8 YS)) = 9"
+      using assms(1) \<open>length (take 8 YS) = 8\<close> distinct_card[of "take 8 YS"] distinct_take[of YS] YS_def by fastforce
+    moreover have "finite (set (filter (\<lambda>p. p \<in> RECT) YS))"
       by simp
-    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> rectangle) yys))"
+    ultimately have "9 \<le> card (set (filter (\<lambda>p. p \<in> RECT) YS))"
       using nine_point_set card_mono by metis
-    hence "9 \<le> card (set lys \<union> set rys)"
+    hence "9 \<le> card (set LSQYS \<union> set RSQYS)"
       using set_eq_filter_rect_squares by simp
     thus False
       using card_lys_rys by simp
@@ -516,16 +519,16 @@ proof -
     using assms(5,10) by auto
   moreover have "snd y\<^sub>0 \<le> snd y\<^sub>1"
     using sortedY_def assms(2,10) by auto
-  ultimately have "y\<^sub>1 \<in> rectangle"
+  ultimately have "y\<^sub>1 \<in> RECT"
     using mem_cbox_2D[of "l - \<delta>" "fst y\<^sub>1" "l + \<delta>" "snd y\<^sub>0" "snd y\<^sub>1" "snd y\<^sub>0 + \<delta>"] defs by simp
-  moreover have "y\<^sub>1 \<in> set yys"
-    using yys_def assms(10) by simp
-  ultimately have "y\<^sub>1 \<in> set lys \<union> set rys"
+  moreover have "y\<^sub>1 \<in> set YS"
+    using YS_def assms(10) by simp
+  ultimately have "y\<^sub>1 \<in> set LSQYS \<union> set RSQYS"
     using set_eq_filter_rect_squares filter_set by auto
-  hence "y\<^sub>1 \<in> set (take 8 yys)"
-    using \<open>set lys \<union> set rys \<subseteq> set (take 8 yys)\<close> by blast
+  hence "y\<^sub>1 \<in> set (take 8 YS)"
+    using \<open>set LSQYS \<union> set RSQYS \<subseteq> set (take 8 YS)\<close> by blast
   thus ?thesis
-    using assms(1,10) yys_def by auto
+    using assms(1,10) YS_def by auto
 qed
   
 lemma find_closest_dist_take_7:
@@ -541,7 +544,7 @@ proof -
   moreover have "find_closest y\<^sub>0 ys \<in> set ys"
     using assms(3) find_closest_set by blast
   ultimately have "find_closest y\<^sub>0 ys \<in> set (take 7 ys)"
-    using closest_in_take_7[of y\<^sub>0 ys \<delta> ys\<^sub>L ys\<^sub>R l "find_closest y\<^sub>0 ys"] assms by blast
+    using closest_pair_in_take_7[of y\<^sub>0 ys \<delta> ys\<^sub>L ys\<^sub>R l "find_closest y\<^sub>0 ys"] assms by blast
   moreover have "\<forall>y\<^sub>1 \<in> set (take 7 ys). dist y\<^sub>0 (find_closest y\<^sub>0 (take 7 ys)) \<le> dist y\<^sub>0 y\<^sub>1"
     using find_closest_dist by blast
   ultimately have "\<forall>y\<^sub>1 \<in> set ys. dist y\<^sub>0 (find_closest y\<^sub>0 (take 7 ys)) \<le> dist y\<^sub>0 y\<^sub>1"
@@ -1138,7 +1141,7 @@ function (sequential) closest' :: "point set \<Rightarrow> point list \<Rightarr
   "closest' ps xs ys = (
     let n = length xs in
     if n \<le> 3 then
-      brute_force_closest xs
+      bf_closest_pair xs
     else
       let (xs\<^sub>L, ys\<^sub>L) = divide (take (n div 2)) xs ys in
       let (xs\<^sub>R, ys\<^sub>R) = divide (drop (n div 2)) xs ys in
@@ -1183,10 +1186,10 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True
-    hence "(p\<^sub>0, p\<^sub>1) = brute_force_closest xs"
+    hence "(p\<^sub>0, p\<^sub>1) = bf_closest_pair xs"
       using "1.prems"(2) closest'.simps by simp
     thus ?thesis
-      using "1.prems"(1,4) brute_force_closest_c0_c1 by simp
+      using "1.prems"(1,4) bf_closest_pair_c0_c1 by simp
   next
     case False
 
@@ -1259,10 +1262,10 @@ proof (induction xs arbitrary: ys p\<^sub>0 p\<^sub>1 rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True
-    hence "(p\<^sub>0, p\<^sub>1) = brute_force_closest xs"
+    hence "(p\<^sub>0, p\<^sub>1) = bf_closest_pair xs"
       using "1.prems"(2) closest'.simps by simp
     thus ?thesis
-      using "1.prems"(1,4) brute_force_closest_dist dist_criterion.simps by metis
+      using "1.prems"(1,4) bf_closest_pair_dist dist_criterion.simps by metis
   next
     case False
 
