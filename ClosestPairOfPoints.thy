@@ -1399,48 +1399,119 @@ theorem closest_pair_dist:
 
 subsection "Closest Pair of Points Algorithm (Alternative)"
 
-function (sequential) closest_pair_rec' :: "point list \<Rightarrow> point list \<Rightarrow> (point * point)" where
-  "closest_pair_rec' xs ys = (
+fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+  "merge _ [] ys = ys"
+| "merge _ xs [] = xs"
+| "merge f (x#xs) (y#ys) = (
+    if f x \<le> f y then
+      x # merge f xs (y#ys)
+    else
+      y # merge f (x#xs) ys
+  )"
+
+lemma length_merge:
+  "length (merge f xs ys) = length xs + length ys"
+  by (induction f xs ys rule: merge.induct) auto
+
+lemma set_merge:
+  "set (merge f xs ys) = set xs \<union> set ys"
+  by (induction f xs ys rule: merge.induct) auto
+
+lemma distinct_merge:
+  assumes "set xs \<inter> set ys = {}" "distinct xs" "distinct ys"
+  shows "distinct (merge f xs ys)"
+  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
+
+lemma sortedY_merge:
+  assumes "sortedY xs" "sortedY ys" "f = (\<lambda>p. snd p)"
+  shows "sortedY (merge f xs ys)"
+  using assms unfolding sortedY_def
+  by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
+
+
+function (sequential) closest_pair_rec' :: "point list \<Rightarrow> (point list * point * point)" where
+  "closest_pair_rec' xs = (
     let n = length xs in
     if n \<le> 3 then
-      bf_closest_pair xs
+      (sortY xs, bf_closest_pair xs)
     else
       let (xs\<^sub>L, xs\<^sub>R) = splitAt (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
-      let ps = set xs\<^sub>L in
-      let (ys\<^sub>L, ys\<^sub>R) = partition (\<lambda>p. p \<in> ps) ys in
 
-      let c\<^sub>L = closest_pair_rec' xs\<^sub>L ys\<^sub>L in
-      let c\<^sub>R = closest_pair_rec' xs\<^sub>R ys\<^sub>R in
+      let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec' xs\<^sub>L in
+      let (ys\<^sub>R, c\<^sub>R) = closest_pair_rec' xs\<^sub>R in
 
-      combine c\<^sub>L c\<^sub>R l ys 
+      let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
+      (ys, combine c\<^sub>L c\<^sub>R l ys) 
   )"
   by pat_completeness auto
 termination closest_pair_rec'
-  apply (relation "Wellfounded.measure (\<lambda>(xs, _). length xs)")
+  apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
   apply (auto simp add: splitAt_take_drop_conv Let_def)
   done
 
-(* TODO *)
-
 lemma closest_pair_rec'_simps:
   assumes "n = length xs" "\<not> (n \<le> 3)"
-  shows "closest_pair_rec' xs ys = (
-    let (xs\<^sub>L, ys\<^sub>L) = divide (take (n div 2)) xs ys in
-    let (xs\<^sub>R, ys\<^sub>R) = divide (drop (n div 2)) xs ys in
+  shows "closest_pair_rec' xs = (
+    let (xs\<^sub>L, xs\<^sub>R) = splitAt (n div 2) xs in
     let l = fst (hd xs\<^sub>R) in
-    let (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest_pair_rec' xs\<^sub>L ys\<^sub>L in
-    let (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest_pair_rec' xs\<^sub>R ys\<^sub>R in
-    combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys
+    let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec' xs\<^sub>L in
+    let (ys\<^sub>R, c\<^sub>R) = closest_pair_rec' xs\<^sub>R in
+    let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
+    (ys, combine c\<^sub>L c\<^sub>R l ys) 
   )"
   using assms by (auto simp add: Let_def)
 
 declare closest_pair_rec'.simps [simp del]
 
+lemma closest_pair_rec'_sortedY:
+  assumes "(ys, cp) = closest_pair_rec' xs"
+  shows "sortedY ys"
+  using assms
+proof (induction xs arbitrary: ys cp rule: length_induct)
+  case (1 xs)
+  let ?n = "length xs"
+  show ?case
+  proof (cases "?n \<le> 3")
+    case True
+    thus ?thesis using "1.prems"
+      by (auto simp add: closest_pair_rec'.simps sortedY_sortY)
+  next
+    case False
+
+    let ?xs = "splitAt (?n div 2) xs"
+    let ?xs\<^sub>L = "fst ?xs"
+    let ?xs\<^sub>R = "snd ?xs"
+    let ?l = "fst (hd ?xs\<^sub>R)"
+
+    let ?lcp = "closest_pair_rec' ?xs\<^sub>L"
+    let ?ys\<^sub>L = "fst ?lcp"
+    let ?c\<^sub>L = "snd ?lcp"
+    let ?rcp = "closest_pair_rec' ?xs\<^sub>R"
+    let ?ys\<^sub>R = "fst ?rcp"
+    let ?c\<^sub>R = "snd ?rcp"
+
+    let ?ys = "merge (\<lambda>p. snd p) ?ys\<^sub>L ?ys\<^sub>R"
+    let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
+
+    have "length ?xs\<^sub>L < length xs" "length ?xs\<^sub>R < length xs"
+      using False by (auto simp add: splitAt_take_drop_conv)
+    hence "sortedY ?ys\<^sub>L" "sortedY ?ys\<^sub>R"
+      using "1.IH" prod.collapse by blast+
+    hence SY: "sortedY ?ys"
+      using sortedY_merge by simp
+
+    have "(?ys, ?cp) = closest_pair_rec' xs"
+      using False closest_pair_rec'_simps by (auto simp add: Let_def split: prod.splits)
+    hence "(ys, cp) = (?ys, ?cp)"
+      using "1.prems" by argo
+    thus ?thesis
+      using SY by blast
+  qed
+qed
+
 lemma closest_pair_rec'_c0_c1:
-  assumes "1 < length xs" "(c\<^sub>0, c\<^sub>1) = closest_pair_rec xs ys"
-  assumes "set xs = set ys" "distinct (map fst xs)" "distinct (map fst ys)"
-  assumes "sortedX xs" "sortedY ys"
+  assumes "1 < length xs" "distinct xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec' xs"
   shows "c\<^sub>0 \<in> set xs \<and> c\<^sub>1 \<in> set xs \<and> c\<^sub>0 \<noteq> c\<^sub>1"
   using assms
 proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
@@ -1450,13 +1521,13 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     hence "(c\<^sub>0, c\<^sub>1) = bf_closest_pair xs"
-      using "1.prems"(2) closest_pair_rec.simps by simp
-    moreover have "distinct xs"
-      using "1.prems"(4) distinct_map by blast
-    ultimately show ?thesis
-      using "1.prems"(1) bf_closest_pair_c0_c1 by simp
+      using "1.prems"(3) closest_pair_rec'.simps by simp
+    thus ?thesis
+      using "1.prems"(1,2) bf_closest_pair_c0_c1 by simp
   next
     case False
+
+    (* TODO *)
 
     let ?xs\<^sub>L = "take (?n div 2) xs"
     let ?xs\<^sub>R = "drop (?n div 2) xs"
