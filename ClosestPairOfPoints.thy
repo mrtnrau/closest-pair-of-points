@@ -99,45 +99,22 @@ lemma sorted_wrt_hd_less_take:
 lemma sorted_wrt_take_less_hd_drop:
   assumes "sorted_wrt f xs" "n < length xs"
   shows "\<forall>x \<in> set (take n xs). f x (hd (drop n xs))"
-proof -
-  have "\<forall>i < n. f (xs!i) (xs!n)"
-    using assms by (simp add: sorted_wrt_iff_nth_less)
-  hence "\<forall>i < n. f (xs!i) (hd (drop n xs))"
-    using assms(2) hd_drop_conv_nth by metis
-  moreover have "\<forall>i < n. xs!i = (take n xs)!i"
-    using assms(1) by simp
-  ultimately have "\<forall>i < n. f ((take n xs)!i) (hd (drop n xs))"
-    by metis
-  moreover have "n = length (take n xs)"
-    using assms(2) by simp
-  ultimately show ?thesis
-    by (metis in_set_conv_nth)
-qed
+  using sorted_wrt_take_drop assms by fastforce
 
 lemma sorted_wrt_hd_drop_less_drop:
-  assumes "sorted_wrt f xs" "n < length xs" "(\<And>x. f x x)"
+  assumes "sorted_wrt f xs" "\<And>x. f x x"
   shows "\<forall>x \<in> set (drop n xs). f (hd (drop n xs)) x"
-proof -
-  let ?xs' = "drop n xs"
-  have "sorted_wrt f ?xs'"
-    using assms(1) by (simp add: sorted_wrt_drop)
-  hence "\<forall>i < length ?xs'. f (?xs'!0) (?xs'!i)"
-    using assms(2,3) sorted_wrt_nth_less by (metis linorder_neqE_nat not_less_zero)
-  hence "\<forall>i < length ?xs'. f (hd ?xs') (?xs'!i)"
-    by (simp add: hd_conv_nth)
-  thus ?thesis
-    by (metis in_set_conv_nth)
-qed
+  using assms sorted_wrt_drop sorted_wrt_hd_less by blast
 
 lemma sortedX_take_less_hd_drop:
   assumes "sortedX ps" "n < length ps"
   shows "\<forall>p \<in> set (take n ps). fst p \<le> fst (hd (drop n ps))"
-  using assms sorted_wrt_take_less_hd_drop[of "(\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1)"] sortedX_def by fastforce
+  using assms sorted_wrt_take_less_hd_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
 
 lemma sortedX_hd_drop_less_drop:
-  assumes "sortedX ps" "n < length ps"
+  assumes "sortedX ps"
   shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
-  using assms sorted_wrt_hd_drop_less_drop[of "(\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1)"] sortedX_def by fastforce
+  using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
 
 
 subsection "Brute Force Algorithm"
