@@ -321,8 +321,12 @@ proof (induction "card S" arbitrary: S)
   finally show ?case .
 qed simp
 
-(* Short but ?not? usable: How to instantiate f if each point p in P should be mapped to a specific Box B especially for the pigeonhole lemma below? *) 
-lemma (*TODO*)
+(* 
+   Short but ?not? usable: 
+     How to instantiate f if each point p in P should be mapped to a specific 
+     Box B especially for the pigeonhole lemma below?
+*) 
+lemma (* TODO *)
   assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
   shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
   using assms pigeonhole by (metis inj_onI rev_image_eqI)
@@ -1140,6 +1144,8 @@ lemma closest_pair_rec_simps:
 
 declare closest_pair_rec.simps [simp del]
 
+lemma (* TODO *) "True"
+  oops
 
 lemma closest_pair_rec_ys:
   assumes "distinct xs" "(ys, cp) = closest_pair_rec xs"
@@ -1201,6 +1207,9 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
       using SET DISTINCT SORTED by blast
   qed
 qed
+
+lemma (* TODO *) "True"
+  oops
 
 lemma closest_pair_rec_c0_c1:
   assumes "1 < length xs" "distinct xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
