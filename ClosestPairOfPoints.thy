@@ -96,6 +96,49 @@ lemma sorted_wrt_hd_less_take:
   shows "\<forall>y \<in> set (take n (x # xs)). f x y"
   using assms sorted_wrt_hd_less in_set_takeD by fastforce
 
+lemma sorted_wrt_take_less_hd_drop:
+  assumes "sorted_wrt f xs" "n < length xs"
+  shows "\<forall>x \<in> set (take n xs). f x (hd (drop n xs))"
+proof -
+  have "\<forall>i < n. f (xs!i) (xs!n)"
+    using assms by (simp add: sorted_wrt_iff_nth_less)
+  hence "\<forall>i < n. f (xs!i) (hd (drop n xs))"
+    using assms(2) hd_drop_conv_nth by metis
+  moreover have "\<forall>i < n. xs!i = (take n xs)!i"
+    using assms(1) by simp
+  ultimately have "\<forall>i < n. f ((take n xs)!i) (hd (drop n xs))"
+    by metis
+  moreover have "n = length (take n xs)"
+    using assms(2) by simp
+  ultimately show ?thesis
+    by (metis in_set_conv_nth)
+qed
+
+lemma sorted_wrt_hd_drop_less_drop:
+  assumes "sorted_wrt f xs" "n < length xs" "(\<And>x. f x x)"
+  shows "\<forall>x \<in> set (drop n xs). f (hd (drop n xs)) x"
+proof -
+  let ?xs' = "drop n xs"
+  have "sorted_wrt f ?xs'"
+    using assms(1) by (simp add: sorted_wrt_drop)
+  hence "\<forall>i < length ?xs'. f (?xs'!0) (?xs'!i)"
+    using assms(2,3) sorted_wrt_nth_less by (metis linorder_neqE_nat not_less_zero)
+  hence "\<forall>i < length ?xs'. f (hd ?xs') (?xs'!i)"
+    by (simp add: hd_conv_nth)
+  thus ?thesis
+    by (metis in_set_conv_nth)
+qed
+
+lemma sortedX_take_less_hd_drop:
+  assumes "sortedX ps" "n < length ps"
+  shows "\<forall>p \<in> set (take n ps). fst p \<le> fst (hd (drop n ps))"
+  using assms sorted_wrt_take_less_hd_drop[of "(\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1)"] sortedX_def by fastforce
+
+lemma sortedX_hd_drop_less_drop:
+  assumes "sortedX ps" "n < length ps"
+  shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
+  using assms sorted_wrt_hd_drop_less_drop[of "(\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1)"] sortedX_def by fastforce
+
 lemma sortedX_iff_nth_mono_le:
   "sortedX xs = (\<forall>i j. i < j \<longrightarrow> j < length xs \<longrightarrow> fst (xs!i) \<le> fst (xs!j))"
   by (auto simp add: sorted_wrt_iff_nth_less sortedX_def)
@@ -1662,12 +1705,15 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     let ?c\<^sub>0 = "fst ?cp"
     let ?c\<^sub>1 = "snd ?cp"
 
-    have "1 < length ?xs\<^sub>L" "length ?xs\<^sub>L < length xs"
-      using False by (auto simp add: splitAt_take_drop_conv)
-    moreover have "distinct ?xs\<^sub>L" "sortedX ?xs\<^sub>L"
-      using "1.prems"(2,3) by (auto simp add: splitAt_take_drop_conv sortedX_def sorted_wrt_take)
-    moreover have "(?ys\<^sub>L, ?c\<^sub>0\<^sub>L, ?c\<^sub>1\<^sub>L) = closest_pair_rec' ?xs\<^sub>L"
+    have XSLR: "?xs\<^sub>L = take (?n div 2) xs" "?xs\<^sub>R = drop (?n div 2) xs"
       by (auto simp add: splitAt_take_drop_conv)
+
+    have "1 < length ?xs\<^sub>L" and LENGTHL: "length ?xs\<^sub>L < length xs"
+      using False XSLR by simp_all
+    moreover have "distinct ?xs\<^sub>L" and SORTEDXL: "sortedX ?xs\<^sub>L"
+      using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_take)
+    moreover have "(?ys\<^sub>L, ?c\<^sub>0\<^sub>L, ?c\<^sub>1\<^sub>L) = closest_pair_rec' ?xs\<^sub>L"
+      using XSLR by simp
     ultimately have "\<forall>p\<^sub>0 \<in> set ?xs\<^sub>L. \<forall>p\<^sub>1 \<in> set ?xs\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0\<^sub>L ?c\<^sub>1\<^sub>L \<le> dist p\<^sub>0 p\<^sub>1"
                     "set ?xs\<^sub>L = set ?ys\<^sub>L" "distinct ?ys\<^sub>L" "sortedY ?ys\<^sub>L"
       using 1 closest_pair_rec'_ys by blast+
@@ -1675,11 +1721,11 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       by blast
 
     have "1 < length ?xs\<^sub>R" "length ?xs\<^sub>R < length xs"
-      using False by (auto simp add: splitAt_take_drop_conv)
+      using False XSLR by simp_all
     moreover have "distinct ?xs\<^sub>R" "sortedX ?xs\<^sub>R"
-      using "1.prems"(2,3) by (auto simp add: splitAt_take_drop_conv sortedX_def sorted_wrt_drop)
+      using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_drop)
     moreover have "(?ys\<^sub>R, ?c\<^sub>0\<^sub>R, ?c\<^sub>1\<^sub>R) = closest_pair_rec' ?xs\<^sub>R"
-      by (auto simp add: splitAt_take_drop_conv)
+      using XSLR by simp
     ultimately have "\<forall>p\<^sub>0 \<in> set ?xs\<^sub>R. \<forall>p\<^sub>1 \<in> set ?xs\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist ?c\<^sub>0\<^sub>R ?c\<^sub>1\<^sub>R \<le> dist p\<^sub>0 p\<^sub>1"
                     "set ?xs\<^sub>R = set ?ys\<^sub>R"  "distinct ?ys\<^sub>R" "sortedY ?ys\<^sub>R"
       using 1 closest_pair_rec'_ys by blast+
@@ -1692,8 +1738,9 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     have "set xs = set ?ys" "distinct ?ys"
       using "1.prems"(2) closest_pair_rec'_ys * by blast+
     moreover have "\<forall>p \<in> set ?xs\<^sub>L. fst p \<le> ?l"
-      using sorted_wrt_take_drop apply (auto simp add: splitAt_take_drop_conv) sledgehammer
+      using False XSLR LENGTHL SORTEDXL sortedX_take_less_hd_drop sorry
 
+      thm combine_dist
 
     moreover have "\<forall>p \<in> set XS\<^sub>L. fst p \<le> L" "\<forall>p \<in> set YS\<^sub>L. fst p \<le> L"
       using INDEX FXSL FYSL by simp_all
