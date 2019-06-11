@@ -1,6 +1,5 @@
 theory Test
 imports 
-  "HOL-Analysis.Analysis"
   "Landau_Symbols.Landau_More"
   "Akra_Bazzi.Akra_Bazzi_Method"
   "Akra_Bazzi.Akra_Bazzi_Approximation"
@@ -152,9 +151,10 @@ termination by akra_bazzi_termination simp_all
 
 declare t_take.simps t_drop.simps t_merge.simps[simp del]
 
+(*
 lemma t_merge_sort_conv_merge_sort_cost:
   "real (t_msort xs) \<le> merge_sort_cost (length xs)"
-  oops
+*)
 
 lemma merge_sort_nonneg[simp]:
   "0 \<le> merge_sort_cost n"
