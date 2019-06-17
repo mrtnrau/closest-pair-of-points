@@ -333,7 +333,6 @@ lemma (* TODO *)
 lemma pigeonhole:
   assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
   shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
-  sledgehammer
 proof (rule ccontr)
   assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
   hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
@@ -1389,6 +1388,53 @@ section "Closest Pair Of Points Time Analysis"
 
 
 section "Closest Pair Of Points Exported Code"
+
+subsection "find_closest"
+
+fun find_closest_it_rec :: "point \<Rightarrow> point \<Rightarrow> point list \<Rightarrow> point" where
+  "find_closest_it_rec _ c\<^sub>0 [] = c\<^sub>0"
+| "find_closest_it_rec p c\<^sub>0 (c\<^sub>1 # cs) = (
+    if dist p c\<^sub>0 < dist p c\<^sub>1 then
+      find_closest_it_rec p c\<^sub>0 cs
+    else 
+      find_closest_it_rec p c\<^sub>1 cs
+  )"
+
+fun find_closest_it :: "point \<Rightarrow> point list \<Rightarrow> point" where
+  "find_closest_it _ [] = undefined"
+| "find_closest_it p (p\<^sub>0 # ps) = find_closest_it_rec p p\<^sub>0 ps"
+
+lemma find_closest_drop_snd:
+  "dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>0 # ps)"
+  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
+
+lemma find_closest_drop_fst:
+  "\<not> dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>1 # ps)"
+  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
+
+lemma find_closest_conv_find_closest_it_rec:
+  "find_closest p (c\<^sub>0 # cs) = find_closest_it_rec p c\<^sub>0 cs"
+proof (induction p c\<^sub>0 cs rule: find_closest_it_rec.induct)
+  case (2 p c\<^sub>0 c\<^sub>1 cs)
+  then show ?case
+  proof (cases "dist p c\<^sub>0 < dist p c\<^sub>1")
+    case True
+    thus ?thesis
+      using find_closest_drop_snd "2"(1) by simp
+  next
+    case False
+    hence "find_closest_it_rec p c\<^sub>0 (c\<^sub>1 # cs) = find_closest p (c\<^sub>1 # cs)"
+      using False "2"(2) by simp
+    thus ?thesis
+      using find_closest_drop_fst False by simp
+  qed
+qed simp
+
+lemma find_closest_conv_find_closest_it[code_unfold]:
+  "find_closest p ps = find_closest_it p ps"
+  using find_closest_conv_find_closest_it_rec by (cases ps) simp_all
+
+
 
 export_code closest_pair in Scala
   module_name ClosestPair
