@@ -1,9 +1,8 @@
-section "Closest Pair Of Points"
-
 theory ClosestPairOfPoints
   imports "HOL-Analysis.Analysis"
 begin
 
+section "Closest Pair Of Points Functional Correctness"
 
 type_synonym point = "real * real"
 
@@ -334,6 +333,7 @@ lemma (* TODO *)
 lemma pigeonhole:
   assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
   shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
+  sledgehammer
 proof (rule ccontr)
   assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
   hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
@@ -1383,6 +1383,12 @@ theorem closest_pair_dist:
   shows "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
   using assms sortX closest_pair_rec_dist[of "sortX ps"] unfolding closest_pair_def
   by (auto split: prod.splits)
+
+
+section "Closest Pair Of Points Time Analysis"
+
+
+section "Closest Pair Of Points Exported Code"
 
 export_code closest_pair in Scala
   module_name ClosestPair
