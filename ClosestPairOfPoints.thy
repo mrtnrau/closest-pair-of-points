@@ -149,7 +149,7 @@ fun bf_closest_pair :: "point list \<Rightarrow> (point * point)" where
 | "bf_closest_pair (p\<^sub>0 # ps) = (
     let (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps in
     let p\<^sub>1 = find_closest p\<^sub>0 ps in
-    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+    if dist c\<^sub>0 c\<^sub>1 < dist p\<^sub>0 p\<^sub>1 then
       (c\<^sub>0, c\<^sub>1)
     else
       (p\<^sub>0, p\<^sub>1) 
@@ -190,7 +190,7 @@ lemma dist_criterion_identity:
   using assms by (simp add: dist_commute)
 
 lemma dist_criterion_update:
-  assumes "dist_criterion (c\<^sub>0, c\<^sub>1) ps" "dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
+  assumes "dist_criterion (c\<^sub>0, c\<^sub>1) ps" "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
   shows "dist_criterion (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # ps)"
   using assms apply (auto simp add: dist_commute) by force+
 
@@ -212,7 +212,7 @@ proof (induction ps rule: bf_closest_pair.induct)
     using find_closest_dist by blast
 
   thus ?case using 4
-  proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
+  proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 < dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
     case True
     hence "\<forall>p \<in> set ?ps. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
       using * by auto
@@ -569,7 +569,7 @@ fun closest_pair_7 :: "point list \<Rightarrow> (point * point)" where
 | "closest_pair_7 (p\<^sub>0 # ps) = (
     let (c\<^sub>0, c\<^sub>1) = closest_pair_7 ps in
     let p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps) in
-    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+    if dist c\<^sub>0 c\<^sub>1 < dist p\<^sub>0 p\<^sub>1 then
       (c\<^sub>0, c\<^sub>1)
     else
       (p\<^sub>0, p\<^sub>1) 
@@ -660,15 +660,15 @@ next
         using find_closest_dist_take_7 "4.prems" defs by blast
       show ?thesis
       proof cases
-        assume ASM: "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
+        assume ASM: "dist C\<^sub>0 C\<^sub>1 < dist x P\<^sub>1"
         hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
           using * # by (auto simp add: dist_commute)
         moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
-          using ASM defs by (auto split: prod.splits)
+          using ASM YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
         ultimately show ?thesis
           using "4.prems"(12) YS_def by (metis fst_conv snd_conv)
       next
-        assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1)"
+        assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 < dist x P\<^sub>1)"
         hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
           using * # apply (auto simp add: dist_commute) by force+
         moreover have "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
@@ -680,10 +680,10 @@ next
       case False
       have "P\<^sub>1 \<in> set YS"
         using P\<^sub>1_def YS_def find_closest_set[of "take 7 YS" x] set_take_subset[of 7 YS] by auto
-      hence "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
+      hence "dist C\<^sub>0 C\<^sub>1 < dist x P\<^sub>1"
         using DC0C1 False by auto
       hence "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
-        using defs by (auto split: prod.splits)
+        using YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
       moreover have "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
         using * DC0C1 False by (auto simp add: dist_commute)
       ultimately show ?thesis
