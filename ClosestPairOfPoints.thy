@@ -1041,18 +1041,18 @@ qed
 
 subsection "Split and Merge"
 
-fun splitAt :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
-  "splitAt _ [] = ([], [])"
-| "splitAt n (x#xs) = (
+fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
+  "split_at _ [] = ([], [])"
+| "split_at n (x#xs) = (
     case n of
       0 \<Rightarrow> ([], x#xs)
     | Suc m \<Rightarrow>
-      let (xs', ys') = splitAt m xs in
+      let (xs', ys') = split_at m xs in
       (x#xs', ys')
   )"
 
-lemma splitAt_take_drop_conv:
-  "splitAt n xs = (take n xs, drop n xs)"
+lemma split_at_take_drop_conv:
+  "split_at n xs = (take n xs, drop n xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
 lemma set_take_drop:
@@ -1077,7 +1077,7 @@ proof (induction xs arbitrary: i j)
   qed
 qed simp
 
-declare splitAt.simps[simp del]
+declare split_at.simps[simp del]
 
 
 fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
@@ -1114,7 +1114,7 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
     if n \<le> 3 then
       (sortY xs, bf_closest_pair xs)
     else
-      let (xs\<^sub>L, xs\<^sub>R) = splitAt (n div 2) xs in
+      let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
 
       let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec xs\<^sub>L in
@@ -1126,13 +1126,13 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
   by pat_completeness auto
 termination closest_pair_rec
   apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp add: splitAt_take_drop_conv Let_def)
+  apply (auto simp add: split_at_take_drop_conv Let_def)
   done
 
 lemma closest_pair_rec_simps:
   assumes "n = length xs" "\<not> (n \<le> 3)"
   shows "closest_pair_rec xs = (
-    let (xs\<^sub>L, xs\<^sub>R) = splitAt (n div 2) xs in
+    let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
     let l = fst (hd xs\<^sub>R) in
     let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec xs\<^sub>L in
     let (ys\<^sub>R, c\<^sub>R) = closest_pair_rec xs\<^sub>R in
@@ -1143,8 +1143,6 @@ lemma closest_pair_rec_simps:
 
 declare closest_pair_rec.simps [simp del]
 
-lemma (* TODO *) "True"
-  oops
 
 lemma closest_pair_rec_ys:
   assumes "distinct xs" "(ys, cp) = closest_pair_rec xs"
@@ -1161,7 +1159,7 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
   next
     case False
 
-    let ?xs = "splitAt (?n div 2) xs"
+    let ?xs = "split_at (?n div 2) xs"
     let ?xs\<^sub>L = "fst ?xs"
     let ?xs\<^sub>R = "snd ?xs"
     let ?l = "fst (hd ?xs\<^sub>R)"
@@ -1177,20 +1175,20 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
     let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
 
     have "length ?xs\<^sub>L < length xs" "length ?xs\<^sub>R < length xs"
-      using False by (auto simp add: splitAt_take_drop_conv)
+      using False by (auto simp add: split_at_take_drop_conv)
     moreover have "distinct ?xs\<^sub>L" "distinct ?xs\<^sub>R"
-      using "1.prems"(1) by (auto simp add: splitAt_take_drop_conv)
+      using "1.prems"(1) by (auto simp add: split_at_take_drop_conv)
     ultimately have IH: "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R" 
                         "distinct ?ys\<^sub>L" "distinct ?ys\<^sub>R" 
                         "sortedY ?ys\<^sub>L" "sortedY ?ys\<^sub>R"
       using "1.IH" prod.collapse by blast+
 
     have "set xs = set ?xs\<^sub>L \<union> set ?xs\<^sub>R"
-      by (auto simp add: set_take_drop splitAt_take_drop_conv)
+      by (auto simp add: set_take_drop split_at_take_drop_conv)
     hence SET: "set xs = set ?ys"
       using set_merge IH(1,2) by fast
     have "set ?xs\<^sub>L \<inter> set ?xs\<^sub>R = {}"
-      using "1.prems"(1) by (auto simp add: splitAt_take_drop_conv set_take_disj_set_drop_if_distinct)
+      using "1.prems"(1) by (auto simp add: split_at_take_drop_conv set_take_disj_set_drop_if_distinct)
     hence "set ?ys\<^sub>L \<inter> set ?ys\<^sub>R = {}"
       using IH(1,2) by blast
     hence DISTINCT: "distinct ?ys"
@@ -1206,9 +1204,6 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
       using SET DISTINCT SORTED by blast
   qed
 qed
-
-lemma (* TODO *) "True"
-  oops
 
 lemma closest_pair_rec_c0_c1:
   assumes "1 < length xs" "distinct xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
@@ -1227,7 +1222,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   next
     case False
 
-    let ?xs = "splitAt (?n div 2) xs"
+    let ?xs = "split_at (?n div 2) xs"
     let ?xs\<^sub>L = "fst ?xs"
     let ?xs\<^sub>R = "snd ?xs"
     let ?l = "fst (hd ?xs\<^sub>R)"
@@ -1249,18 +1244,18 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     let ?c\<^sub>1 = "snd ?cp"
 
     have "1 < length ?xs\<^sub>L" "length ?xs\<^sub>L < length xs" "distinct ?xs\<^sub>L"
-      using False "1.prems"(2) by (auto simp add: splitAt_take_drop_conv)
+      using False "1.prems"(2) by (auto simp add: split_at_take_drop_conv)
     hence "?c\<^sub>0\<^sub>L \<in> set ?xs\<^sub>L" "?c\<^sub>1\<^sub>L \<in> set ?xs\<^sub>L" and IHL1: "?c\<^sub>0\<^sub>L \<noteq> ?c\<^sub>1\<^sub>L"
       using "1.IH" prod.collapse by metis+
     hence IHL2: "?c\<^sub>0\<^sub>L \<in> set xs" "?c\<^sub>1\<^sub>L \<in> set xs"
-      using splitAt_take_drop_conv in_set_takeD fst_conv by metis+
+      using split_at_take_drop_conv in_set_takeD fst_conv by metis+
 
     have "1 < length ?xs\<^sub>R" "length ?xs\<^sub>R< length xs" "distinct ?xs\<^sub>R"
-      using False "1.prems"(2) by (auto simp add: splitAt_take_drop_conv)
+      using False "1.prems"(2) by (auto simp add: split_at_take_drop_conv)
     hence "?c\<^sub>0\<^sub>R \<in> set ?xs\<^sub>R" "?c\<^sub>1\<^sub>R \<in> set ?xs\<^sub>R" and IHR1: "?c\<^sub>0\<^sub>R\<noteq> ?c\<^sub>1\<^sub>R"
       using "1.IH" prod.collapse by metis+
     hence IHR2: "?c\<^sub>0\<^sub>R \<in> set xs" "?c\<^sub>1\<^sub>R \<in> set xs"
-      using splitAt_take_drop_conv in_set_dropD snd_conv by metis+
+      using split_at_take_drop_conv in_set_dropD snd_conv by metis+
 
     have *: "(?ys, ?c\<^sub>0, ?c\<^sub>1) = closest_pair_rec xs"
       using False by (auto simp add: closest_pair_rec_simps Let_def split: prod.split)
@@ -1295,7 +1290,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   next
     case False
 
-    define XS where "XS = splitAt (?n div 2) xs"
+    define XS where "XS = split_at (?n div 2) xs"
     define XS\<^sub>L where "XS\<^sub>L = fst XS"
     define XS\<^sub>R where "XS\<^sub>R = snd XS"
     define L where "L = fst (hd XS\<^sub>R)"
@@ -1320,7 +1315,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     note combine_defs = YS_def C_def C\<^sub>0_def C\<^sub>1_def
 
     have XSLR: "XS\<^sub>L = take (?n div 2) xs" "XS\<^sub>R = drop (?n div 2) xs"
-      using divide_defs by (auto simp add: splitAt_take_drop_conv)
+      using divide_defs by (auto simp add: split_at_take_drop_conv)
 
     have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs"
       using False XSLR by simp_all
