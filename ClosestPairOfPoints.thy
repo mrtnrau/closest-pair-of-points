@@ -1077,7 +1077,7 @@ proof (induction xs arbitrary: i j)
   qed
 qed simp
 
-declare split_at.simps[simp del]
+declare split_at.simps [simp del]
 
 
 fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
@@ -1089,6 +1089,10 @@ fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow
     else
       y # merge f (x#xs) ys
   )"
+
+lemma length_merge:
+  "length (merge f xs ys) = length xs + length ys"
+  by (induction f xs ys rule: merge.induct) auto
 
 lemma set_merge:
   "set (merge f xs ys) = set xs \<union> set ys"
@@ -1104,6 +1108,22 @@ lemma sortedY_merge:
   shows "sortedY (merge f xs ys)"
   using assms unfolding sortedY_def
   by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
+
+
+function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+  "msort f xs = (
+    let n = length xs in
+    if n \<le> 1 then
+      xs
+    else  
+      let (l, r) = split_at (n div 2) xs in
+      merge f (msort f l) (msort f r)
+  )"
+  by pat_completeness auto
+termination msort
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+  apply (auto simp add: split_at_take_drop_conv Let_def)
+  done
 
 
 subsection "Closest Pair of Points Algorithm"
