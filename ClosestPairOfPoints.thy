@@ -6,6 +6,21 @@ section "Closest Pair Of Points Functional Correctness"
 
 type_synonym point = "real * real"
 
+subsection "Sparsity"
+
+definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
+  "sparse \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
+
+lemma sparse_identity:
+  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)" "\<forall>p \<in> set ps. dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set (p\<^sub>0 # ps))"
+  using assms by (simp add: dist_commute sparse_def)
+
+lemma sparse_update:
+  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
+  assumes "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
+  shows "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
+  using assms apply (auto simp add: dist_commute sparse_def) by force+
 
 subsection "Sortedness"
 
@@ -181,26 +196,11 @@ qed auto
 
 lemmas bf_closest_pair_c0_c1 = bf_closest_pair_c0 bf_closest_pair_c1 bf_closest_pair_c0_ne_c1
 
-fun dist_criterion :: "(point * point) \<Rightarrow> point list \<Rightarrow> bool" where
-  "dist_criterion (c\<^sub>0, c\<^sub>1) ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1)"
-
-lemma dist_criterion_identity:
-  assumes "dist_criterion (c\<^sub>0, c\<^sub>1) ps" "\<forall>p \<in> set ps. dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p"
-  shows "dist_criterion (c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps)"
-  using assms by (simp add: dist_commute)
-
-lemma dist_criterion_update:
-  assumes "dist_criterion (c\<^sub>0, c\<^sub>1) ps" "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
-  shows "dist_criterion (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # ps)"
-  using assms apply (auto simp add: dist_commute) by force+
-
-declare dist_criterion.simps [simp del]
-
 lemma bf_closest_pair_dist:
-  assumes "1 < length ps"
-  shows "dist_criterion (bf_closest_pair ps) ps"
+  assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = bf_closest_pair ps"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
   using assms
-proof (induction ps rule: bf_closest_pair.induct)
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
 
   let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
@@ -208,22 +208,34 @@ proof (induction ps rule: bf_closest_pair.induct)
   let ?c\<^sub>0 = "fst ?c"
   let ?c\<^sub>1 = "snd ?c"
 
+  have IH: "sparse (dist ?c\<^sub>0 ?c\<^sub>1) (set (p\<^sub>1 # p\<^sub>2 # ps))"
+    using 4 by simp
   have *: "\<forall>p \<in> set ?ps. dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist p\<^sub>0 p"
     using find_closest_dist by blast
 
-  thus ?case using 4
+  show ?case
   proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
     case True
     hence "\<forall>p \<in> set ?ps. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
       using * by auto
-    thus ?thesis using 4 True
-      by (auto simp add: dist_criterion_identity split: prod.splits)
+    hence "sparse (dist ?c\<^sub>0 ?c\<^sub>1) (set (p\<^sub>0 # ?ps))"
+      using sparse_identity IH by blast
+    moreover have "(c\<^sub>0, c\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
+      using True "4.prems" by (auto split: prod.splits)
+    ultimately show ?thesis
+      by blast
   next
     case False
-    thus ?thesis using 4 *
-      by (auto simp add: dist_criterion_update split: prod.splits)
+    hence "dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist ?c\<^sub>0 ?c\<^sub>1"
+      by simp
+    hence "sparse (dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)) (set (p\<^sub>0 # ?ps))"
+      using sparse_update IH * by blast
+    moreover have "(c\<^sub>0, c\<^sub>1) = (p\<^sub>0, (find_closest p\<^sub>0 ?ps))"
+      using False "4.prems" by (auto split: prod.splits)
+    ultimately show ?thesis
+      by simp
   qed
-qed (auto simp add: dist_commute dist_criterion.simps)
+qed (auto simp add: dist_commute sparse_def)
 
 
 subsection "2D-Boxes and Points"
@@ -247,7 +259,8 @@ lemma cbox_right_un:
   using assms by auto
 
 lemma cbox_max_dist:
-  assumes "p\<^sub>0 = (x, y)" "p\<^sub>1 = (x + \<delta>, y + \<delta>)" "(x\<^sub>0, y\<^sub>0) \<in> cbox p\<^sub>0 p\<^sub>1" "(x\<^sub>1, y\<^sub>1) \<in> cbox p\<^sub>0 p\<^sub>1" "0 \<le> \<delta>"
+  assumes "p\<^sub>0 = (x, y)" "p\<^sub>1 = (x + \<delta>, y + \<delta>)"
+  assumes "(x\<^sub>0, y\<^sub>0) \<in> cbox p\<^sub>0 p\<^sub>1" "(x\<^sub>1, y\<^sub>1) \<in> cbox p\<^sub>0 p\<^sub>1" "0 \<le> \<delta>"
   shows "dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) \<le> sqrt 2 * \<delta>"
 proof -
   have X: "dist x\<^sub>0 x\<^sub>1 \<le> \<delta>"
@@ -350,7 +363,7 @@ qed
 subsection "\<delta> Sparse Points within a Square"
 
 lemma max_points_square:
-  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "0 < \<delta>"
+  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "sparse \<delta> ps" "0 < \<delta>"
   shows "card ps \<le> 4"
 proof (rule ccontr)
   assume *: "\<not> (card ps \<le> 4)"
@@ -408,7 +421,7 @@ proof (rule ccontr)
   ultimately have "dist p\<^sub>0 p\<^sub>1 < \<delta>"
     by simp
   moreover have "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(2) # by blast
+    using assms(2) # sparse_def by simp
   ultimately show False
     by simp
 qed
@@ -420,7 +433,7 @@ lemma closest_pair_in_take_7:
   assumes "distinct (y\<^sub>0 # ys)" "sortedY (y\<^sub>0 # ys)" "0 < \<delta>" "set (y\<^sub>0 # ys) = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "\<forall>p \<in> set (y\<^sub>0 # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "sparse \<delta> ys\<^sub>L" "sparse \<delta> ys\<^sub>R"
   assumes "y\<^sub>1 \<in> set ys" "dist y\<^sub>0 y\<^sub>1 < \<delta>"
   shows "y\<^sub>1 \<in> set (take 7 ys)"
 proof -
@@ -452,14 +465,14 @@ proof -
       using \<open>RECT = LSQ \<union> RSQ\<close> LSQYS_def RSQYS_def YS_def by auto
   qed
 
-  have "\<forall>p\<^sub>0 \<in> set LSQYS. \<forall>p\<^sub>1 \<in> set LSQYS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(8) LSQYS_def by simp
+  have "sparse \<delta> (set LSQYS)"
+    using assms(8) LSQYS_def sparse_def by simp
   moreover have "\<forall>p \<in> set LSQYS. p \<in> LSQ"
     using LSQYS_def by auto
   ultimately have card_lys: "card (set LSQYS) \<le> 4"
     using max_points_square[of "set LSQYS" "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) LSQ_def by auto
-  have "\<forall>p\<^sub>0 \<in> set RSQYS. \<forall>p\<^sub>1 \<in> set RSQYS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(9) RSQYS_def by simp
+  have "sparse \<delta> (set RSQYS)"
+    using assms(9) RSQYS_def sparse_def by simp
   moreover have "\<forall>p \<in> set RSQYS. p \<in> RSQ"
     using RSQYS_def by auto
   ultimately have card_rys: "card (set RSQYS) \<le> 4"
@@ -542,7 +555,7 @@ lemma find_closest_dist_take_7:
   assumes "distinct (y\<^sub>0 # ys)" "sortedY (y\<^sub>0 # ys)" "0 < length ys" "0 < \<delta>" "set (y\<^sub>0 # ys) = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "\<forall>p \<in> set (y\<^sub>0 # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "sparse \<delta> ys\<^sub>L" "sparse \<delta> ys\<^sub>R"
   assumes "\<exists>y\<^sub>1 \<in> set ys. dist y\<^sub>0 y\<^sub>1 < \<delta>"
   shows "\<forall>y\<^sub>1 \<in> set ys. dist y\<^sub>0 (find_closest y\<^sub>0 (take 7 ys)) \<le> dist y\<^sub>0 y\<^sub>1"
 proof -
@@ -601,14 +614,16 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_7.induct)
     by fast
 qed auto
 
+lemmas closest_pair_7_c0_c1 = closest_pair_7_c0 closest_pair_7_c1 closest_pair_7_c0_ne_c1
+
 lemma closest_7_dist:
   assumes "distinct ys" "sortedY ys" "1 < length ys" "0 < \<delta>" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "\<forall>p \<in> set ys. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "sparse \<delta> ys\<^sub>L" "sparse \<delta> ys\<^sub>R"
   assumes "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
   assumes "(c\<^sub>0, c\<^sub>1) = closest_pair_7 ys"
-  shows "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ys)"
   using assms
 proof (induction ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: closest_pair_7.induct)
   case (3 p\<^sub>0 p\<^sub>1)
@@ -619,7 +634,7 @@ proof (induction ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: c
   ultimately have "p\<^sub>0 = c\<^sub>0" "p\<^sub>1 = c\<^sub>1"
     by simp_all
   thus ?case
-    by (simp add: dist_commute set_ConsD)
+    by (simp add: dist_commute sparse_def set_ConsD)
 next
   case (4 x y z zs)
 
@@ -643,16 +658,16 @@ next
       using "4.prems"(6) YS_def by simp
     moreover have "\<forall>p \<in> YS\<^sub>L. fst p \<le> l" "\<forall>p \<in> YS\<^sub>R. l \<le> fst p"
       using "4.prems"(7,8) YS\<^sub>L_def YS\<^sub>R_def by simp_all
-    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>L. \<forall>p\<^sub>1 \<in> YS\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.prems"(9) YS\<^sub>L_def by simp
-    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>R. \<forall>p\<^sub>1 \<in> YS\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using "4.prems"(10) YS\<^sub>R_def by simp
+    moreover have "sparse \<delta> YS\<^sub>L"
+      using "4.prems"(9) YS\<^sub>L_def sparse_def by simp
+    moreover have "sparse \<delta> YS\<^sub>R"
+      using "4.prems"(10) YS\<^sub>R_def sparse_def by simp
     moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 YS"
       using defs by simp
-    ultimately have *: "\<forall>p\<^sub>0 \<in> set YS. \<forall>p\<^sub>1 \<in> set YS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+    ultimately have *: "sparse (dist C\<^sub>0 C\<^sub>1) (set YS)"
       using "4.IH"[of YS\<^sub>L YS\<^sub>R C\<^sub>0 C\<^sub>1] "4.prems"(4) defs by fast
     hence DC0C1: "dist C\<^sub>0 C\<^sub>1 < \<delta>"
-      using True le_less_trans by blast
+      using True le_less_trans sparse_def by metis
     show ?thesis
     proof (cases "\<exists>x' \<in> set YS. dist x x' < \<delta>")
       case True
@@ -661,16 +676,16 @@ next
       show ?thesis
       proof cases
         assume ASM: "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
-        hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-          using * # by (auto simp add: dist_commute)
+        hence "sparse (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
+          using * # by (auto simp add: sparse_def dist_commute)
         moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
           using ASM YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
         ultimately show ?thesis
           using "4.prems"(12) YS_def by (metis fst_conv snd_conv)
       next
         assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1)"
-        hence "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-          using * # apply (auto simp add: dist_commute) by force+
+        hence "sparse (dist x P\<^sub>1) (set (x # YS))"
+          using * # apply (auto simp add: sparse_def dist_commute) by force+
         moreover have "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
           using ASM defs by (auto split: prod.splits)
         ultimately show ?thesis
@@ -684,8 +699,8 @@ next
         using DC0C1 False by auto
       hence "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
         using YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
-      moreover have "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-        using * DC0C1 False by (auto simp add: dist_commute)
+      moreover have "sparse (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
+        using * DC0C1 False by (auto simp add: sparse_def dist_commute)
       ultimately show ?thesis
         using "4.prems"(12) YS_def by (metis fst_conv snd_conv)    
     qed
@@ -694,15 +709,15 @@ next
     have "distinct YS" "1 < length YS"
       using YS_def "4.prems"(1) by simp_all
     hence C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
-      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def closest_pair_7_c0 closest_pair_7_c1 closest_pair_7_c0_ne_c1 prod.collapse by blast+
+      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def closest_pair_7_c0_c1 prod.collapse by blast+
     have 0: "\<exists>x' \<in> set YS. dist x x' < \<delta>"
       using False YS_def "4.prems"(11) by (auto simp add: dist_commute)
     hence "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
       using defs find_closest_dist_take_7[of x YS \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
     moreover have "dist x P\<^sub>1 < \<delta>"
       using 0 calculation by auto
-    ultimately have *: "\<forall>p\<^sub>0 \<in> set (x # YS). \<forall>p\<^sub>1 \<in> set (x # YS). p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist x P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using False apply (auto simp add: dist_commute) by force+
+    ultimately have *: "sparse (dist x P\<^sub>1) (set (x # YS))"
+      using False apply (auto simp add: sparse_def dist_commute) by force+
     hence "dist x P\<^sub>1 < dist C\<^sub>0 C\<^sub>1"
       using C01 \<open>dist x P\<^sub>1 < \<delta>\<close> False by (meson not_less order.strict_trans2)
     hence "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
@@ -906,13 +921,13 @@ qed
   
 lemma set_band_filter:
   assumes "p\<^sub>0 \<in> set ys" "p\<^sub>1 \<in> set ys" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
-  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "sparse \<delta> ys\<^sub>L" "sparse \<delta> ys\<^sub>R"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
   assumes "ys' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) (ys :: point list)"
   shows "p\<^sub>0 \<in> set ys' \<and> p\<^sub>1 \<in> set ys'"
 proof -
   have "p\<^sub>0 \<notin> ys\<^sub>L \<or> p\<^sub>1 \<notin> ys\<^sub>L" "p\<^sub>0 \<notin> ys\<^sub>R \<or> p\<^sub>1 \<notin> ys\<^sub>R"
-    using assms(3,4,6,7) by force+
+    using assms(3,4,6,7) sparse_def by force+
   then consider (A) "p\<^sub>0 \<in> ys\<^sub>L \<and> p\<^sub>1 \<in> ys\<^sub>R" | (B) "p\<^sub>0 \<in> ys\<^sub>R \<and> p\<^sub>1 \<in> ys\<^sub>L"
     using assms(1,2,5) by auto
   thus ?thesis
@@ -938,9 +953,9 @@ lemma set_Un_filter:
 lemma combine_dist:
   assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R"
   assumes "distinct ys" "sortedY ys" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
-  assumes "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L \<le> dist p\<^sub>0 p\<^sub>1" "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R \<le> dist p\<^sub>0 p\<^sub>1"
+  assumes "sparse (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ys\<^sub>L" "sparse (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ys\<^sub>R"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  shows "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ys)"
 proof -
   define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
   define C\<^sub>0 where "C\<^sub>0 = fst C\<^sub>0\<^sub>1"
@@ -954,10 +969,10 @@ proof -
   define YS\<^sub>R where "YS\<^sub>R = { p \<in> ys\<^sub>R. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
   note defs = C\<^sub>0\<^sub>1_def C\<^sub>0_def C\<^sub>1_def \<delta>_def YS_def P\<^sub>0\<^sub>1_def P\<^sub>0_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
 
-  have \<delta>_ys\<^sub>L: "\<forall>p\<^sub>0 \<in> ys\<^sub>L. \<forall>p\<^sub>1 \<in> ys\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def apply (auto) by force+
-  have \<delta>_ys\<^sub>R: "\<forall>p\<^sub>0 \<in> ys\<^sub>R. \<forall>p\<^sub>1 \<in> ys\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def apply (auto) by force+
+  have \<delta>_ys\<^sub>L: "sparse \<delta> ys\<^sub>L"
+    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def sparse_def apply (auto) by force+
+  have \<delta>_ys\<^sub>R: "sparse \<delta> ys\<^sub>R"
+    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def sparse_def apply (auto) by force+
 
   show ?thesis
   proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
@@ -974,26 +989,26 @@ proof -
       using assms(6) set_Un_filter defs by auto
     moreover have "\<forall>p \<in> set YS. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
       using YS_def by simp
-    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>L. \<forall>p\<^sub>1 \<in> YS\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using \<delta>_ys\<^sub>L YS\<^sub>L_def by blast
-    moreover have "\<forall>p\<^sub>0 \<in> YS\<^sub>R. \<forall>p\<^sub>1 \<in> YS\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using \<delta>_ys\<^sub>R YS\<^sub>R_def by blast
+    moreover have "sparse \<delta> YS\<^sub>L"
+      using \<delta>_ys\<^sub>L YS\<^sub>L_def sparse_def by blast
+    moreover have "sparse \<delta> YS\<^sub>R"
+      using \<delta>_ys\<^sub>R YS\<^sub>R_def sparse_def by blast
     moreover have "\<forall>p \<in> YS\<^sub>L. fst p \<le> l" "\<forall>p \<in> YS\<^sub>R. l \<le> fst p"
       using assms(9,10) YS\<^sub>L_def YS\<^sub>R_def by blast+
     moreover have "(P\<^sub>0, P\<^sub>1) = closest_pair_7 YS"
       using defs by auto
-    ultimately have "\<forall>p\<^sub>0 \<in> set YS. \<forall>p\<^sub>1 \<in> set YS. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist P\<^sub>0 P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+    ultimately have "sparse (dist P\<^sub>0 P\<^sub>1) (set YS)"
       using closest_7_dist[of YS \<delta> YS\<^sub>L YS\<^sub>R] by auto
     moreover have "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta> \<longrightarrow> p\<^sub>0 \<in> set YS \<and> p\<^sub>1 \<in> set YS"
       using set_band_filter assms(6,9,10) \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R YS_def by blast
-    ultimately have *: "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist P\<^sub>0 P\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using True by smt
+    ultimately have *: "sparse (dist P\<^sub>0 P\<^sub>1) (set ys)"
+      using True sparse_def by smt
     
     show ?thesis
     proof cases
       assume "length YS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>)"
       moreover have "dist P\<^sub>0 P\<^sub>1 < \<delta>"
-        using True * by fastforce
+        using True * sparse_def by force
       ultimately show ?thesis
         using LYS by linarith
     next
@@ -1007,8 +1022,8 @@ proof -
     qed
   next
     case False
-    hence *: "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
-      using \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R defs by (meson leI)
+    hence *: "sparse (dist C\<^sub>0 C\<^sub>1) (set ys)"
+      using \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R defs sparse_def by (meson leI)
     thus ?thesis
     proof cases
       assume "length YS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>)"
@@ -1031,7 +1046,7 @@ proof -
       moreover have "P\<^sub>0 \<noteq> P\<^sub>1"
         using combine_c0_ne_c1 combine assms(2,3,4) by blast
       ultimately have "\<delta> \<le> dist P\<^sub>0 P\<^sub>1"
-        using * defs by blast
+        using * defs sparse_def by blast
       thus ?thesis
         using ASM by argo
     qed
@@ -1295,7 +1310,7 @@ qed
 
 lemma closest_pair_rec_dist:
   assumes "1 < length xs" "distinct xs" "sortedX xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
-  shows "\<forall>p\<^sub>0 \<in> set xs. \<forall>p\<^sub>1 \<in> set xs. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set xs)"
   using assms
 proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   case (1 xs)
@@ -1306,7 +1321,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     hence "(c\<^sub>0, c\<^sub>1) = bf_closest_pair xs"
       using "1.prems"(4) closest_pair_rec.simps by simp
     thus ?thesis
-      using "1.prems"(1,4) bf_closest_pair_dist dist_criterion.simps by metis
+      using "1.prems"(1,4) bf_closest_pair_dist by metis
   next
     case False
 
@@ -1343,11 +1358,11 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_take)
     moreover have "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
       using XSLR by (auto simp add: divide_defs conquer_defs)
-    ultimately have L: "\<forall>p\<^sub>0 \<in> set XS\<^sub>L. \<forall>p\<^sub>1 \<in> set XS\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L \<le> dist p\<^sub>0 p\<^sub>1"
+    ultimately have L: "sparse (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set XS\<^sub>L)"
                        "set XS\<^sub>L = set YS\<^sub>L" "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
       using 1 closest_pair_rec_ys closest_pair_rec_c0_c1 by blast+
-    hence IHL: "\<forall>p\<^sub>0 \<in> set YS\<^sub>L. \<forall>p\<^sub>1 \<in> set YS\<^sub>L. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L \<le> dist p\<^sub>0 p\<^sub>1"
-      by blast
+    hence IHL: "sparse (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
+      by argo
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs"
       using False XSLR by simp_all
@@ -1355,11 +1370,11 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_drop)
     moreover have "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
       using XSLR by (auto simp add: divide_defs conquer_defs)
-    ultimately have R: "\<forall>p\<^sub>0 \<in> set XS\<^sub>R. \<forall>p\<^sub>1 \<in> set XS\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R \<le> dist p\<^sub>0 p\<^sub>1"
+    ultimately have R: "sparse (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set XS\<^sub>R)"
                        "set XS\<^sub>R = set YS\<^sub>R" "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
       using 1 closest_pair_rec_ys closest_pair_rec_c0_c1 by blast+
-    hence IHR: "\<forall>p\<^sub>0 \<in> set YS\<^sub>R. \<forall>p\<^sub>1 \<in> set YS\<^sub>R. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R \<le> dist p\<^sub>0 p\<^sub>1"
-      by blast
+    hence IHR: "sparse (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
+      by argo
 
     have *: "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
       using False by (auto simp add: closest_pair_rec_simps Let_def divide_defs conquer_defs combine_defs split: prod.split)
@@ -1374,7 +1389,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using set_merge combine_defs by fast
     moreover have "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
       by (auto simp add: divide_defs conquer_defs combine_defs)
-    ultimately have "\<forall>p\<^sub>0 \<in> set xs. \<forall>p\<^sub>1 \<in> set xs. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+    ultimately have "sparse (dist C\<^sub>0 C\<^sub>1) (set xs)"
       using combine_dist IHL IHR L(3) R(3) by presburger
     moreover have "(YS, C\<^sub>0, C\<^sub>1) = (ys, c\<^sub>0, c\<^sub>1)"
       using "1.prems"(4) * by simp
@@ -1394,7 +1409,7 @@ theorem closest_pair_c0_c1:
 
 theorem closest_pair_dist:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
-  shows "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
   using assms sortX closest_pair_rec_dist[of "sortX ps"] unfolding closest_pair_def
   by (auto split: prod.splits)
 
@@ -1474,6 +1489,8 @@ lemma bf_closest_pair_conv_bf_closest_pair_it[code_unfold]:
   "bf_closest_pair ps = bf_closest_pair_it ps"
   using bf_closest_pair_conv_bf_closest_pair_it_rec
   by (metis bf_closest_pair.simps(1,2) bf_closest_pair_it.elims bf_closest_pair_it.simps(2))
+
+subsection "Export Code"
 
 export_code closest_pair in Scala
   module_name ClosestPair
