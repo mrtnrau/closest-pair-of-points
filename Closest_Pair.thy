@@ -1,4 +1,4 @@
-theory ClosestPairOfPoints
+theory Closest_Pair
   imports "HOL-Analysis.Analysis"
 begin
 
@@ -733,13 +733,12 @@ subsection "Combine"
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let \<delta> = dist c\<^sub>0 c\<^sub>1 in
-    let ys' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys in
+    let ys' = filter (\<lambda>p. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) ys in
     if length ys' < 2 then
       (c\<^sub>0, c\<^sub>1)
     else
       let (p\<^sub>0, p\<^sub>1) = closest_pair_7 ys' in
-      if dist p\<^sub>0 p\<^sub>1 < \<delta> then
+      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
         (p\<^sub>0, p\<^sub>1)
       else
         (c\<^sub>0, c\<^sub>1) 
@@ -1096,14 +1095,14 @@ declare split_at.simps [simp del]
 
 
 fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "merge _ [] ys = ys"
-| "merge _ xs [] = xs"
-| "merge f (x#xs) (y#ys) = (
+  "merge f (x#xs) (y#ys) = (
     if f x \<le> f y then
       x # merge f xs (y#ys)
     else
       y # merge f (x#xs) ys
   )"
+| "merge _ [] ys = ys"
+| "merge _ xs [] = xs"
 
 lemma length_merge:
   "length (merge f xs ys) = length xs + length ys"
@@ -1126,13 +1125,11 @@ lemma sortedY_merge:
 
 
 function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "msort f xs = (
-    let n = length xs in
-    if n \<le> 1 then
-      xs
-    else  
-      let (l, r) = split_at (n div 2) xs in
-      merge f (msort f l) (msort f r)
+  "msort _ [] = []"
+| "msort _ [x] = [x]"
+| "msort f (x # y # xs) = (  
+    let (l, r) = split_at (length (x # y # xs) div 2) (x # y # xs) in
+    merge f (msort f l) (msort f r)
   )"
   by pat_completeness auto
 termination msort
@@ -1152,11 +1149,11 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
 
-      let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec xs\<^sub>L in
-      let (ys\<^sub>R, c\<^sub>R) = closest_pair_rec xs\<^sub>R in
+      let (ys\<^sub>L, c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
+      let (ys\<^sub>R, c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
 
       let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-      (ys, combine c\<^sub>L c\<^sub>R l ys) 
+      (ys, combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys) 
   )"
   by pat_completeness auto
 termination closest_pair_rec
@@ -1169,10 +1166,10 @@ lemma closest_pair_rec_simps:
   shows "closest_pair_rec xs = (
     let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
     let l = fst (hd xs\<^sub>R) in
-    let (ys\<^sub>L, c\<^sub>L) = closest_pair_rec xs\<^sub>L in
-    let (ys\<^sub>R, c\<^sub>R) = closest_pair_rec xs\<^sub>R in
+    let (ys\<^sub>L, c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
+    let (ys\<^sub>R, c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
     let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-    (ys, combine c\<^sub>L c\<^sub>R l ys) 
+    (ys, combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys) 
   )"
   using assms by (auto simp add: Let_def)
 
@@ -1412,87 +1409,5 @@ theorem closest_pair_dist:
   shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
   using assms sortX closest_pair_rec_dist[of "sortX ps"] unfolding closest_pair_def
   by (auto split: prod.splits)
-
-
-section "Closest Pair Of Points Time Analysis"
-
-
-section "Closest Pair Of Points Exported Code"
-
-subsection "find_closest"
-
-fun find_closest_it_rec :: "point \<Rightarrow> point \<Rightarrow> point list \<Rightarrow> point" where
-  "find_closest_it_rec _ c\<^sub>0 [] = c\<^sub>0"
-| "find_closest_it_rec p c\<^sub>0 (c\<^sub>1 # cs) = (
-    if dist p c\<^sub>0 < dist p c\<^sub>1 then
-      find_closest_it_rec p c\<^sub>0 cs
-    else 
-      find_closest_it_rec p c\<^sub>1 cs
-  )"
-
-fun find_closest_it :: "point \<Rightarrow> point list \<Rightarrow> point" where
-  "find_closest_it _ [] = undefined"
-| "find_closest_it p (p\<^sub>0 # ps) = find_closest_it_rec p p\<^sub>0 ps"
-
-lemma find_closest_drop_snd:
-  "dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>0 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
-
-lemma find_closest_drop_fst:
-  "\<not> dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>1 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
-
-lemma find_closest_conv_find_closest_it_rec:
-  "find_closest p (c\<^sub>0 # cs) = find_closest_it_rec p c\<^sub>0 cs"
-proof (induction p c\<^sub>0 cs rule: find_closest_it_rec.induct)
-  case (2 p c\<^sub>0 c\<^sub>1 cs)
-  then show ?case
-  proof (cases "dist p c\<^sub>0 < dist p c\<^sub>1")
-    case True
-    thus ?thesis
-      using find_closest_drop_snd "2"(1) by simp
-  next
-    case False
-    hence "find_closest_it_rec p c\<^sub>0 (c\<^sub>1 # cs) = find_closest p (c\<^sub>1 # cs)"
-      using False "2"(2) by simp
-    thus ?thesis
-      using find_closest_drop_fst False by simp
-  qed
-qed simp
-
-lemma find_closest_conv_find_closest_it[code_unfold]:
-  "find_closest p ps = find_closest_it p ps"
-  using find_closest_conv_find_closest_it_rec by (cases ps) simp_all
-
-subsection "bf_closest_pair"
-
-fun bf_closest_pair_it_rec :: "(point * point) \<Rightarrow> point list \<Rightarrow> (point * point)" where
-  "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) [] = (c\<^sub>0, c\<^sub>1)"
-| "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) [_] = (c\<^sub>0, c\<^sub>1)"
-| "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps) = (
-    let p\<^sub>1 = find_closest_it p\<^sub>0 ps in
-    if dist c\<^sub>0 c\<^sub>1 < dist p\<^sub>0 p\<^sub>1 then
-      bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) ps
-    else
-      bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) ps
-  )"
-
-fun bf_closest_pair_it :: "point list \<Rightarrow> (point * point)" where
-  "bf_closest_pair_it (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
-| "bf_closest_pair_it _ = undefined"
-
-lemma bf_closest_pair_conv_bf_closest_pair_it_rec:
-  "bf_closest_pair (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
-  sorry
-
-lemma bf_closest_pair_conv_bf_closest_pair_it[code_unfold]:
-  "bf_closest_pair ps = bf_closest_pair_it ps"
-  using bf_closest_pair_conv_bf_closest_pair_it_rec
-  by (metis bf_closest_pair.simps(1,2) bf_closest_pair_it.elims bf_closest_pair_it.simps(2))
-
-subsection "Export Code"
-
-export_code closest_pair in Scala
-  module_name ClosestPair
 
 end

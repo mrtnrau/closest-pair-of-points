@@ -1,171 +1,177 @@
 theory Test
-imports 
-  "Landau_Symbols.Landau_More"
-  "Akra_Bazzi.Akra_Bazzi_Method"
-  "Akra_Bazzi.Akra_Bazzi_Approximation"
+  imports "HOL-Analysis.Analysis"
 begin
 
-section "Time Analysis Merge Sort"
+type_synonym point = "(real * real)"
 
-subsection "Time Analysis take and drop"
+find_theorems dist
 
-fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_take _ [] = 0"
-| "t_take n (x#xs) = (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc n \<Rightarrow> 1 + t_take n xs
-  )"
+definition dist :: "point \<Rightarrow> point \<Rightarrow> real" where
+  "dist p\<^sub>0 p\<^sub>1 = (fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2"
 
-lemma t_take:
-  "t_take n xs = min n (length xs)"
-  apply (induction n xs rule: t_take.induct)
-    apply (auto split: nat.split)
-  done
-
-definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = real n"
-
-lemma take_cost_nonneg[simp]:
-  "0 \<le> take_cost n"
-  unfolding take_cost_def by simp
-
-lemma t_take_conv_take_cost:
-  "real (t_take n xs) \<le> take_cost (length xs)"
-  unfolding take_cost_def by (auto simp add: min_def t_take)
-
-lemma take_cost_big_theta:
-  "take_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding take_cost_def by simp
-
-fun t_drop :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_drop _ [] = 0"
-| "t_drop n (x#xs) = (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc n \<Rightarrow> 1 + t_drop n xs
-  )"
-
-lemma t_drop:
-  "t_drop n xs = min n (length xs)"
-  apply (induction n xs rule: t_drop.induct)
-    apply (auto split: nat.split)
-  done
-
-definition drop_cost :: "nat \<Rightarrow> real" where
-  "drop_cost n = real n"
-
-lemma drop_cost_nonneg[simp]:
-  "0 \<le> drop_cost n"
-  unfolding drop_cost_def by simp
-
-lemma t_drop_conv_drop_cost:
-  "real (t_drop n xs) \<le> drop_cost (length xs)"
-  unfolding drop_cost_def by (auto simp add: min_def t_drop)
-
-lemma drop_cost_big_theta:
-  "drop_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding drop_cost_def by simp
-
-
-subsection "Time Analysis merge"
-
-fun merge :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
-  "merge (x#xs) (y#ys) = (
-    if x \<le> y then 
-      x # merge xs (y#ys)
+fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
+  "find_closest _ [] = undefined"
+| "find_closest _ [p] = p"
+| "find_closest p\<^sub>0 (p # ps) = (
+    let c = find_closest p\<^sub>0 ps in
+    if dist p\<^sub>0 p < dist p\<^sub>0 c then
+      p
     else
-      y # merge (x#xs) ys)"
-| "merge xs [] = xs"
-| "merge [] ys = ys"
+      c
+  )"
 
-lemma length_merge:
-  "length (merge xs ys) = length xs + length ys"
-  apply (induction xs ys rule: merge.induct)
-    apply (auto)
-  done
+lemma find_closest_dist:
+  "\<forall>p \<in> set ps. dist p\<^sub>0 (find_closest p\<^sub>0 ps) \<le> dist p\<^sub>0 p"
+  sorry
 
-fun t_merge :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_merge (x#xs) (y#ys) = (
-    if x \<le> y then
-      1 + t_merge xs (y#ys)
+lemma find_closest_set:
+  "0 < length ps \<Longrightarrow> find_closest p\<^sub>0 ps \<in> set ps"
+  sorry
+
+lemma find_closest_ne:
+  "0 < length ps \<Longrightarrow> p\<^sub>0 \<notin> set ps \<Longrightarrow> find_closest p\<^sub>0 ps \<noteq> p\<^sub>0"
+  sorry
+
+
+fun bf_closest_pair :: "point list \<Rightarrow> (point * point)" where
+  "bf_closest_pair [] = undefined"
+| "bf_closest_pair [_] = undefined"
+| "bf_closest_pair [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "bf_closest_pair (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+      (c\<^sub>0, c\<^sub>1)
     else
-      1 + t_merge (x#xs) ys
-  )"
-| "t_merge xs [] = 0"
-| "t_merge [] ys = 0"
-
-lemma t_merge:
-  "t_merge xs ys \<le> length xs + length ys"
-  apply (induction xs ys rule: t_merge.induct)
-    apply (auto)
-  done
-
-definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = real n"
-
-lemma merge_cost_nonneg[simp]:
-  "0 \<le> merge_cost n"
-  unfolding merge_cost_def by simp
-
-lemma t_merge_conv_merge_cost:
-  "real (t_merge xs ys) \<le> merge_cost (length xs + length ys)"
-  unfolding merge_cost_def by (metis of_nat_mono t_merge)
-
-lemma merge_cost_big_theta:
-  "merge_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding merge_cost_def by simp
-
-
-subsection "Time Analysis msort"
-
-fun msort :: "('a::linorder) list \<Rightarrow> 'a list" where
-  "msort [] = []"
-| "msort [x] = [x]"
-| "msort xs = merge (msort (take (length xs div 2) xs))
-                    (msort (drop (length xs div 2) xs))"
-
-lemma length_msort[simp]:
-  "length (msort xs) = length xs"
-  apply (induction xs rule: msort.induct)
-    apply (auto simp add: min_def length_merge)
-  done
-
-fun t_msort :: "('a::linorder) list \<Rightarrow> nat" where
-  "t_msort [] = 0"
-| "t_msort [_] = 1"
-| "t_msort xs = (
-    let n = length xs div 2 in
-    let l = msort (take n xs) in
-    let r = msort (drop n xs) in
-    t_take n xs + t_drop n xs + t_msort l + t_msort r + t_merge l r
+      (p\<^sub>0, p\<^sub>1) 
   )"
 
-function merge_sort_cost :: "nat \<Rightarrow> real" where
-  "merge_sort_cost 0 = 0"
-| "merge_sort_cost 1 = 1"
-| "2 \<le> n \<Longrightarrow> merge_sort_cost n =
-    take_cost n + drop_cost n + merge_sort_cost (nat \<lfloor>real n / 2\<rfloor>) + merge_sort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
-  by force simp_all
-termination by akra_bazzi_termination simp_all
+lemma bf_closest_pair_c0:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+  sorry
 
-declare t_take.simps t_drop.simps t_merge.simps[simp del]
+lemma bf_closest_pair_c1:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
+  sorry
 
-(*
-lemma t_merge_sort_conv_merge_sort_cost:
-  "real (t_msort xs) \<le> merge_sort_cost (length xs)"
-*)
+lemma bf_closest_pair_c0_ne_c1:
+  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
+  sorry
 
-lemma merge_sort_nonneg[simp]:
-  "0 \<le> merge_sort_cost n"
-  apply (induction n rule: merge_sort_cost.induct)
-    apply (auto simp del: One_nat_def)
-  done
+lemma bf_closest_pair_dist:
+  assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = bf_closest_pair ps"
+  shows "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1"
+  sorry
 
-lemma msort_cost:
-  "merge_sort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
-  apply (master_theorem)
-    apply (auto simp add: take_cost_def drop_cost_def merge_cost_def)
-  done
+fun bf_closest_pair_it_rec :: "(point * point) \<Rightarrow> point list \<Rightarrow> (point * point)" where
+  "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) [] = (c\<^sub>0, c\<^sub>1)"
+| "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) [_] = (c\<^sub>0, c\<^sub>1)"
+| "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps) = (
+    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+    if dist c\<^sub>0 c\<^sub>1 < dist p\<^sub>0 p\<^sub>1 then
+      bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) ps
+    else
+      bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) ps
+  )"
+
+fun bf_closest_pair_it :: "point list \<Rightarrow> (point * point)" where
+  "bf_closest_pair_it (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
+| "bf_closest_pair_it _ = undefined"
+
+value "bf_closest_pair_it_rec ((0,1), (0,0)) [(0,1),(0,0)]"
+value "dist (0,0) (0,1)"
+  
+lemma bf_closest_pair_drop_fst:
+  assumes "0 < length ps" "dist p\<^sub>0 (find_closest p\<^sub>0 ps) \<le> dist c\<^sub>0 (find_closest c\<^sub>0 (p\<^sub>0 # ps))"
+  shows "bf_closest_pair (c\<^sub>0 # p\<^sub>0 # ps) = bf_closest_pair (p\<^sub>0 # ps)"
+  using assms
+proof (induction ps arbitrary: c\<^sub>0 p\<^sub>0 rule: bf_closest_pair.induct)
+  case (3 p\<^sub>1 p\<^sub>2)
+  then show ?case
+    by (smt bf_closest_pair.simps(4) prod.sel(1) prod.sel(2) split_def)
+next
+  case (4 p\<^sub>2 p\<^sub>3 p\<^sub>4 ps)
+  let ?ps = "p\<^sub>0 # p\<^sub>2 # p\<^sub>3 # p\<^sub>4 # ps"
+  let ?c\<^sub>0\<^sub>1 = "bf_closest_pair ?ps"
+  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
+  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+  let ?p\<^sub>1 = "find_closest c\<^sub>0 ?ps"
+
+  have "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist c\<^sub>0 ?p\<^sub>1"
+    by (smt "4.prems"(2) bf_closest_pair.simps(4) prod.sel(1) prod.sel(2) split_def)
+  hence "(?c\<^sub>0, ?c\<^sub>1) = bf_closest_pair (c\<^sub>0 # p\<^sub>0 # p\<^sub>2 # p\<^sub>3 # p\<^sub>4 # ps)"
+    by (auto split: prod.splits)
+  thus ?case
+    by simp
+qed auto
+
+lemma bf_closest_pair_drop_snd:
+  assumes "dist c\<^sub>0 (find_closest c\<^sub>0 (p\<^sub>0 # p\<^sub>2 # ps)) < dist p\<^sub>0 (find_closest p\<^sub>0 (p\<^sub>2 # ps))" "find_closest c\<^sub>0 (p\<^sub>0 # p\<^sub>2 # ps) \<noteq> p\<^sub>0"
+  shows "bf_closest_pair (c\<^sub>0 # p\<^sub>0 # p\<^sub>2 # ps) = bf_closest_pair (c\<^sub>0 # p\<^sub>2 # ps)"
+  sorry
+
+lemma bf_closest_pair_conv_bf_closest_pair_it_rec':
+  assumes "0 < length ps"
+  shows "bf_closest_pair (p\<^sub>0 # ps) = bf_closest_pair_it_rec (p\<^sub>0, find_closest p\<^sub>0 ps) ps"
+  using assms
+proof (induction "(p\<^sub>0, find_closest p\<^sub>0 ps)" ps arbitrary: p\<^sub>0 rule: bf_closest_pair_it_rec.induct)
+  case (3 c\<^sub>0 p\<^sub>0 p\<^sub>2 ps)
+
+  let ?c\<^sub>1 = "find_closest c\<^sub>0 (p\<^sub>0 # p\<^sub>2 # ps)"
+  let ?p\<^sub>1 = "find_closest p\<^sub>0 (p\<^sub>2 # ps)"
+
+  thm "3.prems"
+  thm "3.hyps"(1)
+  thm "3.hyps"(2)
+
+  show ?case
+  proof (cases "dist c\<^sub>0 ?c\<^sub>1 < dist p\<^sub>0 ?p\<^sub>1")
+    case True
+    let ?bf = "bf_closest_pair (p\<^sub>0 # p\<^sub>2 # ps)"
+    show ?thesis
+    proof cases
+      assume *: "?c\<^sub>1 = find_closest c\<^sub>0 (p\<^sub>2 # ps)"
+      hence "?c\<^sub>1 \<noteq> p\<^sub>0"
+        sorry
+      have "bf_closest_pair (c\<^sub>0 # p\<^sub>2 # ps) = bf_closest_pair_it_rec (c\<^sub>0, ?c\<^sub>1) (p\<^sub>0 # p\<^sub>2 # ps)"
+        using * "3.hyps"(1) True by simp
+      thus ?thesis
+        using True sorry
+    next
+      assume "\<not> ?c\<^sub>1 = find_closest c\<^sub>0 (p\<^sub>2 # ps)"
+      hence "?c\<^sub>1 = p\<^sub>0"
+        by (smt find_closest.simps(3))
+      thus ?thesis
+        using True sorry
+    qed
+  next
+    case False
+    hence "bf_closest_pair (p\<^sub>0 # p\<^sub>2 # ps) = bf_closest_pair_it_rec (c\<^sub>0, ?c\<^sub>1) (p\<^sub>0 # p\<^sub>2 # ps)"
+      using "3.hyps"(2) by simp
+    moreover have "bf_closest_pair (c\<^sub>0 # p\<^sub>0 # p\<^sub>2 # ps) = bf_closest_pair (p\<^sub>0 # p\<^sub>2 # ps)"
+      using False bf_closest_pair_drop_fst[of "p\<^sub>2 # ps"] by simp
+    ultimately show ?thesis
+      by argo
+  qed
+qed oops
+
+
+lemma bf_closest_pair_conv_bf_closest_pair_it_rec:
+  "bf_closest_pair (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
+proof (induction "(p\<^sub>0, p\<^sub>1)" ps arbitrary: p\<^sub>0 p\<^sub>1 rule: bf_closest_pair_it_rec.induct)
+case (1 c\<^sub>0 c\<^sub>1)
+  then show ?case sorry
+next
+  case (2 c\<^sub>0 c\<^sub>1 uu)
+  then show ?case sorry
+next
+  case (3 c\<^sub>0 c\<^sub>1 p\<^sub>0 p\<^sub>2 ps)
+  then show ?case sorry
+qed
+
+lemma bf_closest_pair_conv_bf_closest_pair_it[code_unfold]:
+  "bf_closest_pair ps = bf_closest_pair_it ps"
+  using bf_closest_pair_conv_bf_closest_pair_it_rec
+  by (metis bf_closest_pair.simps(1,2) bf_closest_pair_it.elims bf_closest_pair_it.simps(2))
 
 end
