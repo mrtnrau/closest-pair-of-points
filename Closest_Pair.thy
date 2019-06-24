@@ -6,81 +6,154 @@ section "Closest Pair Of Points Functional Correctness"
 
 type_synonym point = "real * real"
 
-subsection "Sparsity"
+subsection "Splitting"
 
-definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
-  "sparse \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
+fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
+  "split_at _ [] = ([], [])"
+| "split_at n (x#xs) = (
+    case n of
+      0 \<Rightarrow> ([], x#xs)
+    | Suc m \<Rightarrow>
+      let (xs', ys') = split_at m xs in
+      (x#xs', ys')
+  )"
 
-lemma sparse_identity:
-  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)" "\<forall>p \<in> set ps. dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p"
-  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set (p\<^sub>0 # ps))"
-  using assms by (simp add: dist_commute sparse_def)
+lemma split_at_take_drop_conv:
+  "split_at n xs = (take n xs, drop n xs)"
+  by (induction xs arbitrary: n) (auto split: nat.split)
 
-lemma sparse_update:
-  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
-  assumes "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
-  shows "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
-  using assms apply (auto simp add: dist_commute sparse_def) by force+
+declare split_at.simps [simp del]
 
-subsection "Sortedness"
+lemma set_take_drop_i_le_j:
+  "i \<le> j \<Longrightarrow> set xs = set (take j xs) \<union> set (drop i xs)"
+proof (induction xs arbitrary: i j)
+  case (Cons x xs)
+  show ?case
+  proof (cases "i = 0")
+    case True
+    thus ?thesis
+      using set_take_subset by force
+  next
+    case False
+    hence "set xs = set (take (j-1) xs) \<union> set (drop (i-1) xs)"
+      by (simp add: Cons diff_le_mono)
+    moreover have "set (take j (x#xs)) = insert x (set (take (j-1) xs))"
+      using False Cons.prems by (auto simp add: take_Cons')
+    moreover have "set (drop i (x#xs)) = set (drop (i-1) xs)"
+      using False Cons.prems by (auto simp add: drop_Cons')
+    ultimately show ?thesis
+      by auto
+  qed
+qed simp
 
-definition sortX :: "point list \<Rightarrow> point list" where
-  "sortX ps = sort_key fst ps"
+lemma set_take_drop:
+  "set xs = set (take n xs) \<union> set (drop n xs)"
+  using set_take_drop_i_le_j by fast
+
+
+subsection "Merging and Sorting"
 
 definition sortedX :: "point list \<Rightarrow> bool" where
   "sortedX ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1) ps"
 
-definition sortY :: "point list \<Rightarrow> point list" where
-  "sortY ps = sort_key snd ps"
-
 definition sortedY :: "point list \<Rightarrow> bool" where
   "sortedY ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1) ps"
 
-lemma sortedX_insort_key:
-  "sortedX (insort_key fst p ps) = sortedX ps"
-  by (induction ps) (auto simp add: sortedX_def set_insort_key)
+fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+  "merge f (x#xs) (y#ys) = (
+    if f x \<le> f y then
+      x # merge f xs (y#ys)
+    else
+      y # merge f (x#xs) ys
+  )"
+| "merge _ [] ys = ys"
+| "merge _ xs [] = xs"
 
-lemma sortedX_sortX:
-  "sortedX (sortX ps)"
-  using sortedX_insort_key
-  by (induction ps) (auto simp add: sortedX_def sortX_def)
+lemma length_merge:
+  "length (merge f xs ys) = length xs + length ys"
+  by (induction f xs ys rule: merge.induct) auto
 
-lemma set_sortX:
-  "set ps = set (sortX ps)"
-  by (simp add: sortX_def)
+lemma set_merge:
+  "set (merge f xs ys) = set xs \<union> set ys"
+  by (induction f xs ys rule: merge.induct) auto
 
-lemma length_sortX:
-  "length ps = length (sortX ps)"
-  by (simp add: sortX_def)
+lemma distinct_merge:
+  assumes "set xs \<inter> set ys = {}" "distinct xs" "distinct ys"
+  shows "distinct (merge f xs ys)"
+  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
 
-lemma distinct_sortX:
-  "distinct ps \<Longrightarrow> distinct (sortX ps)"
-  by (simp add: sortX_def)
+lemma sorted_merge:
+  assumes "P = (\<lambda>x y. f x \<le> f y)"
+  shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
+  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
 
-lemmas sortX = sortedX_sortX set_sortX length_sortX distinct_sortX
 
-lemma sortedY_insort_key:
-  "sortedY (insort_key snd p ps) = sortedY ps"
-  by (induction ps) (auto simp add: sortedY_def set_insort_key)
+function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+  "msort _ [] = []"
+| "msort _ [x] = [x]"
+| "msort f (x # y # xs) = (  
+    let (l, r) = split_at (length (x # y # xs) div 2) (x # y # xs) in
+    merge f (msort f l) (msort f r)
+  )"
+  by pat_completeness auto
+termination msort
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+  apply (auto simp add: split_at_take_drop_conv Let_def)
+  done
 
-lemma sortedY_sortY:
-  "sortedY (sortY ps)"
-  using sortedY_insort_key
-  by (induction ps) (auto simp add: sortedY_def sortY_def)
+lemma sorted_wrt_msort:
+  "sorted_wrt (\<lambda>x y. f x \<le> f y) (msort f xs)"
+  by (induction f xs rule: msort.induct) (auto simp add: split_at_take_drop_conv sorted_merge)
 
-lemma set_sortY:
-  "set ps = set (sortY ps)"
-  by (simp add: sortY_def)
+lemma set_msort:
+  "set (msort f xs) = set xs"
+  apply (induction f xs rule: msort.induct)
+  apply (simp_all add: set_merge split_at_take_drop_conv)
+  using set_take_drop by (metis list.simps(15))
 
-lemma length_sortY:
-  "length ps = length (sortY ps)"
-  by (simp add: sortY_def)
+lemma length_msort:
+  "length (msort f xs) = length xs"
+  by (induction f xs rule: msort.induct) (auto simp add: length_merge split_at_take_drop_conv)
 
-lemma distinct_sortY:
-  "distinct ps \<Longrightarrow> distinct (sortY ps)"
-  by (simp add: sortY_def)
+lemma distinct_msort:
+  "distinct xs \<Longrightarrow> distinct (msort f xs)"
+proof (induction f xs rule: msort.induct)
+  case (3 f x y xs)
+  let ?lr = "split_at (length (x # y # xs) div 2) (x # y # xs)"
+  let ?l = "fst ?lr"
+  let ?r = "snd ?lr"
+  have "distinct ?l" "distinct ?r"
+    using "3.prems" split_at_take_drop_conv by (metis distinct_take distinct_drop fst_conv snd_conv)+
+  hence "distinct (msort f ?l)" "distinct (msort f ?r)"
+    using "3.IH" by (metis eq_fst_iff eq_snd_iff)+
+  moreover have "set ?l \<inter> set ?r = {}"
+    using "3.prems" split_at_take_drop_conv by (metis append_take_drop_id distinct_append fst_conv snd_conv)
+  ultimately show ?case
+    by (auto simp add: distinct_merge set_msort split: prod.splits)
+qed auto
 
-lemmas sortY = sortedY_sortY set_sortY length_sortY distinct_sortY
+
+definition sortX :: "point list \<Rightarrow> point list" where
+  "sortX ps = msort fst ps"
+
+definition sortY :: "point list \<Rightarrow> point list" where
+  "sortY ps = msort snd ps"
+
+lemma sortX:
+  shows sortedX_sortX: "sortedX (sortX ps)" and
+        set_sortX: "set (sortX ps) = set ps" and
+        length_sortX: "length (sortX ps) = length ps" and
+        distinct_sortX: "distinct ps \<Longrightarrow> distinct (sortX ps)"
+  unfolding sortX_def sortedX_def
+  by (auto simp add: sorted_wrt_msort set_msort length_msort distinct_msort)
+
+lemma sortY:
+  shows sortedY_sortY: "sortedY (sortY ps)" and
+        set_sortY: "set (sortY ps) = set ps" and
+        length_sortY: "length (sortY ps) = length ps" and
+        distinct_sortY: "distinct ps \<Longrightarrow> distinct (sortY ps)"
+  unfolding sortY_def sortedY_def
+  by (auto simp add: sorted_wrt_msort set_msort length_msort distinct_msort)
 
 lemma sorted_wrt_filter:
   "sorted_wrt f xs \<Longrightarrow> sorted_wrt f (filter P xs)"
@@ -129,6 +202,23 @@ lemma sortedX_hd_drop_less_drop:
   assumes "sortedX ps"
   shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
   using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
+
+
+subsection "Sparsity"
+
+definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
+  "sparse \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
+
+lemma sparse_identity:
+  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)" "\<forall>p \<in> set ps. dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set (p\<^sub>0 # ps))"
+  using assms by (simp add: dist_commute sparse_def)
+
+lemma sparse_update:
+  assumes "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
+  assumes "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
+  shows "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
+  using assms apply (auto simp add: dist_commute sparse_def) by force+
 
 
 subsection "Brute Force Algorithm"
@@ -1053,91 +1143,6 @@ proof -
 qed
 
 
-subsection "Split and Merge"
-
-fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
-  "split_at _ [] = ([], [])"
-| "split_at n (x#xs) = (
-    case n of
-      0 \<Rightarrow> ([], x#xs)
-    | Suc m \<Rightarrow>
-      let (xs', ys') = split_at m xs in
-      (x#xs', ys')
-  )"
-
-lemma split_at_take_drop_conv:
-  "split_at n xs = (take n xs, drop n xs)"
-  by (induction xs arbitrary: n) (auto split: nat.split)
-
-lemma set_take_drop:
-  "i \<le> j \<Longrightarrow> set xs = set (take j xs) \<union> set (drop i xs)"
-proof (induction xs arbitrary: i j)
-  case (Cons x xs)
-  show ?case
-  proof (cases "i = 0")
-    case True
-    thus ?thesis
-      using set_take_subset by force
-  next
-    case False
-    hence "set xs = set (take (j-1) xs) \<union> set (drop (i-1) xs)"
-      by (simp add: Cons diff_le_mono)
-    moreover have "set (take j (x#xs)) = insert x (set (take (j-1) xs))"
-      using False Cons.prems by (auto simp add: take_Cons')
-    moreover have "set (drop i (x#xs)) = set (drop (i-1) xs)"
-      using False Cons.prems by (auto simp add: drop_Cons')
-    ultimately show ?thesis
-      by auto
-  qed
-qed simp
-
-declare split_at.simps [simp del]
-
-
-fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "merge f (x#xs) (y#ys) = (
-    if f x \<le> f y then
-      x # merge f xs (y#ys)
-    else
-      y # merge f (x#xs) ys
-  )"
-| "merge _ [] ys = ys"
-| "merge _ xs [] = xs"
-
-lemma length_merge:
-  "length (merge f xs ys) = length xs + length ys"
-  by (induction f xs ys rule: merge.induct) auto
-
-lemma set_merge:
-  "set (merge f xs ys) = set xs \<union> set ys"
-  by (induction f xs ys rule: merge.induct) auto
-
-lemma distinct_merge:
-  assumes "set xs \<inter> set ys = {}" "distinct xs" "distinct ys"
-  shows "distinct (merge f xs ys)"
-  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
-
-lemma sortedY_merge:
-  assumes "sortedY xs" "sortedY ys" "f = (\<lambda>p. snd p)"
-  shows "sortedY (merge f xs ys)"
-  using assms unfolding sortedY_def
-  by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
-
-
-function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "msort _ [] = []"
-| "msort _ [x] = [x]"
-| "msort f (x # y # xs) = (  
-    let (l, r) = split_at (length (x # y # xs) div 2) (x # y # xs) in
-    merge f (msort f l) (msort f r)
-  )"
-  by pat_completeness auto
-termination msort
-  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-  apply (auto simp add: split_at_take_drop_conv Let_def)
-  done
-
-
 subsection "Closest Pair of Points Algorithm"
 
 function closest_pair_rec :: "point list \<Rightarrow> (point list * point * point)" where
@@ -1226,7 +1231,7 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
     hence DISTINCT: "distinct ?ys"
       using distinct_merge IH(3,4) by blast
     have SORTED: "sortedY ?ys"
-      using sortedY_merge IH(5,6) by simp
+      using IH(5,6) by (simp add: sortedY_def sorted_merge)
 
     have "(?ys, ?cp) = closest_pair_rec xs"
       using False closest_pair_rec_simps by (auto simp add: Let_def split: prod.splits)
