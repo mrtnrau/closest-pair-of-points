@@ -78,6 +78,101 @@ fun bf_closest_pair_it :: "point list \<Rightarrow> (point * point)" where
   "bf_closest_pair_it (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
 | "bf_closest_pair_it _ = undefined"
 
+fun bf :: "point * point \<Rightarrow> point list \<Rightarrow> point * point" where
+  "bf c [] = (fst c, snd c)"
+| "bf c [_] = (fst c, snd c)"
+| "bf c (p\<^sub>0 # ps) = (
+    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+    if dist (fst c) (snd c) < dist p\<^sub>0 p\<^sub>1 then
+      c
+    else
+      (p\<^sub>0, p\<^sub>1)
+  )"
+
+lemma bf_foldl:
+  "bf_closest_pair_it_rec (c\<^sub>0, c\<^sub>1) ps = foldl bf (c\<^sub>0, c\<^sub>1) (rev (subseqs ps))"
+  sorry
+
+lemma bf_foldr:
+  "2 \<le> length ps \<Longrightarrow> bf_closest_pair ps = foldr (\<lambda>a b. bf b a) (rev (subseqs ps)) (ps!0, ps!1)"
+  sorry
+
+lemma list3:
+  assumes "P []" "\<And>x. P [x]" "\<And>x y xs. P (x#y#xs)"
+  shows "P xs"
+  using assms apply (induction xs) apply (auto)
+  by (metis assms(2) assms(3) neq_Nil_conv)
+
+lemma BUX:
+  "bf (bf x y) z = bf (bf x z) y"
+  apply (cases rule: list3)
+    apply (auto simp add: Let_def)
+  subgoal sorry
+  subgoal sorry
+  subgoal sorry
+  done
+
+lemma AUX:
+  assumes "\<And>x y. f x y = g y x"
+  assumes "\<And>x y z. f (f x y) z = f (f x z) y"
+  assumes "\<And>x y z. g x (g y z) = g y (g x z)"
+  shows "foldl f a xs = foldr g xs a"
+  sorry
+
+lemma
+  "2 \<le> length ps \<Longrightarrow> bf_closest_pair ps = bf_closest_pair_it_rec (ps!0, ps!1) ps"
+  using bf_foldl[of "ps!0" "ps!1"] bf_foldr BUX by (simp add: AUX)
+
+lemma foldr_com_distrib:
+  assumes "\<And>a b. f a b = f b a" "\<And>a b c. f a (f b c) = f (f a b) c"
+  shows "foldr f xs (f x a) = f x (foldr f xs a)"
+  using assms
+proof (induction xs)
+  case (Cons y xs)
+  have "foldr f (y#xs) (f x a) = f y (foldr f xs (f x a))"
+    by simp
+  also have "... = f y (f x (foldr f xs a))"
+    using Cons by fastforce
+  also have "... = f (f x (foldr f xs a)) y"
+    using Cons.prems(1) by simp
+  also have "... = f x (f (foldr f xs a) y)"
+    using Cons.prems(2)[symmetric] by simp
+  also have "... = f x (f y (foldr f xs a))"
+    using Cons.prems(1) by simp
+  also have "... = f x (foldr f (y#xs) a)"
+    by simp
+  finally show ?case .
+qed simp
+
+lemma foldl_conv_foldr_if_com_distrib:
+  assumes "\<And>a b. f a b = f b a" "\<And>a b c. f a (f b c) = f (f a b) c"
+  shows "foldl f a xs = foldr f xs a"
+  using assms
+proof (induction xs arbitrary: a)
+  case (Cons x xs)
+  have "foldl f a (x#xs) = foldl f (f a x) xs"
+    by simp
+  also have "... = foldr f xs (f a x)"
+    using Cons by blast
+  also have "... = foldr f xs (f x a)"
+    using Cons.prems(1) by simp
+  also have "... = f x (foldr f xs a)"
+    using Cons.prems by (meson foldr_com_distrib)
+  also have "... = foldr f (x#xs) a"
+    by simp
+  finally show ?case .
+qed simp
+
+
+
+
+
+
+
+
+
+
+
 value "bf_closest_pair_it_rec ((0,1), (0,0)) [(0,1),(0,0)]"
 value "dist (0,0) (0,1)"
   
@@ -158,16 +253,8 @@ qed oops
 
 lemma bf_closest_pair_conv_bf_closest_pair_it_rec:
   "bf_closest_pair (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
-proof (induction "(p\<^sub>0, p\<^sub>1)" ps arbitrary: p\<^sub>0 p\<^sub>1 rule: bf_closest_pair_it_rec.induct)
-case (1 c\<^sub>0 c\<^sub>1)
-  then show ?case sorry
-next
-  case (2 c\<^sub>0 c\<^sub>1 uu)
-  then show ?case sorry
-next
-  case (3 c\<^sub>0 c\<^sub>1 p\<^sub>0 p\<^sub>2 ps)
-  then show ?case sorry
-qed
+  oops
+
 
 lemma bf_closest_pair_conv_bf_closest_pair_it[code_unfold]:
   "bf_closest_pair ps = bf_closest_pair_it ps"
