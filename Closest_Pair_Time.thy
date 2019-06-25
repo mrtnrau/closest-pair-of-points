@@ -104,8 +104,8 @@ termination t_msort
 function msort_cost :: "nat \<Rightarrow> real" where
   "msort_cost 0 = 0"
 | "msort_cost 1 = 1"
-| "2 \<le> n \<Longrightarrow> msort_cost n =
-    length_cost n + split_at_cost n + msort_cost (nat \<lfloor>real n / 2\<rfloor>) + msort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
+| "2 \<le> n \<Longrightarrow> msort_cost n = length_cost n + split_at_cost n + 
+    msort_cost (nat \<lfloor>real n / 2\<rfloor>) + msort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
@@ -128,21 +128,21 @@ next
   define R where "R = snd LR"
   note defs = XS_def N_def LR_def L_def R_def
 
+  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R"
+  let ?RHS = "length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) +
+              msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
+
   have IHL: "t_msort f L \<le> msort_cost (length L)"
     using defs "3.IH"(1) prod.collapse by blast
   have IHR: "t_msort f R \<le> msort_cost (length R)"
     using defs "3.IH"(2) prod.collapse by blast
 
-  have t_msort: "t_msort f XS = t_length XS  + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R"
-    by (auto simp add: defs split: prod.split)
-  have msort_cost: "msort_cost N = length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) + msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
-    by (simp add: defs)
-
   have *: "length L = N div 2" "length R = N - N div 2"
     by (auto simp add: defs split_at_take_drop_conv)
   hence "(nat \<lfloor>real N / 2\<rfloor>) = length L" "(nat \<lceil>real N / 2\<rceil>) = length R"
     by linarith+
-  hence tIH: "t_msort f L \<le> msort_cost (nat \<lfloor>real N / 2\<rfloor>)" "t_msort f R \<le> msort_cost (nat \<lceil>real N / 2\<rceil>)"
+  hence IH: "t_msort f L \<le> msort_cost (nat \<lfloor>real N / 2\<rfloor>)"
+            "t_msort f R \<le> msort_cost (nat \<lceil>real N / 2\<rceil>)"
     using IHL IHR by simp_all
 
   have "N = length L + length R"
@@ -153,11 +153,14 @@ next
     using t_length_conv_length_cost defs by blast
   moreover have "t_split_at (N div 2) XS \<le> split_at_cost N"
     using t_split_at_conv_split_at_cost defs by blast
-  ultimately have "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R \<le>
-    length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) + msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
-    using tIH by simp
-  hence "t_msort f XS \<le> msort_cost N"
-    using t_msort msort_cost by presburger
+  ultimately have *: "?LHS \<le> ?RHS"
+    using IH by simp
+  moreover have "t_msort f XS = ?LHS"
+    by (auto simp add: defs split: prod.split)
+  moreover have "msort_cost N = ?RHS"
+    by (simp add: defs)
+  ultimately have "t_msort f XS \<le> msort_cost N"
+    by presburger 
   thus ?case
     using XS_def N_def by blast
 qed auto
