@@ -91,8 +91,10 @@ lemma sorted_merge:
 function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
   "msort _ [] = []"
 | "msort _ [x] = [x]"
-| "msort f (x # y # xs) = (  
-    let (l, r) = split_at (length (x # y # xs) div 2) (x # y # xs) in
+| "msort f (x # y # xs') = ( 
+    let xs = x # y # xs' in
+    let n = length xs div 2 in
+    let (l, r) = split_at n xs in
     merge f (msort f l) (msort f r)
   )"
   by pat_completeness auto

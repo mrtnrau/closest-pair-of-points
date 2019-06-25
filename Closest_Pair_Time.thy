@@ -8,99 +8,69 @@ begin
 
 section "Time Analysis Merge Sort"
 
-subsection "Time Analysis take and drop"
+subsection "Time Analysis length"
 
-fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_take _ [] = 0"
-| "t_take n (x#xs) = (
+fun t_length :: "'a list \<Rightarrow> nat" where
+  "t_length [] = 0"
+| "t_length (x#xs) = 1 + t_length xs"
+
+lemma t_length:
+  "t_length xs = length xs"
+  by (induction xs) auto
+
+definition length_cost :: "nat \<Rightarrow> real" where
+  "length_cost n = real n"
+
+lemma length_cost_nonneg[simp]:
+  "0 \<le> length_cost n"
+  unfolding length_cost_def by simp
+
+lemma t_length_conv_length_cost:
+  "t_length xs \<le> length_cost (length xs)"
+  unfolding length_cost_def by (auto simp add: t_length)
+
+
+subsection "Time Analysis split_at"
+
+fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_split_at _ [] = 0"
+| "t_split_at n (x#xs) = (
     case n of
       0 \<Rightarrow> 0
-    | Suc n \<Rightarrow> 1 + t_take n xs
+    | Suc m \<Rightarrow> 1 + t_split_at m xs
   )"
 
-lemma t_take:
-  "t_take n xs = min n (length xs)"
-  apply (induction n xs rule: t_take.induct)
-    apply (auto split: nat.split)
-  done
+lemma t_split_at:
+  "t_split_at n xs = min n (length xs)"
+  by (induction xs arbitrary: n) (auto split: nat.split)
 
-definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = real n"
+definition split_at_cost :: "nat \<Rightarrow> real" where
+  "split_at_cost n = real n"
 
-lemma take_cost_nonneg[simp]:
-  "0 \<le> take_cost n"
-  unfolding take_cost_def by simp
+lemma split_at_cost_nonneg[simp]:
+  "0 \<le> split_at_cost n"
+  unfolding split_at_cost_def by simp
 
-lemma t_take_conv_take_cost:
-  "real (t_take n xs) \<le> take_cost (length xs)"
-  unfolding take_cost_def by (auto simp add: min_def t_take)
-
-lemma take_cost_big_theta:
-  "take_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding take_cost_def by simp
-
-fun t_drop :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_drop _ [] = 0"
-| "t_drop n (x#xs) = (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc n \<Rightarrow> 1 + t_drop n xs
-  )"
-
-lemma t_drop:
-  "t_drop n xs = min n (length xs)"
-  apply (induction n xs rule: t_drop.induct)
-    apply (auto split: nat.split)
-  done
-
-definition drop_cost :: "nat \<Rightarrow> real" where
-  "drop_cost n = real n"
-
-lemma drop_cost_nonneg[simp]:
-  "0 \<le> drop_cost n"
-  unfolding drop_cost_def by simp
-
-lemma t_drop_conv_drop_cost:
-  "real (t_drop n xs) \<le> drop_cost (length xs)"
-  unfolding drop_cost_def by (auto simp add: min_def t_drop)
-
-lemma drop_cost_big_theta:
-  "drop_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding drop_cost_def by simp
+lemma t_split_at_conv_split_at_cost:
+  "t_split_at n xs \<le> split_at_cost (length xs)"
+  unfolding split_at_cost_def by (auto simp add: min_def t_split_at)
 
 
 subsection "Time Analysis merge"
 
-fun merge :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
-  "merge (x#xs) (y#ys) = (
-    if x \<le> y then 
-      x # merge xs (y#ys)
+fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
+  "t_merge f (x#xs) (y#ys) = (
+    if f x \<le> f y then
+      1 + t_merge f xs (y#ys)
     else
-      y # merge (x#xs) ys)"
-| "merge xs [] = xs"
-| "merge [] ys = ys"
-
-lemma length_merge:
-  "length (merge xs ys) = length xs + length ys"
-  apply (induction xs ys rule: merge.induct)
-    apply (auto)
-  done
-
-fun t_merge :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_merge (x#xs) (y#ys) = (
-    if x \<le> y then
-      1 + t_merge xs (y#ys)
-    else
-      1 + t_merge (x#xs) ys
+      1 + t_merge f (x#xs) ys
   )"
-| "t_merge xs [] = 0"
-| "t_merge [] ys = 0"
+| "t_merge _ xs [] = 0"
+| "t_merge _ [] ys = 0"
 
 lemma t_merge:
-  "t_merge xs ys \<le> length xs + length ys"
-  apply (induction xs ys rule: t_merge.induct)
-    apply (auto)
-  done
+  "t_merge f xs ys \<le> length xs + length ys"
+  by (induction f xs ys rule: t_merge.induct) auto
 
 definition merge_cost :: "nat \<Rightarrow> real" where
   "merge_cost n = real n"
@@ -110,63 +80,94 @@ lemma merge_cost_nonneg[simp]:
   unfolding merge_cost_def by simp
 
 lemma t_merge_conv_merge_cost:
-  "real (t_merge xs ys) \<le> merge_cost (length xs + length ys)"
+  "t_merge f xs ys \<le> merge_cost (length xs + length ys)"
   unfolding merge_cost_def by (metis of_nat_mono t_merge)
-
-lemma merge_cost_big_theta:
-  "merge_cost \<in> \<Theta>(\<lambda>n. n::real)"
-  unfolding merge_cost_def by simp
 
 
 subsection "Time Analysis msort"
 
-fun msort :: "('a::linorder) list \<Rightarrow> 'a list" where
-  "msort [] = []"
-| "msort [x] = [x]"
-| "msort xs = merge (msort (take (length xs div 2) xs))
-                    (msort (drop (length xs div 2) xs))"
-
-lemma length_msort[simp]:
-  "length (msort xs) = length xs"
-  apply (induction xs rule: msort.induct)
-    apply (auto simp add: min_def length_merge)
+function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
+  "t_msort _ [] = 0"
+| "t_msort _ [_] = 1"
+| "t_msort f (x # y # xs') = (
+    let xs = x # y # xs' in
+    let n = length xs div 2 in
+    let (l, r) = split_at n xs in
+    t_length xs + t_split_at n xs + t_msort f l + t_msort f r + t_merge f l r
+  )"
+  by pat_completeness auto
+termination t_msort
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+  apply (auto simp add: split_at_take_drop_conv Let_def)
   done
 
-fun t_msort :: "('a::linorder) list \<Rightarrow> nat" where
-  "t_msort [] = 0"
-| "t_msort [_] = 1"
-| "t_msort xs = (
-    let n = length xs div 2 in
-    let l = msort (take n xs) in
-    let r = msort (drop n xs) in
-    t_take n xs + t_drop n xs + t_msort l + t_msort r + t_merge l r
-  )"
-
-function merge_sort_cost :: "nat \<Rightarrow> real" where
-  "merge_sort_cost 0 = 0"
-| "merge_sort_cost 1 = 1"
-| "2 \<le> n \<Longrightarrow> merge_sort_cost n =
-    take_cost n + drop_cost n + merge_sort_cost (nat \<lfloor>real n / 2\<rfloor>) + merge_sort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
+function msort_cost :: "nat \<Rightarrow> real" where
+  "msort_cost 0 = 0"
+| "msort_cost 1 = 1"
+| "2 \<le> n \<Longrightarrow> msort_cost n =
+    length_cost n + split_at_cost n + msort_cost (nat \<lfloor>real n / 2\<rfloor>) + msort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
-declare t_take.simps t_drop.simps t_merge.simps[simp del]
+declare t_length.simps t_split_at.simps t_merge.simps[simp del]
 
-(*
+
 lemma t_merge_sort_conv_merge_sort_cost:
-  "real (t_msort xs) \<le> merge_sort_cost (length xs)"
-*)
+  "t_msort f xs \<le> msort_cost (length xs)"
+proof (induction f xs rule: t_msort.induct)
+  case (2 f x)
+  thus ?case
+    using msort_cost.simps(2) by auto
+next
+  case (3 f x y xs')
 
-lemma merge_sort_nonneg[simp]:
-  "0 \<le> merge_sort_cost n"
-  apply (induction n rule: merge_sort_cost.induct)
-    apply (auto simp del: One_nat_def)
-  done
+  define XS where "XS = x # y # xs'"
+  define N where "N = length XS"
+  define LR where "LR = split_at (N div 2) XS"
+  define L where "L = fst LR"
+  define R where "R = snd LR"
+  note defs = XS_def N_def LR_def L_def R_def
+
+  have IHL: "t_msort f L \<le> msort_cost (length L)"
+    using defs "3.IH"(1) prod.collapse by blast
+  have IHR: "t_msort f R \<le> msort_cost (length R)"
+    using defs "3.IH"(2) prod.collapse by blast
+
+  have t_msort: "t_msort f XS = t_length XS  + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R"
+    by (auto simp add: defs split: prod.split)
+  have msort_cost: "msort_cost N = length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) + msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
+    by (simp add: defs)
+
+  have *: "length L = N div 2" "length R = N - N div 2"
+    by (auto simp add: defs split_at_take_drop_conv)
+  hence "(nat \<lfloor>real N / 2\<rfloor>) = length L" "(nat \<lceil>real N / 2\<rceil>) = length R"
+    by linarith+
+  hence tIH: "t_msort f L \<le> msort_cost (nat \<lfloor>real N / 2\<rfloor>)" "t_msort f R \<le> msort_cost (nat \<lceil>real N / 2\<rceil>)"
+    using IHL IHR by simp_all
+
+  have "N = length L + length R"
+    using * by linarith
+  hence "t_merge f L R \<le> merge_cost N"
+    using t_merge_conv_merge_cost by metis
+  moreover have "t_length XS \<le> length_cost N"
+    using t_length_conv_length_cost defs by blast
+  moreover have "t_split_at (N div 2) XS \<le> split_at_cost N"
+    using t_split_at_conv_split_at_cost defs by blast
+  ultimately have "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R \<le>
+    length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) + msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
+    using tIH by simp
+  hence "t_msort f XS \<le> msort_cost N"
+    using t_msort msort_cost by presburger
+  thus ?case
+    using XS_def N_def by blast
+qed auto
+
+lemma msort_nonneg[simp]:
+  "0 \<le> msort_cost n"
+  by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
 
 lemma msort_cost:
-  "merge_sort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
-  apply (master_theorem)
-    apply (auto simp add: take_cost_def drop_cost_def merge_cost_def)
-  done
+  "msort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def)
 
 end
