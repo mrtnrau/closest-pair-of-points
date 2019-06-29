@@ -329,6 +329,8 @@ proof (induction f ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.indu
   qed
 qed auto
 
+lemmas gen_closest_pair_c0_c1 = gen_closest_pair_c0 gen_closest_pair_c1 gen_closest_pair_c0_ne_c1
+
 
 subsection "Brute Force Algorithm"
 
@@ -728,46 +730,38 @@ qed
 
 subsection "Informed Brute Force Algorithm"
 
-(* TODO generic adaptation *)
-
-fun closest_pair_7 :: "point list \<Rightarrow> (point * point)" where
-  "closest_pair_7 [] = undefined"
-| "closest_pair_7 [_] = undefined"
-| "closest_pair_7 [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
-| "closest_pair_7 (p\<^sub>0 # ps) = (
-    let (c\<^sub>0, c\<^sub>1) = closest_pair_7 ps in
-    let p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps) in
-    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
-      (c\<^sub>0, c\<^sub>1)
-    else
-      (p\<^sub>0, p\<^sub>1) 
-  )"
+definition closest_pair_7 :: "point list \<Rightarrow> (point * point)" where
+  "closest_pair_7 ps = gen_closest_pair (take 7) ps"
 
 lemma closest_pair_7_c0:
   "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_7 ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_7.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "take 7 (p\<^sub>1 # p\<^sub>2 # ps)" p\<^sub>0]
-    by (auto simp add: Let_def split!: if_splits prod.splits)
-qed auto
+  unfolding closest_pair_7_def using gen_closest_pair_c0 by simp
 
 lemma closest_pair_7_c1:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_7 ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_7.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "take 7 (p\<^sub>1 # p\<^sub>2 # ps)" p\<^sub>0] in_set_takeD
-    apply (auto simp add: Let_def split!: if_splits prod.splits)
-    by fast
-qed auto
+  assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = closest_pair_7 ps"
+  shows "c\<^sub>1 \<in> set ps"
+proof - 
+  have "(\<And>ps. set (take 7 ps) \<subseteq> set ps)"
+    using set_take_subset by fast
+  moreover have "(\<And>ps. 0 < length ps \<longrightarrow> 0 < length (take 7 ps))"
+    using length_take by simp
+  ultimately show ?thesis
+    using gen_closest_pair_c1 assms closest_pair_7_def by metis
+qed
 
 lemma closest_pair_7_c0_ne_c1:
-  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_7 ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_7.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_ne[of "take 6 (p\<^sub>2 # ps)" p\<^sub>0] in_set_takeD
-    apply (auto simp add: Let_def split!: prod.splits if_splits)
-    by fast
-qed auto
+  assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair_7 ps"
+  shows "c\<^sub>0 \<noteq> c\<^sub>1"
+proof - 
+  have "(\<And>ps. distinct ps \<longrightarrow> distinct (take 7 ps))"
+    using distinct_take by simp
+  moreover have "(\<And>ps. set (take 7 ps) \<subseteq> set ps)"
+    using set_take_subset by fast
+  moreover have "(\<And>ps. 0 < length ps \<longrightarrow> 0 < length (take 7 ps))"
+    using length_take by simp
+  ultimately show ?thesis
+    using gen_closest_pair_c0_ne_c1 assms closest_pair_7_def by metis
+qed
 
 lemmas closest_pair_7_c0_c1 = closest_pair_7_c0 closest_pair_7_c1 closest_pair_7_c0_ne_c1
 
@@ -777,27 +771,27 @@ lemma closest_7_dist:
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
   assumes "sparse \<delta> ys\<^sub>L" "sparse \<delta> ys\<^sub>R"
   assumes "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
-  assumes "(c\<^sub>0, c\<^sub>1) = closest_pair_7 ys"
+  assumes "(c\<^sub>0, c\<^sub>1) = closest_pair_7 ys" "f = (\<lambda>(ps::point list). take 7 ps)"
   shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ys)"
-  using assms
-proof (induction ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: closest_pair_7.induct)
-  case (3 p\<^sub>0 p\<^sub>1)
-  have "(p\<^sub>0, p\<^sub>1) = closest_pair_7 [p\<^sub>0, p\<^sub>1]"
+  using assms unfolding closest_pair_7_def
+proof (induction f ys arbitrary: c\<^sub>0 c\<^sub>1 ys\<^sub>L ys\<^sub>R rule: gen_closest_pair.induct)
+  case (3 f p\<^sub>0 p\<^sub>1)
+  have "(p\<^sub>0, p\<^sub>1) = gen_closest_pair f [p\<^sub>0, p\<^sub>1]"
     by simp
-  moreover have "(c\<^sub>0, c\<^sub>1) = closest_pair_7 [p\<^sub>0, p\<^sub>1]"
+  moreover have "(c\<^sub>0, c\<^sub>1) = gen_closest_pair f [p\<^sub>0, p\<^sub>1]"
     using "3.prems"(12) by simp
   ultimately have "p\<^sub>0 = c\<^sub>0" "p\<^sub>1 = c\<^sub>1"
     by simp_all
   thus ?case
     by (simp add: dist_commute sparse_def set_ConsD)
 next
-  case (4 x y z zs)
+  case (4 f x y z zs)
 
   define YS where "YS = y # z # zs"
-  define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = closest_pair_7 YS"
+  define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = gen_closest_pair f YS"
   define C\<^sub>0 where "C\<^sub>0 = fst C\<^sub>0\<^sub>1"
   define C\<^sub>1 where "C\<^sub>1 = snd C\<^sub>0\<^sub>1"
-  define P\<^sub>1 where "P\<^sub>1 = find_closest x (take 7 YS)"
+  define P\<^sub>1 where "P\<^sub>1 = find_closest x (f YS)"
   define YS\<^sub>L where "YS\<^sub>L = ys\<^sub>L - { x }"
   define YS\<^sub>R where "YS\<^sub>R = ys\<^sub>R - { x }"
   note defs = YS_def C\<^sub>0\<^sub>1_def C\<^sub>0_def C\<^sub>1_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
@@ -817,10 +811,10 @@ next
       using "4.prems"(9) YS\<^sub>L_def sparse_def by simp
     moreover have "sparse \<delta> YS\<^sub>R"
       using "4.prems"(10) YS\<^sub>R_def sparse_def by simp
-    moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 YS"
+    moreover have "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f YS"
       using defs by simp
     ultimately have *: "sparse (dist C\<^sub>0 C\<^sub>1) (set YS)"
-      using "4.IH"[of YS\<^sub>L YS\<^sub>R C\<^sub>0 C\<^sub>1] "4.prems"(4) defs by fast
+      using "4.IH"[of YS\<^sub>L YS\<^sub>R C\<^sub>0 C\<^sub>1] "4.prems"(4,13) defs by fast
     hence DC0C1: "dist C\<^sub>0 C\<^sub>1 < \<delta>"
       using True le_less_trans sparse_def by metis
     show ?thesis
@@ -833,38 +827,44 @@ next
         assume ASM: "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
         hence "sparse (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
           using * # by (auto simp add: sparse_def dist_commute)
-        moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
+        moreover have "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f (x # YS)"
           using ASM YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
         ultimately show ?thesis
-          using "4.prems"(12) YS_def by (metis fst_conv snd_conv)
+          using "4.prems"(12,13) YS_def by (metis fst_conv snd_conv)
       next
         assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1)"
         hence "sparse (dist x P\<^sub>1) (set (x # YS))"
           using * # apply (auto simp add: sparse_def dist_commute) by force+
-        moreover have "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
+        moreover have "(x, P\<^sub>1) = gen_closest_pair f (x # YS)"
           using ASM defs by (auto split: prod.splits)
         ultimately show ?thesis
-          using "4.prems"(12) YS_def by (metis fst_conv snd_conv)       
+          using "4.prems"(12,13) YS_def by (metis fst_conv snd_conv)       
       qed
     next
       case False
       have "P\<^sub>1 \<in> set YS"
-        using P\<^sub>1_def YS_def find_closest_set[of "take 7 YS" x] set_take_subset[of 7 YS] by auto
+        using "4.prems"(13) P\<^sub>1_def YS_def find_closest_set[of "f YS" x] set_take_subset[of 7 YS] by auto
       hence "dist C\<^sub>0 C\<^sub>1 < dist x P\<^sub>1"
         using DC0C1 False by auto
-      hence "(C\<^sub>0, C\<^sub>1) = closest_pair_7 (x # YS)"
+      hence "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f (x # YS)"
         using YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
       moreover have "sparse (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
         using * DC0C1 False by (auto simp add: sparse_def dist_commute)
       ultimately show ?thesis
-        using "4.prems"(12) YS_def by (metis fst_conv snd_conv)    
+        using "4.prems"(12,13) YS_def by (metis fst_conv snd_conv)    
     qed
   next
     case False
     have "distinct YS" "1 < length YS"
       using YS_def "4.prems"(1) by simp_all
-    hence C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
-      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def closest_pair_7_c0_c1 prod.collapse by blast+
+    moreover have "(\<And>ps. set (f ps) \<subseteq> set ps)"
+      using "4.prems"(13) by (simp add: set_take_subset)
+    moreover have "(\<And>ps. 0 < length ps \<longrightarrow> 0 < length (f ps))"
+      using "4.prems"(13) by simp
+    moreover have "(\<And>ps. distinct ps \<longrightarrow> distinct (f ps))"
+      using "4.prems"(13) by simp
+    ultimately have C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
+      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def gen_closest_pair_c0_c1 prod.collapse by metis+
     have 0: "\<exists>x' \<in> set YS. dist x x' < \<delta>"
       using False YS_def "4.prems"(11) by (auto simp add: dist_commute)
     hence "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
@@ -875,10 +875,10 @@ next
       using False apply (auto simp add: sparse_def dist_commute) by force+
     hence "dist x P\<^sub>1 < dist C\<^sub>0 C\<^sub>1"
       using C01 \<open>dist x P\<^sub>1 < \<delta>\<close> False by (meson not_less order.strict_trans2)
-    hence "(x, P\<^sub>1) = closest_pair_7 (x # YS)"
+    hence "(x, P\<^sub>1) = gen_closest_pair f (x # YS)"
       using defs by (auto split: prod.splits)
     thus ?thesis
-      using "4.prems"(12) * YS_def by (metis fst_conv snd_conv)
+      using "4.prems"(12,13) * YS_def by (metis fst_conv snd_conv)
   qed
 qed auto
 
