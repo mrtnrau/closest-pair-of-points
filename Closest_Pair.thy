@@ -223,7 +223,7 @@ lemma sparse_update:
   using assms apply (auto simp add: dist_commute sparse_def) by force+
 
 
-subsection "Brute Force Algorithm"
+subsection "Finding Closest Point"
 
 fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
   "find_closest _ [] = undefined"
@@ -245,58 +245,119 @@ lemma find_closest_set:
   by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
 
 lemma find_closest_ne:
-  "0 < length ps \<Longrightarrow> p\<^sub>0 \<notin> set ps \<Longrightarrow> find_closest p\<^sub>0 ps \<noteq> p\<^sub>0"
+  "0 < length ps \<Longrightarrow> p\<^sub>0 \<notin> set ps \<Longrightarrow> p\<^sub>0 \<noteq> find_closest p\<^sub>0 ps"
   by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
 
+subsection "Generic Closest Pair Algorithm"
 
-fun bf_closest_pair :: "point list \<Rightarrow> (point * point)" where
-  "bf_closest_pair [] = undefined"
-| "bf_closest_pair [_] = undefined"
-| "bf_closest_pair [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
-| "bf_closest_pair (p\<^sub>0 # ps) = (
-    let (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps in
-    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+fun gen_closest_pair :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> (point * point)" where
+  "gen_closest_pair _ [] = undefined"
+| "gen_closest_pair _ [_] = undefined"
+| "gen_closest_pair _ [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "gen_closest_pair f (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
     if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
       (c\<^sub>0, c\<^sub>1)
     else
       (p\<^sub>0, p\<^sub>1) 
   )"
 
-lemma bf_closest_pair_c0:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "p\<^sub>1 # p\<^sub>2 # ps" p\<^sub>0]
+lemma gen_closest_pair_c0:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+proof (induction f ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
+  thus ?case using find_closest_set[of "f (p\<^sub>1 # p\<^sub>2 # ps)" p\<^sub>0]
     by (auto simp add: Let_def split!: if_splits prod.splits)
 qed auto
+
+lemma gen_closest_pair_c1:
+  assumes "\<And>ps. set (f ps) \<subseteq> set ps" "\<And>ps. 0 < length ps \<longrightarrow> 0 < length (f ps)"
+  assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps" 
+  shows "c\<^sub>1 \<in> set ps"
+  using assms
+proof (induction f ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  let ?c = "gen_closest_pair f ?ps"
+  let ?p\<^sub>1 = "find_closest p\<^sub>0 (f ?ps)"
+
+  show ?case
+  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
+    case True
+    moreover have "snd ?c \<in> set (p\<^sub>0 # ?ps)"
+      using 4 by (auto split: prod.splits)
+    ultimately show ?thesis
+      using "4.IH" "4.prems"(4) by (auto split: prod.splits)
+  next
+    case False
+    moreover have "?p\<^sub>1 \<in> set (p\<^sub>0 # ?ps)"
+      using find_closest_set[of "f ?ps" p\<^sub>0] "4.prems"(1,2,3) by fastforce
+    ultimately show ?thesis
+      using "4.prems"(4) by (auto split: prod.splits)
+  qed
+qed auto
+
+lemma gen_closest_pair_c0_ne_c1:
+  assumes "\<And>ps. distinct ps \<longrightarrow> distinct (f ps)" "\<And>ps. 0 < length ps \<longrightarrow> 0 < length (f ps)"
+  assumes "\<And>ps. set (f ps) \<subseteq> set ps" "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps"
+  shows "c\<^sub>0 \<noteq> c\<^sub>1"
+  using assms
+proof (induction f ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  let ?c = "gen_closest_pair f ?ps"
+  let ?p\<^sub>1 = "find_closest p\<^sub>0 (f ?ps)"
+
+  show ?case
+  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
+    case True
+    moreover have "fst ?c \<noteq> snd ?c"
+      using "4.IH" "4.prems"(1,2,3,5) by auto
+    ultimately show ?thesis
+      using "4.prems"(6) by (auto split: prod.splits)
+  next
+    case False
+    have "p\<^sub>0 \<notin> set (f ?ps)"
+      using "4.prems"(1,3,5) by fastforce
+    hence "p\<^sub>0 \<noteq> ?p\<^sub>1"
+      using find_closest_ne[of "f ?ps" p\<^sub>0] "4.prems"(2,4) by simp
+    thus ?thesis
+      using "4.prems"(6) False by (auto split: prod.splits)
+  qed
+qed auto
+
+
+subsection "Brute Force Algorithm"
+
+definition bf_closest_pair :: "point list \<Rightarrow> (point * point)" where
+  "bf_closest_pair ps = gen_closest_pair (\<lambda>ps. ps) ps"
+
+lemma bf_closest_pair_c0:
+  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+  unfolding bf_closest_pair_def using gen_closest_pair_c0 by simp
 
 lemma bf_closest_pair_c1:
   "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "p\<^sub>1 # p\<^sub>2 # ps" p\<^sub>0]
-    by (auto simp add: Let_def split!: if_splits prod.splits)
-qed auto
+  unfolding bf_closest_pair_def using gen_closest_pair_c1 by fast
 
 lemma bf_closest_pair_c0_ne_c1:
   "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = bf_closest_pair ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_ne[of "p\<^sub>2 # ps" p\<^sub>0]
-    by (auto simp add: Let_def split!: prod.splits if_splits)
-qed auto
+  unfolding bf_closest_pair_def using gen_closest_pair_c0_ne_c1 by fast
 
 lemmas bf_closest_pair_c0_c1 = bf_closest_pair_c0 bf_closest_pair_c1 bf_closest_pair_c0_ne_c1
 
 lemma bf_closest_pair_dist:
   assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = bf_closest_pair ps"
   shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
-  using assms
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: bf_closest_pair.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
+  using assms unfolding bf_closest_pair_def
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
 
   let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
-  let ?c = "bf_closest_pair ?ps"
+  let ?c = "gen_closest_pair (\<lambda>ps. ps) ?ps"
   let ?c\<^sub>0 = "fst ?c"
   let ?c\<^sub>1 = "snd ?c"
 
@@ -666,6 +727,8 @@ qed
 
 
 subsection "Informed Brute Force Algorithm"
+
+(* TODO generic adaptation *)
 
 fun closest_pair_7 :: "point list \<Rightarrow> (point * point)" where
   "closest_pair_7 [] = undefined"
