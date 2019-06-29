@@ -280,18 +280,18 @@ lemma closest_pair_7_conv_closest_pair_7_it[code_unfold]:
 
 subsection "Alternatives"
 
-text \<open>
+(*
 lemma
-  assumes @{term "0 < length ps"}
-  shows @{term "bf_closest_pair' f (p\<^sub>0 # ps) = bf_closest_pair_it_rec' f (p\<^sub>0, find_closest p\<^sub>0 (f ps)) ps"}
+  assumes "0 < length ps"
+  shows "bf_closest_pair' f (p\<^sub>0 # ps) = bf_closest_pair_it_rec' f (p\<^sub>0, find_closest p\<^sub>0 (f ps)) ps"
   using assms
-  apply (induction f @{term "(p\<^sub>0, find_closest p\<^sub>0 ps)"} ps arbitrary: \<open>p\<^sub>0\<close> rule: bf_closest_pair_it_rec'.induct)
+  apply (induction f "(p\<^sub>0, find_closest p\<^sub>0 ps)" ps arbitrary: p\<^sub>0 rule: bf_closest_pair_it_rec'.induct)
   oops
 
 lemma
-  @{term "bf_closest_pair' f (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec' f (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"}
-  apply (induction f @{term "(p\<^sub>0, p\<^sub>1)"} ps arbitrary: \<open>p\<^sub>0\<close> \<open>p\<^sub>1\<close> rule: bf_closest_pair_it_rec'.induct)
+  "bf_closest_pair' f (p\<^sub>0 # p\<^sub>1 # ps) = bf_closest_pair_it_rec' f (p\<^sub>0, p\<^sub>1) (p\<^sub>0 # p\<^sub>1 # ps)"
+  apply (induction f "(p\<^sub>0, p\<^sub>1)" ps arbitrary: p\<^sub>0 p\<^sub>1 rule: bf_closest_pair_it_rec'.induct)
   oops
-\<close>
+*)
 
 end
