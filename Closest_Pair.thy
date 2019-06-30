@@ -248,6 +248,7 @@ lemma find_closest_ne:
   "0 < length ps \<Longrightarrow> p\<^sub>0 \<notin> set ps \<Longrightarrow> p\<^sub>0 \<noteq> find_closest p\<^sub>0 ps"
   by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
 
+
 subsection "Generic Closest Pair Algorithm"
 
 fun gen_closest_pair :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> (point * point)" where
