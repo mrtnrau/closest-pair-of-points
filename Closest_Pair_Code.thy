@@ -318,31 +318,19 @@ lemma foldl_fl_expand:
   assumes "n = length (p # ps)" "2 \<le> n" "p' = find_closest p (f ps)"
   shows "foldl (fl f) (p, p') (lists (p#ps)) =
          fl f (foldl (fl f) (p, p') (lists (p#ps))) [(p#ps)!(n-2), (p#ps)!(n-1)]"
-  using assms
 proof -
   let ?ps = "p # ps"
   let ?psn = "[?ps!(n-2), ?ps!(n-1)]"
   let ?rs = "?psn # [?ps!(n-1)] # [[]]"
-  obtain ls where *: "lists ?ps = ls @ ?psn # [?ps!(n-1)] # [[]]"
+  obtain ls where *: "lists ?ps = ls @ ?rs"
     using lists_decomp_2 assms by blast
-  have "fl f (foldl (fl f) (p, p') (lists ?ps)) ?psn =
-        fl f (foldl (fl f) (foldl (fl f) (p, p') ls) ?rs) ?psn"
+  have "foldl (fl f) (p, p') (lists ?ps) = fl f (foldl (fl f) (p, p') ls) ?psn"
     using * by simp
-  also have "... =  fl f (foldl (fl f) (foldl (fl f) (p, p') ls) [?psn]) ?psn"
-    by simp
   also have "... = fl f (fl f (foldl (fl f) (p, p') ls) ?psn) ?psn"
-    by simp
-  also have "... = fl f (foldl (fl f) (p, p') ls) ?psn"
     by (cases ?ps) (auto simp add: Let_def)
-  also have "... = foldl (fl f) (foldl (fl f) (p, p') ls) [?psn]"
-    by simp
-  also have "... = foldl (fl f) (foldl (fl f) (p, p') ls) ?rs"
-    by simp
-  also have "... = foldl (fl f) (p, p') (lists ?ps)"
-    using * by simp
-  finally have "fl f (foldl (fl f) (p, p') (lists ?ps)) ?psn = foldl (fl f) (p, p') (lists ?ps)" .
-  thus ?thesis
-    by simp
+  also have "... = fl f (foldl (fl f) (p, p') (lists ?ps)) ?psn"
+    using * by auto
+  finally show ?thesis .
 qed
 
 lemma foldr_fr_expand:
@@ -350,36 +338,24 @@ lemma foldr_fr_expand:
   shows "foldr (fr f) (lists (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)) =
          fr f [p, p'] (foldr (fr f) (lists (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)))"
 proof -
-  let ?ps = "p # ps"
-  let ?psn = "(?ps!(n-2), ?ps!(n-1))"
-  define RS where "RS = foldr (fr f) (lists ps) ?psn"
-  have *: "fr f [p, p'] (foldr (fr f) (lists ?ps) ?psn) = fr f [p, p'] (foldr (fr f) [?ps] RS)"
-    by (simp add: RS_def)
-  have #: "foldr (fr f) (lists ?ps) ?psn = foldr (fr f) [?ps] RS"
-    by (simp add: RS_def)
+  define RS where "RS = foldr (fr f) (lists ps) ((p#ps)!(n-2), (p#ps)!(n-1))"
   show ?thesis
   proof (cases "dist (fst RS) (snd RS) \<le> dist p p'")
     case True
-    have "0 < length ?ps"
-      using assms(1,2) by simp
-    hence "fr f ?ps RS = (fst RS, snd RS)"
+    have "0 < length (p#ps)"
+      by simp
+    hence "fr f (p#ps) RS = (fst RS, snd RS)"
       using assms(3) True by (cases ps) auto
-    hence "foldr (fr f) [?ps] RS = (fst RS, snd RS)"
-      by simp
-    hence "foldr (fr f) (lists ?ps) ?psn = (fst RS, snd RS)"
-      using # by simp
-    moreover have "fr f [p, p'] (fst RS, snd RS) = (fst RS, snd RS)"
-      using True assms(4) by simp
-    ultimately show ?thesis
-      by simp
+    thus ?thesis
+      using RS_def assms(4) True by simp
   next
     case False
     have "0 < length ps"
       using assms(1,2) by (cases ps) auto
-    hence "fr f ?ps RS = (p, p')"
+    hence "fr f (p#ps) RS = (p, p')"
       using False assms(3) by (cases ps) auto
     then show ?thesis
-      using * # assms(4) by simp
+      using RS_def assms(4) by simp
   qed
 qed
 
@@ -480,7 +456,7 @@ lemma le_dist_conv_le_sq_dist[code_unfold]:
 
 subsection "Export Code"
 
-export_code closest_pair in SML
+export_code closest_pair in Scala
   module_name ClosestPair
 
 end
