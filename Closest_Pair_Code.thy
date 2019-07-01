@@ -5,14 +5,14 @@ theory Closest_Pair_Code
     "HOL-Library.Code_Target_Numeral"
 begin
 
-section "Closest Pair Of Points Exported Code"
+section "Closest Pair Of Points Without Stackoverflow"
 
 
 subsection "length"
 
 fun length_it_rec :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "length_it_rec acc [] = acc"
-| "length_it_rec acc (_#xs) = length_it_rec (acc+1) xs"
+| "length_it_rec acc (x#xs) = length_it_rec (acc+1) xs"
 
 definition length_it :: "'a list \<Rightarrow> nat" where
   "length_it xs = length_it_rec 0 xs"
@@ -69,18 +69,8 @@ lemma rev_conv_rev_it[code_unfold]:
 
 subsection "split_at"
 
-fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
-  "split_at _ [] = ([], [])"
-| "split_at n (x#xs) = (
-    case n of
-      0 \<Rightarrow> ([], x#xs)
-    | Suc m \<Rightarrow>
-      let (xs', ys') = split_at m xs in
-      (x#xs', ys')
-  )"
-
 fun split_at_it_rec :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
-  "split_at_it_rec acc _ [] = (rev acc, [])"
+  "split_at_it_rec acc n [] = (rev acc, [])"
 | "split_at_it_rec acc n (x#xs) = (
     case n of
       0 \<Rightarrow> (rev acc, x#xs)
@@ -96,7 +86,7 @@ lemma split_at_conv_split_at_it_rec:
     and "ds = dsi"
   using assms
   apply (induction acc n xs arbitrary: ts rule: split_at_it_rec.induct)
-  apply (auto split: prod.splits nat.splits)
+  apply (auto simp: split_at.simps split: prod.splits nat.splits)
   done
 
 lemma split_at_conv_split_at_it_prod:
@@ -105,11 +95,13 @@ lemma split_at_conv_split_at_it_prod:
   using assms unfolding split_at_it_def 
   using split_at_conv_split_at_it_rec rev.simps(1) append_Nil by fast+
 
-(* TODO Does not unfold for msort and closest_pair? *)
 lemma split_at_conv_split_at_it[code_unfold]:
   "split_at n xs = split_at_it n xs"
   using split_at_conv_split_at_it_prod surj_pair by metis
 
+code_thms split_at
+
+code_deps split_at
 
 subsection "merge"
 
@@ -118,7 +110,7 @@ lemma merge_xs_Nil[simp]:
   by (cases xs) auto
 
 fun merge_it_rec :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "merge_it_rec _ acc [] [] = rev acc"
+  "merge_it_rec f acc [] [] = rev acc"
 | "merge_it_rec f acc (x#xs) [] = merge_it_rec f (x#acc) xs []"
 | "merge_it_rec f acc [] (y#ys) = merge_it_rec f (y#acc) ys []"
 | "merge_it_rec f acc (x#xs) (y#ys) = (
@@ -143,7 +135,7 @@ lemma merge_conv_merge_it[code_unfold]:
 subsection "find_closest"
 
 fun find_closest_it_rec :: "point \<Rightarrow> point \<Rightarrow> point list \<Rightarrow> point" where
-  "find_closest_it_rec _ c\<^sub>0 [] = c\<^sub>0"
+  "find_closest_it_rec p c\<^sub>0 [] = c\<^sub>0"
 | "find_closest_it_rec p c\<^sub>0 (c\<^sub>1 # cs) = (
     if dist p c\<^sub>0 < dist p c\<^sub>1 then
       find_closest_it_rec p c\<^sub>0 cs
@@ -189,8 +181,8 @@ lemma find_closest_conv_find_closest_it[code_unfold]:
 subsection "gen_closest_pair"
 
 fun gen_closest_pair_it_rec :: "(point list \<Rightarrow> point list) \<Rightarrow> (point * point) \<Rightarrow> point list \<Rightarrow> (point * point)" where
-  "gen_closest_pair_it_rec _ (c\<^sub>0, c\<^sub>1) [] = (c\<^sub>0, c\<^sub>1)"
-| "gen_closest_pair_it_rec _ (c\<^sub>0, c\<^sub>1) [_] = (c\<^sub>0, c\<^sub>1)"
+  "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) [] = (c\<^sub>0, c\<^sub>1)"
+| "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) [p\<^sub>0] = (c\<^sub>0, c\<^sub>1)"
 | "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps) = (
     let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
     if dist c\<^sub>0 c\<^sub>1 < dist p\<^sub>0 p\<^sub>1 then
@@ -204,8 +196,8 @@ fun gen_closest_pair_it :: "(point list \<Rightarrow> point list) \<Rightarrow> 
 | "gen_closest_pair_it _ _ = undefined"
 
 fun fl :: "(point list \<Rightarrow> point list) \<Rightarrow> point * point \<Rightarrow> point list \<Rightarrow> point * point" where
-  "fl _ c [] = (fst c, snd c)"
-| "fl _ c [_] = (fst c, snd c)"
+  "fl f c [] = (fst c, snd c)"
+| "fl f c [p\<^sub>0] = (fst c, snd c)"
 | "fl f c (p\<^sub>0 # ps) = (
     let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
     if dist (fst c) (snd c) < dist p\<^sub>0 p\<^sub>1 then
@@ -215,8 +207,8 @@ fun fl :: "(point list \<Rightarrow> point list) \<Rightarrow> point * point \<R
   )"
 
 fun fr :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> point * point \<Rightarrow> point * point" where
-  "fr _ [] c = (fst c, snd c)"
-| "fr _ [_] c = (fst c, snd c)"
+  "fr f [] c = (fst c, snd c)"
+| "fr f [p\<^sub>0] c = (fst c, snd c)"
 | "fr f (p\<^sub>0 # ps) c = (
     let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
     if dist (fst c) (snd c) \<le> dist p\<^sub>0 p\<^sub>1 then
@@ -225,20 +217,20 @@ fun fr :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Righ
       (p\<^sub>0, p\<^sub>1)
   )"
 
-fun lists :: "'a list \<Rightarrow> 'a list list" where
-  "lists [] = [[]]"
-| "lists (x#xs) = (x#xs) # lists xs"
+fun prefixes :: "'a list \<Rightarrow> 'a list list" where
+  "prefixes [] = [[]]"
+| "prefixes (x#xs) = (x#xs) # prefixes xs"
 
 
 lemma gen_closest_pair_it_rec_conv_foldl:
-  "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) ps = foldl (fl f) (c\<^sub>0, c\<^sub>1) (lists ps)"
+  "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) ps = foldl (fl f) (c\<^sub>0, c\<^sub>1) (prefixes ps)"
   apply (induction f "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair_it_rec.induct)
   apply (auto simp add: Let_def)
   done
 
 lemma gen_closest_pair_conv_foldr:
   assumes "n = length ps" "2 \<le> n" "\<And>x. f [x] = [x]"
-  shows "gen_closest_pair f ps = foldr (fr f) (lists ps) (ps!(n-2), ps!(n-1))"
+  shows "gen_closest_pair f ps = foldr (fr f) (prefixes ps) (ps!(n-2), ps!(n-1))"
   using assms
   apply (induction f ps arbitrary: n rule: gen_closest_pair.induct)
   apply (auto simp add: Let_def case_prod_unfold)
@@ -246,8 +238,8 @@ lemma gen_closest_pair_conv_foldr:
 
 lemma fl_foldl_conv_fr_foldr:
   assumes  "\<And>x. f [x] = [x]"
-  shows "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (lists ps)) [c\<^sub>0, c\<^sub>1] =
-         fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (lists ps) (c\<^sub>0, c\<^sub>1))"
+  shows "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes ps)) [c\<^sub>0, c\<^sub>1] =
+         fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
   using assms
 proof (induction ps arbitrary: c\<^sub>0' c\<^sub>1' c\<^sub>0 c\<^sub>1)
   case (Cons p ps)
@@ -262,44 +254,44 @@ proof (induction ps arbitrary: c\<^sub>0' c\<^sub>1' c\<^sub>0 c\<^sub>1)
     show ?thesis
     proof cases
       assume *: "fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (c\<^sub>0', c\<^sub>1')"
-      hence "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (lists (p # ps))) [c\<^sub>0, c\<^sub>1] =
-             fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (lists ps)) [c\<^sub>0, c\<^sub>1]"
+      hence "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+             fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (lists ps) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] ((fr f) (p # ps) (foldr (fr f) (lists ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr f [c\<^sub>0', c\<^sub>1'] ((fr f) (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
         using * Cons.prems by (cases ps) (auto simp add: Let_def)
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (lists (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     next 
       assume ASM: "\<not> fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (c\<^sub>0', c\<^sub>1')"
       hence *: "fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (p, find_closest p (f ps))"
         by (cases ps) (auto simp add: Let_def)
-      have "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (lists (p # ps))) [c\<^sub>0, c\<^sub>1] =
-            fl f (foldl (fl f) (fl f (c\<^sub>0', c\<^sub>1') (p # ps)) (lists ps)) [c\<^sub>0, c\<^sub>1]"
+      have "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+            fl f (foldl (fl f) (fl f (c\<^sub>0', c\<^sub>1') (p # ps)) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
-      also have "... = fl f (foldl (fl f) (p, ?p') (lists ps)) [c\<^sub>0, c\<^sub>1]"
+      also have "... = fl f (foldl (fl f) (p, ?p') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         using Cons.prems * by (cases ps) (auto simp add: Let_def)
-      also have "... = fr f [p, ?p'] (foldr (fr f) (lists ps) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [p, ?p'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (fr f (p # ps) (foldr (fr f) (lists ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (fr f (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
         using Cons.prems * by (cases ps) (auto simp add: Let_def)
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (lists (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     qed
   qed
 qed simp
 
-lemma lists_decomp_2:
-  "n = length xs \<Longrightarrow> 2 \<le> n \<Longrightarrow> \<exists>ls. lists xs = ls @ [xs!(n-2), xs!(n-1)] # [xs!(n-1)] # [[]]"
+lemma prefixes_decomp_2:
+  "n = length xs \<Longrightarrow> 2 \<le> n \<Longrightarrow> \<exists>ls. prefixes xs = ls @ [xs!(n-2), xs!(n-1)] # [xs!(n-1)] # [[]]"
 proof (induction xs arbitrary: n)
   case (Cons x xs)
   show ?case
   proof (cases "n = 2")
     case True
-    hence "lists (x#xs) = [[(x#xs)!(n - 2), (x#xs)!(n - 1)], [(x#xs)!(n - 1)], []]"
+    hence "prefixes (x#xs) = [[(x#xs)!(n - 2), (x#xs)!(n - 1)], [(x#xs)!(n - 1)], []]"
       using Cons.prems(1) by (cases xs) auto
     thus ?thesis
       by simp
@@ -307,7 +299,7 @@ proof (induction xs arbitrary: n)
     case False
     hence *: "2 < n"
       using Cons.prems(2) by simp
-    then obtain ls where "lists xs = ls @ [[xs!(n - 3), xs!(n - 2)], [xs!(n - 2)], []]"
+    then obtain ls where "prefixes xs = ls @ [[xs!(n - 3), xs!(n - 2)], [xs!(n - 2)], []]"
       using Cons by fastforce
     thus ?thesis using *
       by (simp; simp add: numeral_2_eq_2)
@@ -316,29 +308,29 @@ qed simp
 
 lemma foldl_fl_expand:
   assumes "n = length (p # ps)" "2 \<le> n" "p' = find_closest p (f ps)"
-  shows "foldl (fl f) (p, p') (lists (p#ps)) =
-         fl f (foldl (fl f) (p, p') (lists (p#ps))) [(p#ps)!(n-2), (p#ps)!(n-1)]"
+  shows "foldl (fl f) (p, p') (prefixes (p#ps)) =
+         fl f (foldl (fl f) (p, p') (prefixes (p#ps))) [(p#ps)!(n-2), (p#ps)!(n-1)]"
 proof -
   let ?ps = "p # ps"
   let ?psn = "[?ps!(n-2), ?ps!(n-1)]"
   let ?rs = "?psn # [?ps!(n-1)] # [[]]"
-  obtain ls where *: "lists ?ps = ls @ ?rs"
-    using lists_decomp_2 assms by blast
-  have "foldl (fl f) (p, p') (lists ?ps) = fl f (foldl (fl f) (p, p') ls) ?psn"
+  obtain ls where *: "prefixes ?ps = ls @ ?rs"
+    using prefixes_decomp_2 assms by blast
+  have "foldl (fl f) (p, p') (prefixes ?ps) = fl f (foldl (fl f) (p, p') ls) ?psn"
     using * by simp
   also have "... = fl f (fl f (foldl (fl f) (p, p') ls) ?psn) ?psn"
     by (cases ?ps) (auto simp add: Let_def)
-  also have "... = fl f (foldl (fl f) (p, p') (lists ?ps)) ?psn"
+  also have "... = fl f (foldl (fl f) (p, p') (prefixes ?ps)) ?psn"
     using * by auto
   finally show ?thesis .
 qed
 
 lemma foldr_fr_expand:
   assumes "n = length (p # ps)" "2 \<le> n" "p' = find_closest p (f ps)" "\<And>x. f [x] = [x]"
-  shows "foldr (fr f) (lists (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)) =
-         fr f [p, p'] (foldr (fr f) (lists (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)))"
+  shows "foldr (fr f) (prefixes (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)) =
+         fr f [p, p'] (foldr (fr f) (prefixes (p#ps)) ((p#ps)!(n-2), (p#ps)!(n-1)))"
 proof -
-  define RS where "RS = foldr (fr f) (lists ps) ((p#ps)!(n-2), (p#ps)!(n-1))"
+  define RS where "RS = foldr (fr f) (prefixes ps) ((p#ps)!(n-2), (p#ps)!(n-1))"
   show ?thesis
   proof (cases "dist (fst RS) (snd RS) \<le> dist p p'")
     case True
@@ -364,13 +356,13 @@ lemma gen_closest_pair_conv_gen_closest_pair_it_rec:
   shows "gen_closest_pair f (p#ps) = gen_closest_pair_it_rec f (p, p') (p#ps)"
 proof -
   let ?ps = "p # ps"
-  have "gen_closest_pair f ?ps = foldr (fr f) (lists ?ps) (?ps!(n-2), ?ps!(n-1))"
+  have "gen_closest_pair f ?ps = foldr (fr f) (prefixes ?ps) (?ps!(n-2), ?ps!(n-1))"
     using assms gen_closest_pair_conv_foldr by blast
-  also have "... = fr f [p, p'] (foldr (fr f) (lists ?ps) (?ps!(n-2), ?ps!(n-1)))"
+  also have "... = fr f [p, p'] (foldr (fr f) (prefixes ?ps) (?ps!(n-2), ?ps!(n-1)))"
     using assms foldr_fr_expand by blast
-  also have "... = fl f (foldl (fl f) (p, p') (lists ?ps)) [?ps!(n-2), ?ps!(n-1)]"
+  also have "... = fl f (foldl (fl f) (p, p') (prefixes ?ps)) [?ps!(n-2), ?ps!(n-1)]"
     using fl_foldl_conv_fr_foldr assms(4) by presburger
-  also have "... = foldl (fl f) (p, p') (lists ?ps)"
+  also have "... = foldl (fl f) (p, p') (prefixes ?ps)"
     using assms foldl_fl_expand by presburger
   also have "... = gen_closest_pair_it_rec f (p, p') ?ps"
     using gen_closest_pair_it_rec_conv_foldl by simp
@@ -419,7 +411,8 @@ lemma dist_point:
   by (simp add: dist_prod_def dist_real_def)
 
 lemma dist_transform:
-  "(l - dist (c\<^sub>0 :: point) c\<^sub>1 \<le> fst (p :: point) \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) \<longleftrightarrow> dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1"
+  "(l - dist (c\<^sub>0 :: point) c\<^sub>1 \<le> fst (p :: point) \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) \<longleftrightarrow> 
+   dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1"
 proof -
   have "dist p (l, snd p) = \<bar>fst p - l\<bar>"
     using dist_point by simp
@@ -456,7 +449,7 @@ lemma le_dist_conv_le_sq_dist[code_unfold]:
 
 subsection "Export Code"
 
-export_code closest_pair in Scala
+export_code closest_pair in SML
   module_name ClosestPair
 
 end

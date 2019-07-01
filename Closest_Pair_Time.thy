@@ -33,7 +33,7 @@ lemma t_length_conv_length_cost:
 subsection "Time Analysis split_at"
 
 fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_split_at _ [] = 0"
+  "t_split_at n [] = 0"
 | "t_split_at n (x#xs) = (
     case n of
       0 \<Rightarrow> 0
@@ -65,8 +65,8 @@ fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarr
     else
       1 + t_merge f (x#xs) ys
   )"
-| "t_merge _ xs [] = 0"
-| "t_merge _ [] ys = 0"
+| "t_merge f xs [] = 0"
+| "t_merge f [] ys = 0"
 
 lemma t_merge:
   "t_merge f xs ys \<le> length xs + length ys"
@@ -87,8 +87,8 @@ lemma t_merge_conv_merge_cost:
 subsection "Time Analysis msort"
 
 function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
-  "t_msort _ [] = 0"
-| "t_msort _ [_] = 1"
+  "t_msort f [] = 0"
+| "t_msort f [_] = 1"
 | "t_msort f (x # y # xs') = (
     let xs = x # y # xs' in
     let n = length xs div 2 in
