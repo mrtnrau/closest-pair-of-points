@@ -6,9 +6,9 @@ imports
   "Akra_Bazzi.Akra_Bazzi_Approximation"
 begin
 
-section "Time Analysis Merge Sort"
+section "Closest Pair Of Points Time Analysis"
 
-subsection "Time Analysis length"
+subsection "length"
 
 fun t_length :: "'a list \<Rightarrow> nat" where
   "t_length [] = 0"
@@ -30,7 +30,7 @@ lemma t_length_conv_length_cost:
   unfolding length_cost_def by (auto simp add: t_length)
 
 
-subsection "Time Analysis split_at"
+subsection "split_at"
 
 fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "t_split_at n [] = 0"
@@ -56,7 +56,7 @@ lemma t_split_at_conv_split_at_cost:
   unfolding split_at_cost_def by (auto simp add: min_def t_split_at)
 
 
-subsection "Time Analysis merge"
+subsection "merge"
 
 fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_merge f (x#xs) (y#ys) = (
@@ -84,7 +84,7 @@ lemma t_merge_conv_merge_cost:
   unfolding merge_cost_def by (metis of_nat_mono t_merge)
 
 
-subsection "Time Analysis msort"
+subsection "msort"
 
 function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_msort f [] = 0"
@@ -108,6 +108,12 @@ function msort_cost :: "nat \<Rightarrow> real" where
     msort_cost (nat \<lfloor>real n / 2\<rfloor>) + msort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
+
+definition sortX_cost :: "nat \<Rightarrow> real" where
+  "sortX_cost = msort_cost"
+
+definition sortY_cost :: "nat \<Rightarrow> real" where
+  "sortY_cost = msort_cost"
 
 declare t_length.simps t_split_at.simps t_merge.simps[simp del]
 
@@ -169,8 +175,24 @@ lemma msort_nonneg[simp]:
   "0 \<le> msort_cost n"
   by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
 
+lemma sortX_nonneg[simp]:
+  "0 \<le> sortX_cost n"
+  unfolding sortX_cost_def by simp
+
+lemma sortY_nonneg[simp]:
+  "0 \<le> sortY_cost n"
+  unfolding sortY_cost_def by simp
+
 lemma msort_cost:
   "msort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def)
+
+lemma sortX_cost:
+  "sortX_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  unfolding sortX_cost_def using msort_cost by simp
+
+lemma sortY_cost:
+  "sortY_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  unfolding sortY_cost_def using msort_cost by simp 
 
 end

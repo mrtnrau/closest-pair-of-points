@@ -238,10 +238,10 @@ lemma gen_closest_pair_conv_foldr:
 
 lemma fl_foldl_conv_fr_foldr:
   assumes  "\<And>x. f [x] = [x]"
-  shows "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes ps)) [c\<^sub>0, c\<^sub>1] =
-         fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+  shows "fl f (foldl (fl f) (d\<^sub>0, d\<^sub>1) (prefixes ps)) [c\<^sub>0, c\<^sub>1] =
+         fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
   using assms
-proof (induction ps arbitrary: c\<^sub>0' c\<^sub>1' c\<^sub>0 c\<^sub>1)
+proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 d\<^sub>0 d\<^sub>1)
   case (Cons p ps)
   show ?case 
   proof (cases "ps = [p]")
@@ -253,31 +253,31 @@ proof (induction ps arbitrary: c\<^sub>0' c\<^sub>1' c\<^sub>0 c\<^sub>1)
     let ?p' = "find_closest p (f ps)"
     show ?thesis
     proof cases
-      assume *: "fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (c\<^sub>0', c\<^sub>1')"
-      hence "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
-             fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
+      assume *: "fl f (d\<^sub>0, d\<^sub>1) (p # ps) = (d\<^sub>0, d\<^sub>1)"
+      hence "fl f (foldl (fl f) (d\<^sub>0, d\<^sub>1) (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+             fl f (foldl (fl f) (d\<^sub>0, d\<^sub>1) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] ((fr f) (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr f [d\<^sub>0, d\<^sub>1] ((fr f) (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
         using * Cons.prems by (cases ps) (auto simp add: Let_def)
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     next 
-      assume ASM: "\<not> fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (c\<^sub>0', c\<^sub>1')"
-      hence *: "fl f (c\<^sub>0', c\<^sub>1') (p # ps) = (p, find_closest p (f ps))"
+      assume ASM: "\<not> fl f (d\<^sub>0, d\<^sub>1) (p # ps) = (d\<^sub>0, d\<^sub>1)"
+      hence *: "fl f (d\<^sub>0, d\<^sub>1) (p # ps) = (p, find_closest p (f ps))"
         by (cases ps) (auto simp add: Let_def)
-      have "fl f (foldl (fl f) (c\<^sub>0', c\<^sub>1') (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
-            fl f (foldl (fl f) (fl f (c\<^sub>0', c\<^sub>1') (p # ps)) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
+      have "fl f (foldl (fl f) (d\<^sub>0, d\<^sub>1) (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+            fl f (foldl (fl f) (fl f (d\<^sub>0, d\<^sub>1) (p # ps)) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
       also have "... = fl f (foldl (fl f) (p, ?p') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         using Cons.prems * by (cases ps) (auto simp add: Let_def)
       also have "... = fr f [p, ?p'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (fr f (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr f [d\<^sub>0, d\<^sub>1] (fr f (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
         using Cons.prems * by (cases ps) (auto simp add: Let_def)
-      also have "... = fr f [c\<^sub>0', c\<^sub>1'] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     qed
