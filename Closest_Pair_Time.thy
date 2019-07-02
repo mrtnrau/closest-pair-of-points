@@ -26,8 +26,35 @@ lemma length_cost_nonneg[simp]:
   unfolding length_cost_def by simp
 
 lemma t_length_conv_length_cost:
-  "t_length xs \<le> length_cost (length xs)"
-  unfolding length_cost_def by (auto simp add: t_length)
+  "t_length xs = length_cost (length xs)"
+  unfolding length_cost_def using t_length by auto
+
+
+subsection "filter"
+
+fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_filter P [] = 0"
+| "t_filter P (x#xs) = (
+    if P x then
+      1 + t_filter P xs
+    else
+      1 + t_filter P xs
+  )"
+
+lemma t_filter:
+  "t_filter P xs = length xs"
+  by (induction xs) auto
+
+definition filter_cost :: "nat \<Rightarrow> real" where
+  "filter_cost n = real n"
+
+lemma filter_cost_nonneg[simp]:
+  "0 \<le> filter_cost n"
+  unfolding filter_cost_def by simp
+
+lemma t_filter_conv_filter_cost:
+  "t_filter P xs = filter_cost (length xs)"
+  unfolding filter_cost_def using t_filter by auto
 
 
 subsection "take"
@@ -181,7 +208,7 @@ next
     using * by linarith
   hence "t_merge f L R \<le> merge_cost N"
     using t_merge_conv_merge_cost by metis
-  moreover have "t_length XS \<le> length_cost N"
+  moreover have "t_length XS = length_cost N"
     using t_length_conv_length_cost defs by blast
   moreover have "t_split_at (N div 2) XS \<le> split_at_cost N"
     using t_split_at_conv_split_at_cost defs by blast
