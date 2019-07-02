@@ -479,7 +479,7 @@ proof (induction "card S" arbitrary: S)
   then obtain B T where *: "S = { B } \<union> T" "card T = n" "B \<notin> T"
     by (metis card_Suc_eq Suc_eq_plus1 insert_is_Un)
   hence "card (A \<inter> \<Union>S) = card (A \<inter> \<Union>({ B } \<union> T))"
-    using * by blast
+    by blast
   also have "... \<le> card (A \<inter> B) + card (A \<inter> \<Union>T)"
     by (simp add: card_Un_le inf_sup_distrib1)
   also have "... \<le> card (A \<inter> B) + (\<Sum>B \<in> T. card (A \<inter> B))"
