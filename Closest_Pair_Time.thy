@@ -30,6 +30,32 @@ lemma t_length_conv_length_cost:
   unfolding length_cost_def by (auto simp add: t_length)
 
 
+subsection "take"
+
+fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_take n [] = 0"
+| "t_take n (x#xs) = (
+    case n of
+      0 \<Rightarrow> 0
+    | Suc m \<Rightarrow> 1 + t_take m xs
+  )"
+
+lemma t_take:
+  "t_take n xs = min n (length xs)"
+  by (induction xs arbitrary: n) (auto split: nat.split)
+
+definition take_cost :: "nat \<Rightarrow> real" where
+  "take_cost n = real n"
+
+lemma take_cost_nonneg[simp]:
+  "0 \<le> take_cost n"
+  unfolding take_cost_def by simp
+
+lemma t_take_conv_take_cost:
+  "t_take n xs \<le> take_cost (length xs)"
+  unfolding take_cost_def by (auto simp add: min_def t_take)
+
+
 subsection "split_at"
 
 fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
@@ -171,27 +197,27 @@ next
     using XS_def N_def by blast
 qed auto
 
-lemma msort_nonneg[simp]:
+lemma msort_cost_nonneg[simp]:
   "0 \<le> msort_cost n"
   by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
 
-lemma sortX_nonneg[simp]:
+lemma sortX_cost_nonneg[simp]:
   "0 \<le> sortX_cost n"
   unfolding sortX_cost_def by simp
 
-lemma sortY_nonneg[simp]:
+lemma sortY_cost_nonneg[simp]:
   "0 \<le> sortY_cost n"
   unfolding sortY_cost_def by simp
 
-lemma msort_cost:
+theorem msort_cost:
   "msort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def)
 
-lemma sortX_cost:
+corollary sortX_cost:
   "sortX_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   unfolding sortX_cost_def using msort_cost by simp
 
-lemma sortY_cost:
+corollary sortY_cost:
   "sortY_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   unfolding sortY_cost_def using msort_cost by simp 
 
