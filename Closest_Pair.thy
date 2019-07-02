@@ -440,7 +440,7 @@ qed
 
 subsection "Pigeonhole Argument"
 
-lemma card_le_1_pairs_identical:
+lemma card_le_1_if_pairwise_eq:
   assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y"
   shows "card S \<le> 1"
 proof (rule ccontr)
@@ -455,13 +455,13 @@ proof (rule ccontr)
     using * assms by blast
 qed
 
-lemma card_S_inter_T:
+lemma card_Int_if_either_in:
   assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y \<or> x \<notin> T \<or> y \<notin> T" 
   shows "card (S \<inter> T) \<le> 1"
 proof (rule ccontr)
   assume "\<not> (card (S \<inter> T) \<le> 1)"
   then obtain x y where *: "x \<in> S \<inter> T \<and> y \<in> S \<inter> T \<and> x \<noteq> y"
-    by (meson card_le_1_pairs_identical)
+    by (meson card_le_1_if_pairwise_eq)
   hence "x \<in> T" "y \<in> T"
     by simp_all
   moreover have "x \<notin> T \<or> y \<notin> T"
@@ -470,7 +470,7 @@ proof (rule ccontr)
     by blast
 qed
 
-lemma card_Int_Un_le_Sum:
+lemma card_Int_Un_le_Sum_card_Int:
   assumes "finite S"
   shows "card (A \<inter> \<Union>S) \<le> (\<Sum>B \<in> S. card (A \<inter> B))"
   using assms
@@ -505,11 +505,11 @@ lemma pigeonhole:
 proof (rule ccontr)
   assume "\<not> (\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X)"
   hence *: "\<forall>X \<in> T. card (S \<inter> X) \<le> 1"
-    using card_S_inter_T by metis
+    using card_Int_if_either_in by metis
   have "card T < card (S \<inter> \<Union>T)"
     using Int_absorb2 assms by fastforce
   also have "... \<le> (\<Sum>X \<in> T. card (S \<inter> X))"
-    using assms(1) card_Int_Un_le_Sum by blast
+    using assms(1) card_Int_Un_le_Sum_card_Int by blast
   also have "... \<le> card T"
     using * sum_mono by fastforce
   finally show False by simp

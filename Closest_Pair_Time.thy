@@ -246,6 +246,37 @@ corollary sortX_cost:
 
 corollary sortY_cost:
   "sortY_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
-  unfolding sortY_cost_def using msort_cost by simp 
+  unfolding sortY_cost_def using msort_cost by simp
+
+
+subsection "find_closest"
+
+fun t_find_closest :: "point \<Rightarrow> point list \<Rightarrow> nat" where
+  "t_find_closest p\<^sub>0 [] = 0"
+| "t_find_closest p\<^sub>0 [p] = 1"
+| "t_find_closest p\<^sub>0 (p # ps) = (
+    let c = find_closest p\<^sub>0 ps in
+    let t = t_find_closest p\<^sub>0 ps in
+    if dist p\<^sub>0 p < dist p\<^sub>0 c then
+      1 + t
+    else
+      1 + t
+  )"
+
+lemma t_find_closest:
+  "t_find_closest p ps = length ps"
+  by (induction p ps rule: t_find_closest.induct) auto
+
+definition find_closest_cost :: "nat \<Rightarrow> real" where
+  "find_closest_cost n = real n"
+
+lemma find_closest_cost_nonneg[simp]:
+  "0 \<le> find_closest_cost n"
+  unfolding find_closest_cost_def by simp
+
+lemma t_find_closest_conv_find_closest_cost:
+  "t_find_closest p ps = find_closest_cost (length ps)"
+  unfolding find_closest_cost_def using t_find_closest by auto
+  
 
 end
