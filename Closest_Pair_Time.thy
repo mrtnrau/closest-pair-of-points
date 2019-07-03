@@ -19,7 +19,7 @@ lemma t_length:
   by (induction xs) auto
 
 definition length_cost :: "nat \<Rightarrow> real" where
-  "length_cost n = real n"
+  "length_cost n = n"
 
 lemma length_cost_nonneg[simp]:
   "0 \<le> length_cost n"
@@ -46,7 +46,7 @@ lemma t_filter:
   by (induction xs) auto
 
 definition filter_cost :: "nat \<Rightarrow> real" where
-  "filter_cost n = real n"
+  "filter_cost n = n"
 
 lemma filter_cost_nonneg[simp]:
   "0 \<le> filter_cost n"
@@ -72,7 +72,7 @@ lemma t_take:
   by (induction xs arbitrary: n) (auto split: nat.split)
 
 definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = real n"
+  "take_cost n = n"
 
 lemma take_cost_nonneg[simp]:
   "0 \<le> take_cost n"
@@ -98,7 +98,7 @@ lemma t_split_at:
   by (induction xs arbitrary: n) (auto split: nat.split)
 
 definition split_at_cost :: "nat \<Rightarrow> real" where
-  "split_at_cost n = real n"
+  "split_at_cost n = n"
 
 lemma split_at_cost_nonneg[simp]:
   "0 \<le> split_at_cost n"
@@ -126,7 +126,7 @@ lemma t_merge:
   by (induction f xs ys rule: t_merge.induct) auto
 
 definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = real n"
+  "merge_cost n = n"
 
 lemma merge_cost_nonneg[simp]:
   "0 \<le> merge_cost n"
@@ -268,7 +268,7 @@ lemma t_find_closest:
   by (induction p ps rule: t_find_closest.induct) auto
 
 definition find_closest_cost :: "nat \<Rightarrow> real" where
-  "find_closest_cost n = real n"
+  "find_closest_cost n = n"
 
 lemma find_closest_cost_nonneg[simp]:
   "0 \<le> find_closest_cost n"
@@ -277,6 +277,87 @@ lemma find_closest_cost_nonneg[simp]:
 lemma t_find_closest_conv_find_closest_cost:
   "t_find_closest p ps = find_closest_cost (length ps)"
   unfolding find_closest_cost_def using t_find_closest by auto
-  
+
+
+subsection "gen_closest_pair"
+
+fun t_gen_closest_pair :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> nat" where
+  "t_gen_closest_pair f [] = 0"
+| "t_gen_closest_pair f [p\<^sub>0] = 1"
+| "t_gen_closest_pair f [p\<^sub>0, p\<^sub>1] = 2"
+| "t_gen_closest_pair f (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps in
+    let t_gen = t_gen_closest_pair f ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
+    let t_find = t_find_closest p\<^sub>0 (f ps) in
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+      1 + t_gen + t_find
+    else
+      1 + t_gen + t_find
+  )"
+
+lemma t_gen_closest_pair_id:
+  "f = (\<lambda>ps. ps) \<Longrightarrow> t_gen_closest_pair f ps \<le> length ps * length ps"
+proof (induction f ps rule: t_gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  have "t_gen_closest_pair f ?ps \<le> length ?ps * length ?ps"
+    using 4 prod_cases3 by metis
+  thus ?case
+    using "4.prems" t_find_closest by simp
+qed auto
+
+lemma t_gen_closest_pair_take_7:
+  "f = take 7 \<Longrightarrow> t_gen_closest_pair f ps \<le> 8 * length ps"
+proof (induction f ps rule: t_gen_closest_pair.induct)
+  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  have "t_gen_closest_pair f ?ps \<le> 8 * length ?ps"
+    using 4 prod_cases3 by metis
+  thus ?case
+    using "4.prems" t_find_closest by simp
+qed auto
+
+
+subsection "bf_closest_pair"
+
+definition t_bf_closest_pair :: "point list \<Rightarrow> nat" where
+  "t_bf_closest_pair ps = t_gen_closest_pair (\<lambda>ps. ps) ps"
+
+lemma t_bf_closest_pair:
+  "t_bf_closest_pair ps \<le> length ps * length ps"
+  unfolding t_bf_closest_pair_def using t_gen_closest_pair_id by simp
+
+definition bf_closest_pair_cost :: "nat \<Rightarrow> real" where
+  "bf_closest_pair_cost n = n * n"
+
+lemma bf_closest_pair_cost_nonneg[simp]:
+  "0 \<le> bf_closest_pair_cost n"
+  unfolding bf_closest_pair_cost_def by simp
+
+lemma t_bf_closest_pair_conv_bf_closest_pair_cost:
+  "t_bf_closest_pair ps \<le> bf_closest_pair_cost (length ps)"
+  unfolding bf_closest_pair_cost_def using t_bf_closest_pair of_nat_mono by blast
+
+
+subsection "closest_pair_7"
+
+definition t_closest_pair_7 :: "point list \<Rightarrow> nat" where
+  "t_closest_pair_7 ps = t_gen_closest_pair (take 7) ps"
+
+lemma t_closest_pair_7:
+  "t_closest_pair_7 ps \<le> 8 * length ps"
+  unfolding t_closest_pair_7_def using t_gen_closest_pair_take_7 by simp
+
+definition closest_pair_7_cost :: "nat \<Rightarrow> real" where
+  "closest_pair_7_cost n = 8 * n"
+
+lemma closest_pair_7_cost_nonneg[simp]:
+  "0 \<le> closest_pair_7_cost n"
+  unfolding closest_pair_7_cost_def by simp
+
+lemma t_closest_pair_7_conv_closest_pair_7_cost:
+  "t_closest_pair_7 ps \<le> closest_pair_7_cost (length ps)"
+  unfolding closest_pair_7_cost_def using t_closest_pair_7 of_nat_mono by blast
 
 end
