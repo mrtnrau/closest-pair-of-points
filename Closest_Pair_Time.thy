@@ -360,4 +360,74 @@ lemma t_closest_pair_7_conv_closest_pair_7_cost:
   "t_closest_pair_7 ps \<le> closest_pair_7_cost (length ps)"
   unfolding closest_pair_7_cost_def using t_closest_pair_7 of_nat_mono by blast
 
+
+subsection "combine"
+
+fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat" where
+  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
+    let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
+    let ys' = filter (\<lambda>p. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) ys in
+    let t_f = t_filter (\<lambda>p. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) ys in
+    if length ys' < 2 then
+      t_f
+    else
+      let (p\<^sub>0, p\<^sub>1) = closest_pair_7 ys' in
+      let t_c = t_closest_pair_7 ys' in
+      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
+        t_f + t_c
+      else
+        t_f + t_c
+  )"
+
+lemma t_combine:
+  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> 9 * length ys"
+proof -
+  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
+  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
+  let ?P = "(\<lambda>p. l -  dist ?c\<^sub>0 ?c\<^sub>1 \<le> fst p \<and> fst p \<le> l +  dist ?c\<^sub>0 ?c\<^sub>1)"
+  let ?ys' = "filter ?P ys"
+  let ?t_f = "t_filter ?P ys"
+  let ?p\<^sub>0\<^sub>1 = "closest_pair_7 ?ys'"
+  let ?t_c = "t_closest_pair_7 ?ys'"
+  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
+  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+
+  show ?thesis
+  proof cases
+    assume "length ?ys' < 2"
+    hence "?t_f = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+      by (auto simp add: Let_def split!: prod.splits)
+    moreover have "?t_f = length ys"
+      using t_filter[of ?P ys] by simp
+    ultimately show ?thesis
+      by linarith
+  next
+    assume *: "\<not> length ?ys' < 2"
+    have "?t_c \<le> 8 * length ?ys'"
+      using t_closest_pair_7 by simp
+    moreover have "length ?ys' \<le> length ys"
+      by simp
+    ultimately have "?t_c \<le> 8 * length ys"
+      by linarith
+    moreover have "?t_f + ?t_c = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using * by (auto simp add: Let_def split!: prod.splits)
+    moreover have "?t_f = length ys"
+      using t_filter[of ?P ys] by simp
+    ultimately show ?thesis
+      by linarith
+  qed
+qed
+
+definition combine_cost :: "nat \<Rightarrow> real" where
+  "combine_cost n = 9 * n"
+
+lemma combine_cost_nonneg[simp]:
+  "0 \<le> combine_cost n"
+  unfolding combine_cost_def by simp
+
+lemma t_combine_conv_combine_cost:
+  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> combine_cost (length ys)"
+  unfolding combine_cost_def using t_combine of_nat_mono by blast
+
 end
