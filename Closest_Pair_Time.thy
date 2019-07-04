@@ -154,6 +154,12 @@ termination t_msort
   apply (auto simp add: split_at_take_drop_conv Let_def)
   done
 
+definition t_sortX :: "point list \<Rightarrow> nat" where
+  "t_sortX ps = t_msort (\<lambda>p. fst p) ps"
+
+definition t_sortY :: "point list \<Rightarrow> nat" where
+  "t_sortY ps = t_msort (\<lambda>p. snd p) ps"
+
 function msort_cost :: "nat \<Rightarrow> real" where
   "msort_cost 0 = 0"
 | "msort_cost 1 = 1"
@@ -169,7 +175,6 @@ definition sortY_cost :: "nat \<Rightarrow> real" where
   "sortY_cost = msort_cost"
 
 declare t_length.simps t_split_at.simps t_merge.simps[simp del]
-
 
 lemma t_msort_conv_msort_cost:
   "t_msort f xs \<le> msort_cost (length xs)"
@@ -224,15 +229,23 @@ next
     using XS_def N_def by blast
 qed auto
 
+corollary t_sortX_conv_sortX_cost:
+  "t_sortX xs \<le> sortX_cost (length xs)"
+  unfolding t_sortX_def sortX_cost_def using t_msort_conv_msort_cost by blast
+
+corollary t_sortY_conv_sortY_cost:
+  "t_sortY xs \<le> sortY_cost (length xs)"
+  unfolding t_sortY_def sortY_cost_def using t_msort_conv_msort_cost by blast
+
 lemma msort_cost_nonneg[simp]:
   "0 \<le> msort_cost n"
   by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
 
-lemma sortX_cost_nonneg[simp]:
+corollary sortX_cost_nonneg[simp]:
   "0 \<le> sortX_cost n"
   unfolding sortX_cost_def by simp
 
-lemma sortY_cost_nonneg[simp]:
+corollary sortY_cost_nonneg[simp]:
   "0 \<le> sortY_cost n"
   unfolding sortY_cost_def by simp
 
@@ -440,7 +453,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
     let n = length xs in
     let t_l = t_length xs in
     if n \<le> 3 then
-      t_l + t_msort (\<lambda>p. snd p) xs + t_bf_closest_pair xs
+      t_l + t_sortY xs + t_bf_closest_pair xs
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let t_s = t_split_at (n div 2) xs in
@@ -464,7 +477,7 @@ termination t_closest_pair_rec
 
 lemma t_closest_pair_rec_simps_1:
   assumes "n = length xs" "n \<le> 3"
-  shows "t_closest_pair_rec xs = t_length xs + t_msort (\<lambda>p. snd p) xs + t_bf_closest_pair xs"
+  shows "t_closest_pair_rec xs = t_length xs + t_sortY xs + t_bf_closest_pair xs"
   using assms by simp
 
 lemma t_closest_pair_rec_simps_2:
@@ -487,7 +500,7 @@ lemma t_closest_pair_rec_simps_2:
 declare t_closest_pair_rec.simps [simp del]
 
 function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
-  "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = length_cost n + msort_cost n + bf_closest_pair_cost n"
+  "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = length_cost n + sortY_cost n + bf_closest_pair_cost n"
 | "3 < n \<Longrightarrow> closest_pair_rec_cost n = length_cost n + split_at_cost n + 
     closest_pair_rec_cost (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_cost (nat \<lceil>real n / 2\<rceil>) +
    merge_cost n + combine_cost n"
@@ -503,13 +516,13 @@ proof (induction ps rule: length_induct)
   proof (cases "?n \<le> 3")
     case True        
     hence "t_closest_pair_rec ps = 
-           t_length ps + t_msort (\<lambda>p. snd p) ps + t_bf_closest_pair ps"
+           t_length ps + t_sortY ps + t_bf_closest_pair ps"
       using t_closest_pair_rec_simps_1 by simp
     moreover have "closest_pair_rec_cost ?n = 
-                   length_cost ?n + msort_cost ?n + bf_closest_pair_cost ?n"
+                   length_cost ?n + sortY_cost ?n + bf_closest_pair_cost ?n"
       using True by simp
     ultimately show ?thesis
-      using t_length_conv_length_cost t_msort_conv_msort_cost
+      using t_length_conv_length_cost t_sortY_conv_sortY_cost
             t_bf_closest_pair_conv_bf_closest_pair_cost of_nat_add by smt
   next
     case False
@@ -556,7 +569,6 @@ proof (induction ps rule: length_induct)
       by simp_all
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
       by linarith+
-
     have "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
       using conquer_defs closest_pair_rec_set_length_sortedY prod.collapse by metis+
     hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
@@ -592,16 +604,36 @@ proof (induction ps rule: length_induct)
       using FL FR by linarith
   qed
 qed
-  
-lemma closest_pair_rec_cost_nonneg[simp]:
-  "0 \<le> closest_pair_rec_cost n"
-  by (induction n rule: closest_pair_rec_cost.induct) (auto simp del: One_nat_def)
 
 theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
-
 subsection "closest_pair"
+
+definition t_closest_pair :: "point list \<Rightarrow> nat" where
+  "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
+
+definition closest_pair_cost :: "nat \<Rightarrow> real" where
+  "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
+
+lemma t_closest_pair_conv_closest_pair_cost:
+  "t_closest_pair ps \<le> closest_pair_cost (length ps)"
+  unfolding t_closest_pair_def closest_pair_cost_def
+  using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add by smt
+
+lemma AUX:
+  assumes "x \<in> \<Theta>[F](f)" "y \<in> \<Theta>[F](f)" "z = x + y"
+  shows "z \<in> \<Theta>[F](f)"
+  sorry
+
+theorem closest_pair_cost:
+  "closest_pair_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+proof -
+  have "closest_pair_cost = sortX_cost + closest_pair_rec_cost"
+    unfolding closest_pair_cost_def by auto
+  thus ?thesis
+    using sortX_cost closest_pair_rec_cost AUX by blast
+qed
 
 end
