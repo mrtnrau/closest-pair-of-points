@@ -1246,10 +1246,9 @@ lemma closest_pair_rec_simps:
 
 declare closest_pair_rec.simps [simp del]
 
-
-lemma closest_pair_rec_ys:
-  assumes "distinct xs" "(ys, cp) = closest_pair_rec xs"
-  shows "set ys = set xs \<and> distinct ys \<and> sortedY ys"
+lemma closest_pair_rec_set_length_sortedY:
+  assumes "(ys, cp) = closest_pair_rec xs"
+  shows "set ys = set xs \<and> length ys = length xs \<and> sortedY ys"
   using assms
 proof (induction xs arbitrary: ys cp rule: length_induct)
   case (1 xs)
@@ -1257,7 +1256,66 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True
-    thus ?thesis using "1.prems" sortY
+    thus ?thesis using "1.prems" sortY(1,2,3)
+      by (auto simp add: closest_pair_rec.simps)
+  next
+    case False
+
+    let ?xs = "split_at (?n div 2) xs"
+    let ?xs\<^sub>L = "fst ?xs"
+    let ?xs\<^sub>R = "snd ?xs"
+    let ?l = "fst (hd ?xs\<^sub>R)"
+
+    let ?cp\<^sub>L = "closest_pair_rec ?xs\<^sub>L"
+    let ?ys\<^sub>L = "fst ?cp\<^sub>L"
+    let ?c\<^sub>L = "snd ?cp\<^sub>L"
+    let ?cp\<^sub>R = "closest_pair_rec ?xs\<^sub>R"
+    let ?ys\<^sub>R = "fst ?cp\<^sub>R"
+    let ?c\<^sub>R = "snd ?cp\<^sub>R"
+
+    let ?ys = "merge (\<lambda>p. snd p) ?ys\<^sub>L ?ys\<^sub>R"
+    let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
+
+    have "length ?xs\<^sub>L < length xs" "length ?xs\<^sub>R < length xs"
+      using False by (auto simp add: split_at_take_drop_conv)
+    hence IH: "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R"
+              "length ?xs\<^sub>L = length ?ys\<^sub>L" "length ?xs\<^sub>R = length ?ys\<^sub>R"
+              "sortedY ?ys\<^sub>L" "sortedY ?ys\<^sub>R"
+      using "1.IH" prod.collapse by metis+
+
+    have "set xs = set ?xs\<^sub>L \<union> set ?xs\<^sub>R"
+      by (auto simp add: set_take_drop split_at_take_drop_conv)
+    hence SET: "set xs = set ?ys"
+      using set_merge IH(1,2) by fast
+
+    have "length xs = length ?xs\<^sub>L + length ?xs\<^sub>R"
+      by (auto simp add: split_at_take_drop_conv)
+    hence LENGTH: "length xs = length ?ys"
+      using IH(3,4) length_merge by metis
+
+    have SORTED: "sortedY ?ys"
+      using IH(5,6) by (simp add: sortedY_def sorted_merge)
+
+    have "(?ys, ?cp) = closest_pair_rec xs"
+      using False closest_pair_rec_simps by (auto simp add: Let_def split: prod.splits)
+    hence "(ys, cp) = (?ys, ?cp)"
+      using "1.prems" by argo
+    thus ?thesis
+      using SET LENGTH SORTED by simp
+  qed
+qed
+
+lemma closest_pair_rec_distinct:
+  assumes "distinct xs" "(ys, cp) = closest_pair_rec xs"
+  shows "distinct ys"
+  using assms
+proof (induction xs arbitrary: ys cp rule: length_induct)
+  case (1 xs)
+  let ?n = "length xs"
+  show ?case
+  proof (cases "?n \<le> 3")
+    case True
+    thus ?thesis using "1.prems" sortY(4)
       by (auto simp add: closest_pair_rec.simps)
   next
     case False
@@ -1281,30 +1339,24 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
       using False by (auto simp add: split_at_take_drop_conv)
     moreover have "distinct ?xs\<^sub>L" "distinct ?xs\<^sub>R"
       using "1.prems"(1) by (auto simp add: split_at_take_drop_conv)
-    ultimately have IH: "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R" 
-                        "distinct ?ys\<^sub>L" "distinct ?ys\<^sub>R" 
-                        "sortedY ?ys\<^sub>L" "sortedY ?ys\<^sub>R"
+    ultimately have IH: "distinct ?ys\<^sub>L" "distinct ?ys\<^sub>R" 
       using "1.IH" prod.collapse by blast+
 
-    have "set xs = set ?xs\<^sub>L \<union> set ?xs\<^sub>R"
-      by (auto simp add: set_take_drop split_at_take_drop_conv)
-    hence SET: "set xs = set ?ys"
-      using set_merge IH(1,2) by fast
     have "set ?xs\<^sub>L \<inter> set ?xs\<^sub>R = {}"
       using "1.prems"(1) by (auto simp add: split_at_take_drop_conv set_take_disj_set_drop_if_distinct)
-    hence "set ?ys\<^sub>L \<inter> set ?ys\<^sub>R = {}"
-      using IH(1,2) by blast
+    moreover have "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R"
+      using closest_pair_rec_set_length_sortedY prod.collapse by blast+
+    ultimately have "set ?ys\<^sub>L \<inter> set ?ys\<^sub>R = {}"
+      by blast
     hence DISTINCT: "distinct ?ys"
-      using distinct_merge IH(3,4) by blast
-    have SORTED: "sortedY ?ys"
-      using IH(5,6) by (simp add: sortedY_def sorted_merge)
+      using distinct_merge IH by blast
 
     have "(?ys, ?cp) = closest_pair_rec xs"
       using False closest_pair_rec_simps by (auto simp add: Let_def split: prod.splits)
     hence "(ys, cp) = (?ys, ?cp)"
       using "1.prems" by argo
     thus ?thesis
-      using SET DISTINCT SORTED by blast
+      using DISTINCT by blast
   qed
 qed
 
@@ -1363,7 +1415,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     have *: "(?ys, ?c\<^sub>0, ?c\<^sub>1) = closest_pair_rec xs"
       using False by (auto simp add: closest_pair_rec_simps Let_def split: prod.split)
     have YS: "set xs = set ?ys" "distinct ?ys"
-      using "1.prems"(2) closest_pair_rec_ys * by blast+
+      using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
 
     have "?c\<^sub>0 \<in> set xs"
       using combine_c0 IHL2(1) IHR2(1) YS prod.collapse by (metis (no_types, lifting))
@@ -1428,7 +1480,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using XSLR by (auto simp add: divide_defs conquer_defs)
     ultimately have L: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set XS\<^sub>L)"
                        "set XS\<^sub>L = set YS\<^sub>L" "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
-      using 1 closest_pair_rec_ys closest_pair_rec_c0_c1 by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 by blast+
     hence IHL: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
       by argo
 
@@ -1440,7 +1492,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using XSLR by (auto simp add: divide_defs conquer_defs)
     ultimately have R: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set XS\<^sub>R)"
                        "set XS\<^sub>R = set YS\<^sub>R" "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
-      using 1 closest_pair_rec_ys closest_pair_rec_c0_c1 by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 by blast+
     hence IHR: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
       by argo
 
@@ -1448,7 +1500,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
       using False by (auto simp add: closest_pair_rec_simps Let_def divide_defs conquer_defs combine_defs split: prod.split)
 
     have "set xs = set YS" "distinct YS" "sortedY YS"
-      using "1.prems"(2) closest_pair_rec_ys * by blast+
+      using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
     moreover have "\<forall>p \<in> set YS\<^sub>L. fst p \<le> L"
       using False "1.prems"(3) XSLR L_def L(2) sortedX_take_less_hd_drop by simp
     moreover have "\<forall>p \<in> set YS\<^sub>R. L \<le> fst p"

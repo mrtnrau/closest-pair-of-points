@@ -557,6 +557,11 @@ proof (induction ps rule: length_induct)
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
       by linarith+
 
+    have "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
+      using conquer_defs closest_pair_rec_set_length_sortedY prod.collapse by metis+
+    hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
+      using divide_defs XSLR by fastforce
+
     have "length XS\<^sub>L < length ps"
       using False XSLR by simp
     hence "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
@@ -571,9 +576,6 @@ proof (induction ps rule: length_induct)
     hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
       using * by simp
 
-    have #: "?n = length YS\<^sub>L + length YS\<^sub>R"
-      sorry
-
     have "t_length ps = length_cost ?n"
       using t_length_conv_length_cost by blast
     moreover have "TS \<le> split_at_cost ?n"
@@ -583,9 +585,9 @@ proof (induction ps rule: length_induct)
     moreover have "TR \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
       using IHR TR_def by blast
     moreover have "TM \<le> merge_cost ?n"
-      using # t_merge_conv_merge_cost TM_def by auto
+      using L t_merge_conv_merge_cost TM_def by auto
     moreover have "TC \<le> combine_cost ?n"
-      using # combine_defs length_merge t_combine_conv_combine_cost by metis
+      using L combine_defs length_merge t_combine_conv_combine_cost by metis
     ultimately show ?thesis
       using FL FR by linarith
   qed
