@@ -7,7 +7,6 @@ begin
 
 section "Closest Pair Of Points Without Stackoverflow"
 
-
 subsection "length"
 
 fun length_it_rec :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
@@ -98,10 +97,6 @@ lemma split_at_conv_split_at_it_prod:
 lemma split_at_conv_split_at_it[code_unfold]:
   "split_at n xs = split_at_it n xs"
   using split_at_conv_split_at_it_prod surj_pair by metis
-
-code_thms split_at
-
-code_deps split_at
 
 subsection "merge"
 

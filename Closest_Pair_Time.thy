@@ -14,12 +14,12 @@ fun t_length :: "'a list \<Rightarrow> nat" where
   "t_length [] = 0"
 | "t_length (x#xs) = 1 + t_length xs"
 
+definition length_cost :: "nat \<Rightarrow> real" where
+  "length_cost n = n"
+
 lemma t_length:
   "t_length xs = length xs"
   by (induction xs) auto
-
-definition length_cost :: "nat \<Rightarrow> real" where
-  "length_cost n = n"
 
 lemma length_cost_nonneg[simp]:
   "0 \<le> length_cost n"
@@ -41,16 +41,12 @@ fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat
       1 + t_filter P xs
   )"
 
-lemma t_filter:
-  "t_filter P xs = length xs"
-  by (induction xs) auto
-
 definition filter_cost :: "nat \<Rightarrow> real" where
   "filter_cost n = n"
 
-lemma filter_cost_nonneg[simp]:
-  "0 \<le> filter_cost n"
-  unfolding filter_cost_def by simp
+lemma t_filter:
+  "t_filter P xs = length xs"
+  by (induction xs) auto
 
 lemma t_filter_conv_filter_cost:
   "t_filter P xs = filter_cost (length xs)"
@@ -67,16 +63,12 @@ fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
     | Suc m \<Rightarrow> 1 + t_take m xs
   )"
 
-lemma t_take:
-  "t_take n xs = min n (length xs)"
-  by (induction xs arbitrary: n) (auto split: nat.split)
-
 definition take_cost :: "nat \<Rightarrow> real" where
   "take_cost n = n"
 
-lemma take_cost_nonneg[simp]:
-  "0 \<le> take_cost n"
-  unfolding take_cost_def by simp
+lemma t_take:
+  "t_take n xs = min n (length xs)"
+  by (induction xs arbitrary: n) (auto split: nat.split)
 
 lemma t_take_conv_take_cost:
   "t_take n xs \<le> take_cost (length xs)"
@@ -93,12 +85,12 @@ fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
     | Suc m \<Rightarrow> 1 + t_split_at m xs
   )"
 
+definition split_at_cost :: "nat \<Rightarrow> real" where
+  "split_at_cost n = n"
+
 lemma t_split_at:
   "t_split_at n xs = min n (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
-
-definition split_at_cost :: "nat \<Rightarrow> real" where
-  "split_at_cost n = n"
 
 lemma split_at_cost_nonneg[simp]:
   "0 \<le> split_at_cost n"
@@ -121,12 +113,12 @@ fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarr
 | "t_merge f xs [] = 0"
 | "t_merge f [] ys = 0"
 
+definition merge_cost :: "nat \<Rightarrow> real" where
+  "merge_cost n = n"
+
 lemma t_merge:
   "t_merge f xs ys \<le> length xs + length ys"
   by (induction f xs ys rule: t_merge.induct) auto
-
-definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = n"
 
 lemma merge_cost_nonneg[simp]:
   "0 \<le> merge_cost n"
@@ -276,16 +268,12 @@ fun t_find_closest :: "point \<Rightarrow> point list \<Rightarrow> nat" where
       1 + t
   )"
 
-lemma t_find_closest:
-  "t_find_closest p ps = length ps"
-  by (induction p ps rule: t_find_closest.induct) auto
-
 definition find_closest_cost :: "nat \<Rightarrow> real" where
   "find_closest_cost n = n"
 
-lemma find_closest_cost_nonneg[simp]:
-  "0 \<le> find_closest_cost n"
-  unfolding find_closest_cost_def by simp
+lemma t_find_closest:
+  "t_find_closest p ps = length ps"
+  by (induction p ps rule: t_find_closest.induct) auto
 
 lemma t_find_closest_conv_find_closest_cost:
   "t_find_closest p ps = find_closest_cost (length ps)"
@@ -337,12 +325,12 @@ subsection "bf_closest_pair"
 definition t_bf_closest_pair :: "point list \<Rightarrow> nat" where
   "t_bf_closest_pair ps = t_gen_closest_pair (\<lambda>ps. ps) ps"
 
+definition bf_closest_pair_cost :: "nat \<Rightarrow> real" where
+  "bf_closest_pair_cost n = n * n"
+
 lemma t_bf_closest_pair:
   "t_bf_closest_pair ps \<le> length ps * length ps"
   unfolding t_bf_closest_pair_def using t_gen_closest_pair_id by simp
-
-definition bf_closest_pair_cost :: "nat \<Rightarrow> real" where
-  "bf_closest_pair_cost n = n * n"
 
 lemma bf_closest_pair_cost_nonneg[simp]:
   "0 \<le> bf_closest_pair_cost n"
@@ -358,16 +346,12 @@ subsection "closest_pair_7"
 definition t_closest_pair_7 :: "point list \<Rightarrow> nat" where
   "t_closest_pair_7 ps = t_gen_closest_pair (take 7) ps"
 
-lemma t_closest_pair_7:
-  "t_closest_pair_7 ps \<le> 8 * length ps"
-  unfolding t_closest_pair_7_def using t_gen_closest_pair_take_7 by simp
-
 definition closest_pair_7_cost :: "nat \<Rightarrow> real" where
   "closest_pair_7_cost n = 8 * n"
 
-lemma closest_pair_7_cost_nonneg[simp]:
-  "0 \<le> closest_pair_7_cost n"
-  unfolding closest_pair_7_cost_def by simp
+lemma t_closest_pair_7:
+  "t_closest_pair_7 ps \<le> 8 * length ps"
+  unfolding t_closest_pair_7_def using t_gen_closest_pair_take_7 by simp
 
 lemma t_closest_pair_7_conv_closest_pair_7_cost:
   "t_closest_pair_7 ps \<le> closest_pair_7_cost (length ps)"
@@ -391,6 +375,9 @@ fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> re
       else
         t_f + t_c
   )"
+
+definition combine_cost :: "nat \<Rightarrow> real" where
+  "combine_cost n = 9 * n"
 
 lemma t_combine:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> 9 * length ys"
@@ -431,13 +418,6 @@ proof -
       by linarith
   qed
 qed
-
-definition combine_cost :: "nat \<Rightarrow> real" where
-  "combine_cost n = 9 * n"
-
-lemma combine_cost_nonneg[simp]:
-  "0 \<le> combine_cost n"
-  unfolding combine_cost_def by simp
 
 lemma t_combine_conv_combine_cost:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> combine_cost (length ys)"
@@ -609,6 +589,7 @@ theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
+
 subsection "closest_pair"
 
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
@@ -622,18 +603,9 @@ lemma t_closest_pair_conv_closest_pair_cost:
   unfolding t_closest_pair_def closest_pair_cost_def
   using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add by smt
 
-lemma AUX:
-  assumes "x \<in> \<Theta>[F](f)" "y \<in> \<Theta>[F](f)" "z = x + y"
-  shows "z \<in> \<Theta>[F](f)"
-  sorry
-
 theorem closest_pair_cost:
-  "closest_pair_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
-proof -
-  have "closest_pair_cost = sortX_cost + closest_pair_rec_cost"
-    unfolding closest_pair_cost_def by auto
-  thus ?thesis
-    using sortX_cost closest_pair_rec_cost AUX by blast
-qed
+  "closest_pair_cost \<in> O(\<lambda>n. real n * ln (real n))"
+  unfolding closest_pair_cost_def
+  using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
 end
