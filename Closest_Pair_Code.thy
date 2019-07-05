@@ -98,6 +98,7 @@ lemma split_at_conv_split_at_it[code_unfold]:
   "split_at n xs = split_at_it n xs"
   using split_at_conv_split_at_it_prod surj_pair by metis
 
+
 subsection "merge"
 
 lemma merge_xs_Nil[simp]:
@@ -364,7 +365,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 lemma cases_list012:
   "P [] \<Longrightarrow> (\<And>x. P [x]) \<Longrightarrow> (\<And>x y xs. P (x # y # xs)) \<Longrightarrow> P xs"
   using induct_list012 by metis
@@ -405,6 +405,14 @@ lemma dist_point:
   "dist (p\<^sub>0 :: point) p\<^sub>1 = sqrt ((fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2)"
   by (simp add: dist_prod_def dist_real_def)
 
+lemma lt_dist_conv_lt_sq_dist[code_unfold]:
+  "dist a b < dist c d \<longleftrightarrow> dist_code a b < dist_code c d"
+  using dist_point dist_code_def by simp
+
+lemma le_dist_conv_le_sq_dist[code_unfold]:
+  "dist a b \<le> dist c d \<longleftrightarrow> dist_code a b \<le> dist_code c d"
+  using dist_point dist_code_def by simp
+
 lemma dist_transform:
   "(l - dist (c\<^sub>0 :: point) c\<^sub>1 \<le> fst (p :: point) \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) \<longleftrightarrow> 
    dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1"
@@ -414,6 +422,9 @@ proof -
   thus ?thesis
     by linarith
 qed
+
+
+subsection "combine"
 
 fun combine_code :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
@@ -433,18 +444,10 @@ lemma combine_conv_combine_code[code_unfold]:
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
   using dist_transform by simp
 
-lemma lt_dist_conv_lt_sq_dist[code_unfold]:
-  "dist a b < dist c d \<longleftrightarrow> dist_code a b < dist_code c d"
-  using dist_point dist_code_def by simp
-
-lemma le_dist_conv_le_sq_dist[code_unfold]:
-  "dist a b \<le> dist c d \<longleftrightarrow> dist_code a b \<le> dist_code c d"
-  using dist_point dist_code_def by simp
-
 
 subsection "Export Code"
 
 export_code closest_pair in SML
-  module_name ClosestPair
+  module_name Closest_Pair
 
 end
