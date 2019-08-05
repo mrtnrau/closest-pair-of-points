@@ -1,8 +1,8 @@
 theory Closest_Pair_Code
   imports
     Closest_Pair
-    (* "HOL-Library.Code_Real_Approx_By_Float" *)
     "HOL-Library.Code_Target_Numeral"
+    "HOL-Library.Code_Real_Approx_By_Float"
 begin
 
 section "Closest Pair Of Points Without Stackoverflow"
@@ -446,6 +446,8 @@ lemma combine_conv_combine_code[code_unfold]:
 
 
 subsection "Export Code"
+
+declare [[code drop: "(<) :: real \<Rightarrow> real \<Rightarrow> bool" "(\<le>) :: real \<Rightarrow> real \<Rightarrow> bool"]] 
 
 export_code closest_pair in SML
   module_name Closest_Pair
