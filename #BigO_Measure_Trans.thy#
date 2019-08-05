@@ -1,0 +1,32 @@
+theory BigO_Measure_Trans
+imports "HOL-Library.Landau_Symbols" "HOL-Library.Going_To_Filter"
+begin
+
+text \<open>The following lemma expresses a procedure for deriving complexity properties of
+the form @{prop"t \<in> O[m going_to at_top](f o m)"} where
+\<^item> \<open>t\<close> is a (timing) function on same data domain (e.g. lists),
+\<^item> \<open>m\<close> is a measure function on that data domain (e.g. length),
+\<^item> \<open>t'\<close> is a function on @{typ nat}.
+One needs to show that
+\<^item> \<open>t\<close> is bounded by @{term "t' o m"}
+\<^item> @{prop"t' \<in> O(f)"}
+to conclude the overall property @{prop"t \<in> O[m going_to at_top](f o m)"}.
+\<close>
+
+lemma bigo_measure_trans:
+fixes t :: "'a \<Rightarrow> real" and t' :: "nat \<Rightarrow> real" and m :: "'a \<Rightarrow> nat" and f ::"nat \<Rightarrow> real"
+assumes "\<And>x. t x \<le> (t' o m) x"
+and "t' \<in> O(f)"
+and "\<And>x. 0 \<le> t x"
+shows "t \<in> O[m going_to at_top](f o m)"
+proof -
+  have 0: "\<forall>x. 0 \<le> (t' o m) x" by (meson assms(1,3) order_trans)
+  have 1: "t \<in> O[m going_to at_top](t' o m)"
+    apply(rule bigoI[where c=1]) using assms 0 by auto
+  have 2: "t' o m \<in> O[m going_to at_top](f o m)"
+    unfolding o_def going_to_def
+    by(rule landau_o.big.filtercomap[OF assms(2)])
+  show ?thesis by(rule landau_o.big_trans[OF 1 2])
+qed
+
+end

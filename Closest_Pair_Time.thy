@@ -2,9 +2,40 @@ theory Closest_Pair_Time
 imports 
   Closest_Pair
   "Landau_Symbols.Landau_More"
+  "HOL-Library.Going_To_Filter"
   "Akra_Bazzi.Akra_Bazzi_Method"
   "Akra_Bazzi.Akra_Bazzi_Approximation"
 begin
+
+section "Auxiliary"
+
+text \<open>
+  The following lemma expresses a procedure for deriving complexity properties of
+  the form @{prop"t \<in> O[m going_to at_top](f o m)"} where
+    \<^item> \<open>t\<close> is a (timing) function on same data domain (e.g. lists),
+    \<^item> \<open>m\<close> is a measure function on that data domain (e.g. length),
+    \<^item> \<open>t'\<close> is a function on @{typ nat}.
+  One needs to show that
+    \<^item> \<open>t\<close> is bounded by @{term "t' o m"}
+    \<^item> @{prop"t' \<in> O(f)"}
+  to conclude the overall property @{prop"t \<in> O[m going_to at_top](f o m)"}.
+\<close>
+
+lemma bigo_measure_trans:
+  fixes t :: "'a \<Rightarrow> real" and t' :: "nat \<Rightarrow> real" and m :: "'a \<Rightarrow> nat" and f ::"nat \<Rightarrow> real"
+  assumes "\<And>x. t x \<le> (t' o m) x"
+      and "t' \<in> O(f)"
+      and "\<And>x. 0 \<le> t x"
+  shows "t \<in> O[m going_to at_top](f o m)"
+proof -
+  have 0: "\<forall>x. 0 \<le> (t' o m) x" by (meson assms(1,3) order_trans)
+  have 1: "t \<in> O[m going_to at_top](t' o m)"
+    apply(rule bigoI[where c=1]) using assms 0 by auto
+  have 2: "t' o m \<in> O[m going_to at_top](f o m)"
+    unfolding o_def going_to_def
+    by(rule landau_o.big.filtercomap[OF assms(2)])
+  show ?thesis by(rule landau_o.big_trans[OF 1 2])
+qed
 
 section "Closest Pair Of Points Time Analysis"
 
@@ -29,6 +60,15 @@ lemma t_length_conv_length_cost:
   "t_length xs = length_cost (length xs)"
   unfolding length_cost_def using t_length by auto
 
+lemma t_length_bigo:
+  "t_length \<in> O[length going_to at_top](length_cost o length)"
+proof -
+  have "\<And>x. t_length x \<le> (length_cost o length) x"
+    unfolding comp_def by (simp add: length_cost_def t_length)
+  thus ?thesis
+    using bigo_measure_trans[of t_length length_cost length length_cost] by auto
+qed
+
 
 subsection "filter"
 
@@ -52,6 +92,15 @@ lemma t_filter_conv_filter_cost:
   "t_filter P xs = filter_cost (length xs)"
   unfolding filter_cost_def using t_filter by auto
 
+lemma t_filter_bigo:
+  "t_filter P \<in> O[length going_to at_top](filter_cost o length)"
+proof -
+  have "\<And>x. t_filter P x \<le> (filter_cost o length) x"
+    unfolding comp_def by (simp add: filter_cost_def t_filter)
+  thus ?thesis
+    using bigo_measure_trans[of "t_filter P" filter_cost length filter_cost] by auto
+qed
+
 
 subsection "take"
 
@@ -73,6 +122,15 @@ lemma t_take:
 lemma t_take_conv_take_cost:
   "t_take n xs \<le> take_cost (length xs)"
   unfolding take_cost_def by (auto simp add: min_def t_take)
+
+lemma t_take_bigo:
+  "t_take n \<in> O[length going_to at_top](take_cost o length)"
+proof -
+  have "\<And>x. t_take n x \<le> (take_cost o length) x"
+    unfolding comp_def by (simp add: take_cost_def t_take)
+  thus ?thesis
+    using bigo_measure_trans[of "t_take n" take_cost length take_cost] by auto
+qed
 
 
 subsection "split_at"
@@ -100,33 +158,55 @@ lemma t_split_at_conv_split_at_cost:
   "t_split_at n xs \<le> split_at_cost (length xs)"
   unfolding split_at_cost_def by (auto simp add: min_def t_split_at)
 
+lemma t_split_at_bigo:
+  "t_split_at n \<in> O[length going_to at_top](split_at_cost o length)"
+proof -
+  have "\<And>x. t_split_at n x \<le> (split_at_cost o length) x"
+    unfolding comp_def by (simp add: split_at_cost_def t_split_at)
+  thus ?thesis
+    using bigo_measure_trans[of "t_split_at n" split_at_cost length split_at_cost] by auto
+qed
+
 
 subsection "merge"
 
-fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
-  "t_merge f (x#xs) (y#ys) = (
+fun t_merge' :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
+  "t_merge' f (x#xs) (y#ys) = (
     if f x \<le> f y then
-      1 + t_merge f xs (y#ys)
+      1 + t_merge' f xs (y#ys)
     else
-      1 + t_merge f (x#xs) ys
+      1 + t_merge' f (x#xs) ys
   )"
-| "t_merge f xs [] = 0"
-| "t_merge f [] ys = 0"
+| "t_merge' f xs [] = 0"
+| "t_merge' f [] ys = 0"
+
+definition t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> ('b list * 'b list) \<Rightarrow> nat" where
+  "t_merge f xys = t_merge' f (fst xys) (snd xys)"
 
 definition merge_cost :: "nat \<Rightarrow> real" where
   "merge_cost n = n"
 
 lemma t_merge:
-  "t_merge f xs ys \<le> length xs + length ys"
-  by (induction f xs ys rule: t_merge.induct) auto
+  "t_merge f (xs, ys) \<le> length xs + length ys"
+  unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
 
 lemma merge_cost_nonneg[simp]:
   "0 \<le> merge_cost n"
   unfolding merge_cost_def by simp
 
 lemma t_merge_conv_merge_cost:
-  "t_merge f xs ys \<le> merge_cost (length xs + length ys)"
+  "t_merge f (xs, ys) \<le> merge_cost (length xs + length ys)"
   unfolding merge_cost_def by (metis of_nat_mono t_merge)
+
+lemma t_merge_bigo:
+  assumes "m = (\<lambda>(xs, ys). length xs + length ys)"
+  shows "t_merge f \<in> O[m going_to at_top](merge_cost o m)"
+proof -
+  have "\<And>x. t_merge f x \<le> (merge_cost o m) x"
+    unfolding comp_def using assms by (simp add: merge_cost_def t_merge split: prod.splits) 
+  thus ?thesis
+    using bigo_measure_trans[of "t_merge f" merge_cost m merge_cost] by auto
+qed
 
 
 subsection "msort"
@@ -138,7 +218,7 @@ function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rig
     let xs = x # y # xs' in
     let n = length xs div 2 in
     let (l, r) = split_at n xs in
-    t_length xs + t_split_at n xs + t_msort f l + t_msort f r + t_merge f l r
+    t_length xs + t_split_at n xs + t_msort f l + t_msort f r + t_merge f (l, r)
   )"
   by pat_completeness auto
 termination t_msort
@@ -166,7 +246,7 @@ definition sortX_cost :: "nat \<Rightarrow> real" where
 definition sortY_cost :: "nat \<Rightarrow> real" where
   "sortY_cost = msort_cost"
 
-declare t_length.simps t_split_at.simps t_merge.simps[simp del]
+declare t_length.simps t_split_at.simps[simp del]
 
 lemma t_msort_conv_msort_cost:
   "t_msort f xs \<le> msort_cost (length xs)"
@@ -184,7 +264,7 @@ next
   define R where "R = snd LR"
   note defs = XS_def N_def LR_def L_def R_def
 
-  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f L R"
+  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
   let ?RHS = "length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) +
               msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
 
@@ -203,7 +283,7 @@ next
 
   have "N = length L + length R"
     using * by linarith
-  hence "t_merge f L R \<le> merge_cost N"
+  hence "t_merge f (L, R) \<le> merge_cost N"
     using t_merge_conv_merge_cost by metis
   moreover have "t_length XS = length_cost N"
     using t_length_conv_length_cost defs by blast
@@ -212,7 +292,7 @@ next
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
   moreover have "t_msort f XS = ?LHS"
-    by (auto simp add: defs split: prod.split)
+    by (auto simp add: Let_def defs split: prod.split)
   moreover have "msort_cost N = ?RHS"
     by (simp add: defs)
   ultimately have "t_msort f XS \<le> msort_cost N"
@@ -253,6 +333,23 @@ corollary sortY_cost:
   "sortY_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   unfolding sortY_cost_def using msort_cost by simp
 
+lemma t_msort_bigo:
+  "t_msort f \<in> O[length going_to at_top](msort_cost o length)"
+proof -
+  have "\<And>x. t_msort f x \<le> (msort_cost o length) x"
+    unfolding comp_def using t_msort_conv_msort_cost by blast
+  thus ?thesis
+    using bigo_measure_trans[of "t_msort f" msort_cost length msort_cost] by auto
+qed
+
+lemma t_sortX_bigo:
+  "t_sortX \<in> O[length going_to at_top](sortX_cost o length)"
+  unfolding t_sortX_def sortX_cost_def using t_msort_bigo by blast
+
+lemma t_sortY_bigo:
+  "t_sortY \<in> O[length going_to at_top](sortY_cost o length)"
+  unfolding t_sortY_def sortY_cost_def using t_msort_bigo by blast
+
 
 subsection "find_closest"
 
@@ -278,6 +375,15 @@ lemma t_find_closest:
 lemma t_find_closest_conv_find_closest_cost:
   "t_find_closest p ps = find_closest_cost (length ps)"
   unfolding find_closest_cost_def using t_find_closest by auto
+
+lemma t_find_closest_bigo:
+  "t_find_closest p\<^sub>0 \<in> O[length going_to at_top](find_closest_cost o length)"
+proof -
+  have "\<And>x. t_find_closest p\<^sub>0 x \<le> (find_closest_cost o length) x"
+    unfolding comp_def by (simp add: t_find_closest find_closest_cost_def)
+  thus ?thesis
+    using bigo_measure_trans[of "t_find_closest p\<^sub>0" find_closest_cost length find_closest_cost] by auto
+qed
 
 
 subsection "gen_closest_pair"
@@ -340,6 +446,15 @@ lemma t_bf_closest_pair_conv_bf_closest_pair_cost:
   "t_bf_closest_pair ps \<le> bf_closest_pair_cost (length ps)"
   unfolding bf_closest_pair_cost_def using t_bf_closest_pair of_nat_mono by blast
 
+lemma t_bf_closest_pair_bigo:
+  "t_bf_closest_pair \<in> O[length going_to at_top](bf_closest_pair_cost o length)"
+proof -
+  have "\<And>x. t_bf_closest_pair x \<le> (bf_closest_pair_cost o length) x"
+    unfolding comp_def using bf_closest_pair_cost_def t_bf_closest_pair_conv_bf_closest_pair_cost by auto
+  thus ?thesis
+    using bigo_measure_trans[of t_bf_closest_pair bf_closest_pair_cost length bf_closest_pair_cost] by auto
+qed
+
 
 subsection "closest_pair_7"
 
@@ -356,6 +471,15 @@ lemma t_closest_pair_7:
 lemma t_closest_pair_7_conv_closest_pair_7_cost:
   "t_closest_pair_7 ps \<le> closest_pair_7_cost (length ps)"
   unfolding closest_pair_7_cost_def using t_closest_pair_7 of_nat_mono by blast
+
+lemma t_closest_pair_7_bigo:
+  "t_closest_pair_7 \<in> O[length going_to at_top](closest_pair_7_cost o length)"
+proof -
+  have "\<And>x. t_closest_pair_7 x \<le> (closest_pair_7_cost o length) x"
+    unfolding comp_def using closest_pair_7_cost_def t_closest_pair_7_conv_closest_pair_7_cost by auto
+  thus ?thesis
+    using bigo_measure_trans[of t_closest_pair_7 closest_pair_7_cost length closest_pair_7_cost] by auto
+qed
 
 
 subsection "combine"
@@ -423,6 +547,15 @@ lemma t_combine_conv_combine_cost:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> combine_cost (length ys)"
   unfolding combine_cost_def using t_combine of_nat_mono by blast
 
+lemma t_combine_bigo:
+  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l \<in> O[length going_to at_top](combine_cost o length)"
+proof -
+  have "\<And>x. t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l x \<le> (combine_cost o length) x"
+    unfolding comp_def using combine_cost_def t_combine_conv_combine_cost by auto
+  thus ?thesis
+    using bigo_measure_trans[of "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l" combine_cost length combine_cost] by auto
+qed
+
 declare t_combine.simps [simp del]
 
 
@@ -445,7 +578,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
       let t_cr = t_closest_pair_rec xs\<^sub>R in
 
       let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-      let t_m = t_merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
+      let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
       let t_c = t_combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys in
       t_l + t_s + t_cl + t_cr + t_m + t_c
   )"
@@ -471,7 +604,7 @@ lemma t_closest_pair_rec_simps_2:
     let t_cl = t_closest_pair_rec xs\<^sub>L in
     let t_cr = t_closest_pair_rec xs\<^sub>R in
     let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-    let t_m = t_merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
+    let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
     let t_c = t_combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys in
     t_length xs + t_s + t_cl + t_cr + t_m + t_c
   )"
@@ -530,7 +663,7 @@ proof (induction ps rule: length_induct)
                         CP\<^sub>R_def TR_def YS\<^sub>R_def C\<^sub>R_def C\<^sub>0\<^sub>R_def C\<^sub>1\<^sub>R_def
 
     define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
-    define TM where "TM = t_merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
+    define TM where "TM = t_merge (\<lambda>p. snd p) (YS\<^sub>L, YS\<^sub>R)"
     define TC where "TC = t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
     note combine_defs = YS_def TM_def TC_def
 
@@ -589,6 +722,15 @@ theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
+lemma t_closest_pair_rec_bigo:
+  "t_closest_pair_rec \<in> O[length going_to at_top](closest_pair_rec_cost o length)"
+proof -
+  have "\<And>x. t_closest_pair_rec x \<le> (closest_pair_rec_cost o length) x"
+    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost by blast
+  thus ?thesis
+    using bigo_measure_trans[of t_closest_pair_rec closest_pair_rec_cost length closest_pair_rec_cost] by auto
+qed
+
 
 subsection "closest_pair"
 
@@ -607,5 +749,14 @@ theorem closest_pair_cost:
   "closest_pair_cost \<in> O(\<lambda>n. real n * ln (real n))"
   unfolding closest_pair_cost_def
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
+
+lemma t_closest_pair_bigo:
+  "t_closest_pair \<in> O[length going_to at_top](closest_pair_cost o length)"
+proof -
+  have "\<And>x. t_closest_pair x \<le> (closest_pair_cost o length) x"
+    unfolding comp_def using t_closest_pair_conv_closest_pair_cost by blast
+  thus ?thesis
+    using bigo_measure_trans[of t_closest_pair closest_pair_cost length closest_pair_cost] by auto
+qed
 
 end
