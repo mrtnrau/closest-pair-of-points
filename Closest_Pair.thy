@@ -499,6 +499,7 @@ lemma (* TODO *)
   shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
   using assms pigeonhole by (metis inj_onI rev_image_eqI)
 
+
 lemma pigeonhole:
   assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
   shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"

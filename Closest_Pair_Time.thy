@@ -45,12 +45,12 @@ fun t_length :: "'a list \<Rightarrow> nat" where
   "t_length [] = 0"
 | "t_length (x#xs) = 1 + t_length xs"
 
-definition length_cost :: "nat \<Rightarrow> real" where
-  "length_cost n = n"
-
 lemma t_length:
   "t_length xs = length xs"
   by (induction xs) auto
+
+definition length_cost :: "nat \<Rightarrow> real" where
+  "length_cost n = n"
 
 lemma length_cost_nonneg[simp]:
   "0 \<le> length_cost n"
@@ -63,7 +63,7 @@ lemma t_length_conv_length_cost:
 lemma t_length_bigo:
   "t_length \<in> O[length going_to at_top](length_cost o length)"
 proof -
-  have "\<And>x. t_length x \<le> (length_cost o length) x"
+  have "\<And>xs. t_length xs \<le> (length_cost o length) xs"
     unfolding comp_def by (simp add: length_cost_def t_length)
   thus ?thesis
     using bigo_measure_trans[of t_length length_cost length length_cost] by auto
@@ -81,12 +81,12 @@ fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat
       1 + t_filter P xs
   )"
 
-definition filter_cost :: "nat \<Rightarrow> real" where
-  "filter_cost n = n"
-
 lemma t_filter:
   "t_filter P xs = length xs"
   by (induction xs) auto
+
+definition filter_cost :: "nat \<Rightarrow> real" where
+  "filter_cost n = n"
 
 lemma t_filter_conv_filter_cost:
   "t_filter P xs = filter_cost (length xs)"
@@ -95,7 +95,7 @@ lemma t_filter_conv_filter_cost:
 lemma t_filter_bigo:
   "t_filter P \<in> O[length going_to at_top](filter_cost o length)"
 proof -
-  have "\<And>x. t_filter P x \<le> (filter_cost o length) x"
+  have "\<And>xs. t_filter P xs \<le> (filter_cost o length) xs"
     unfolding comp_def by (simp add: filter_cost_def t_filter)
   thus ?thesis
     using bigo_measure_trans[of "t_filter P" filter_cost length filter_cost] by auto
@@ -112,12 +112,12 @@ fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
     | Suc m \<Rightarrow> 1 + t_take m xs
   )"
 
-definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = n"
-
 lemma t_take:
   "t_take n xs = min n (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
+
+definition take_cost :: "nat \<Rightarrow> real" where
+  "take_cost n = n"
 
 lemma t_take_conv_take_cost:
   "t_take n xs \<le> take_cost (length xs)"
@@ -126,7 +126,7 @@ lemma t_take_conv_take_cost:
 lemma t_take_bigo:
   "t_take n \<in> O[length going_to at_top](take_cost o length)"
 proof -
-  have "\<And>x. t_take n x \<le> (take_cost o length) x"
+  have "\<And>xs. t_take n xs \<le> (take_cost o length) xs"
     unfolding comp_def by (simp add: take_cost_def t_take)
   thus ?thesis
     using bigo_measure_trans[of "t_take n" take_cost length take_cost] by auto
@@ -143,12 +143,12 @@ fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
     | Suc m \<Rightarrow> 1 + t_split_at m xs
   )"
 
-definition split_at_cost :: "nat \<Rightarrow> real" where
-  "split_at_cost n = n"
-
 lemma t_split_at:
   "t_split_at n xs = min n (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
+
+definition split_at_cost :: "nat \<Rightarrow> real" where
+  "split_at_cost n = n"
 
 lemma split_at_cost_nonneg[simp]:
   "0 \<le> split_at_cost n"
@@ -161,7 +161,7 @@ lemma t_split_at_conv_split_at_cost:
 lemma t_split_at_bigo:
   "t_split_at n \<in> O[length going_to at_top](split_at_cost o length)"
 proof -
-  have "\<And>x. t_split_at n x \<le> (split_at_cost o length) x"
+  have "\<And>xs. t_split_at n xs \<le> (split_at_cost o length) xs"
     unfolding comp_def by (simp add: split_at_cost_def t_split_at)
   thus ?thesis
     using bigo_measure_trans[of "t_split_at n" split_at_cost length split_at_cost] by auto
@@ -183,12 +183,12 @@ fun t_merge' :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightar
 definition t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> ('b list * 'b list) \<Rightarrow> nat" where
   "t_merge f xys = t_merge' f (fst xys) (snd xys)"
 
-definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = n"
-
 lemma t_merge:
   "t_merge f (xs, ys) \<le> length xs + length ys"
   unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
+
+definition merge_cost :: "nat \<Rightarrow> real" where
+  "merge_cost n = n"
 
 lemma merge_cost_nonneg[simp]:
   "0 \<le> merge_cost n"
@@ -202,7 +202,7 @@ lemma t_merge_bigo:
   assumes "m = (\<lambda>(xs, ys). length xs + length ys)"
   shows "t_merge f \<in> O[m going_to at_top](merge_cost o m)"
 proof -
-  have "\<And>x. t_merge f x \<le> (merge_cost o m) x"
+  have "\<And>xys. t_merge f xys \<le> (merge_cost o m) xys"
     unfolding comp_def using assms by (simp add: merge_cost_def t_merge split: prod.splits) 
   thus ?thesis
     using bigo_measure_trans[of "t_merge f" merge_cost m merge_cost] by auto
@@ -247,6 +247,18 @@ definition sortY_cost :: "nat \<Rightarrow> real" where
   "sortY_cost = msort_cost"
 
 declare t_length.simps t_split_at.simps[simp del]
+
+lemma msort_cost_nonneg[simp]:
+  "0 \<le> msort_cost n"
+  by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
+
+corollary sortX_cost_nonneg[simp]:
+  "0 \<le> sortX_cost n"
+  unfolding sortX_cost_def by simp
+
+corollary sortY_cost_nonneg[simp]:
+  "0 \<le> sortY_cost n"
+  unfolding sortY_cost_def by simp
 
 lemma t_msort_conv_msort_cost:
   "t_msort f xs \<le> msort_cost (length xs)"
@@ -309,45 +321,33 @@ corollary t_sortY_conv_sortY_cost:
   "t_sortY xs \<le> sortY_cost (length xs)"
   unfolding t_sortY_def sortY_cost_def using t_msort_conv_msort_cost by blast
 
-lemma msort_cost_nonneg[simp]:
-  "0 \<le> msort_cost n"
-  by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
-
-corollary sortX_cost_nonneg[simp]:
-  "0 \<le> sortX_cost n"
-  unfolding sortX_cost_def by simp
-
-corollary sortY_cost_nonneg[simp]:
-  "0 \<le> sortY_cost n"
-  unfolding sortY_cost_def by simp
-
 theorem msort_cost:
-  "msort_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  "msort_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def)
 
 corollary sortX_cost:
-  "sortX_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  "sortX_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   unfolding sortX_cost_def using msort_cost by simp
 
 corollary sortY_cost:
-  "sortY_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  "sortY_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   unfolding sortY_cost_def using msort_cost by simp
 
-lemma t_msort_bigo:
-  "t_msort f \<in> O[length going_to at_top](msort_cost o length)"
+theorem t_msort_bigo:
+  "t_msort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>x. t_msort f x \<le> (msort_cost o length) x"
+  have "\<And>xs. t_msort f xs \<le> (msort_cost o length) xs"
     unfolding comp_def using t_msort_conv_msort_cost by blast
   thus ?thesis
-    using bigo_measure_trans[of "t_msort f" msort_cost length msort_cost] by auto
+    by (metis (no_types, lifting) bigo_measure_trans bigthetaD1 msort_cost of_nat_0_le_iff)
 qed
 
-lemma t_sortX_bigo:
-  "t_sortX \<in> O[length going_to at_top](sortX_cost o length)"
+corollary t_sortX_bigo:
+  "t_sortX \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
   unfolding t_sortX_def sortX_cost_def using t_msort_bigo by blast
 
-lemma t_sortY_bigo:
-  "t_sortY \<in> O[length going_to at_top](sortY_cost o length)"
+corollary t_sortY_bigo:
+  "t_sortY \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
   unfolding t_sortY_def sortY_cost_def using t_msort_bigo by blast
 
 
@@ -379,7 +379,7 @@ lemma t_find_closest_conv_find_closest_cost:
 lemma t_find_closest_bigo:
   "t_find_closest p\<^sub>0 \<in> O[length going_to at_top](find_closest_cost o length)"
 proof -
-  have "\<And>x. t_find_closest p\<^sub>0 x \<le> (find_closest_cost o length) x"
+  have "\<And>ps. t_find_closest p\<^sub>0 ps \<le> (find_closest_cost o length) ps"
     unfolding comp_def by (simp add: t_find_closest find_closest_cost_def)
   thus ?thesis
     using bigo_measure_trans[of "t_find_closest p\<^sub>0" find_closest_cost length find_closest_cost] by auto
@@ -449,7 +449,7 @@ lemma t_bf_closest_pair_conv_bf_closest_pair_cost:
 lemma t_bf_closest_pair_bigo:
   "t_bf_closest_pair \<in> O[length going_to at_top](bf_closest_pair_cost o length)"
 proof -
-  have "\<And>x. t_bf_closest_pair x \<le> (bf_closest_pair_cost o length) x"
+  have "\<And>ps. t_bf_closest_pair ps \<le> (bf_closest_pair_cost o length) ps"
     unfolding comp_def using bf_closest_pair_cost_def t_bf_closest_pair_conv_bf_closest_pair_cost by auto
   thus ?thesis
     using bigo_measure_trans[of t_bf_closest_pair bf_closest_pair_cost length bf_closest_pair_cost] by auto
@@ -475,7 +475,7 @@ lemma t_closest_pair_7_conv_closest_pair_7_cost:
 lemma t_closest_pair_7_bigo:
   "t_closest_pair_7 \<in> O[length going_to at_top](closest_pair_7_cost o length)"
 proof -
-  have "\<And>x. t_closest_pair_7 x \<le> (closest_pair_7_cost o length) x"
+  have "\<And>ps. t_closest_pair_7 ps \<le> (closest_pair_7_cost o length) ps"
     unfolding comp_def using closest_pair_7_cost_def t_closest_pair_7_conv_closest_pair_7_cost by auto
   thus ?thesis
     using bigo_measure_trans[of t_closest_pair_7 closest_pair_7_cost length closest_pair_7_cost] by auto
@@ -550,7 +550,7 @@ lemma t_combine_conv_combine_cost:
 lemma t_combine_bigo:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l \<in> O[length going_to at_top](combine_cost o length)"
 proof -
-  have "\<And>x. t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l x \<le> (combine_cost o length) x"
+  have "\<And>ys. t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> (combine_cost o length) ys"
     unfolding comp_def using combine_cost_def t_combine_conv_combine_cost by auto
   thus ?thesis
     using bigo_measure_trans[of "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l" combine_cost length combine_cost] by auto
@@ -719,16 +719,16 @@ proof (induction ps rule: length_induct)
 qed
 
 theorem closest_pair_rec_cost:
-  "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. real n * ln (real n))"
+  "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
-lemma t_closest_pair_rec_bigo:
-  "t_closest_pair_rec \<in> O[length going_to at_top](closest_pair_rec_cost o length)"
+theorem t_closest_pair_rec_bigo:
+  "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>x. t_closest_pair_rec x \<le> (closest_pair_rec_cost o length) x"
+  have "\<And>xs. t_closest_pair_rec xs \<le> (closest_pair_rec_cost o length) xs"
     unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost by blast
   thus ?thesis
-    using bigo_measure_trans[of t_closest_pair_rec closest_pair_rec_cost length closest_pair_rec_cost] by auto
+    by (metis (no_types, lifting) bigo_measure_trans bigthetaD1 closest_pair_rec_cost of_nat_0_le_iff)
 qed
 
 
@@ -746,17 +746,17 @@ lemma t_closest_pair_conv_closest_pair_cost:
   using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add by smt
 
 theorem closest_pair_cost:
-  "closest_pair_cost \<in> O(\<lambda>n. real n * ln (real n))"
+  "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
   unfolding closest_pair_cost_def
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
-lemma t_closest_pair_bigo:
-  "t_closest_pair \<in> O[length going_to at_top](closest_pair_cost o length)"
+theorem t_closest_pair_bigo:
+  "t_closest_pair \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>x. t_closest_pair x \<le> (closest_pair_cost o length) x"
+  have "\<And>ps. t_closest_pair ps \<le> (closest_pair_cost o length) ps"
     unfolding comp_def using t_closest_pair_conv_closest_pair_cost by blast
   thus ?thesis
-    using bigo_measure_trans[of t_closest_pair closest_pair_cost length closest_pair_cost] by auto
+    by (metis (no_types, lifting) bigo_measure_trans closest_pair_cost of_nat_0_le_iff)
 qed
 
 end
