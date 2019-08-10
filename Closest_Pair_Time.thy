@@ -616,7 +616,7 @@ function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
   "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = length_cost n + sortY_cost n + bf_closest_pair_cost n"
 | "3 < n \<Longrightarrow> closest_pair_rec_cost n = length_cost n + split_at_cost n + 
     closest_pair_rec_cost (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_cost (nat \<lceil>real n / 2\<rceil>) +
-   merge_cost n + combine_cost n"
+    merge_cost n + combine_cost n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 

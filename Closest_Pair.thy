@@ -489,17 +489,6 @@ proof (induction "card S" arbitrary: S)
   finally show ?case .
 qed simp
 
-(* 
-   Short but ?not? usable: 
-     How to instantiate f if each point p in P should be mapped to a specific 
-     Box B especially for the pigeonhole lemma below?
-*) 
-lemma (* TODO *)
-  assumes "P \<subseteq> \<Union>(f ` P)" "card (f ` P) < card P"
-  shows "\<exists>x \<in> P. \<exists>y \<in> P. \<exists>B \<in> (f ` P). x \<noteq> y \<and> B = f x \<and> B = f y"
-  using assms pigeonhole by (metis inj_onI rev_image_eqI)
-
-
 lemma pigeonhole:
   assumes "finite T" "S \<subseteq> \<Union>T" "card T < card S"
   shows "\<exists>x \<in> S. \<exists>y \<in> S. \<exists>X \<in> T. x \<noteq> y \<and> x \<in> X \<and> y \<in> X"
@@ -1107,7 +1096,7 @@ lemma set_Un_filter:
   by blast+
 
 lemma combine_dist:
-  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R"
+  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R"
   assumes "distinct ys" "sortedY ys" "set ys = ys\<^sub>L \<union> ys\<^sub>R"
   assumes "min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ys\<^sub>L" "min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ys\<^sub>R"
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"

@@ -217,7 +217,6 @@ fun prefixes :: "'a list \<Rightarrow> 'a list list" where
   "prefixes [] = [[]]"
 | "prefixes (x#xs) = (x#xs) # prefixes xs"
 
-
 lemma gen_closest_pair_it_rec_conv_foldl:
   "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) ps = foldl (fl f) (c\<^sub>0, c\<^sub>1) (prefixes ps)"
   apply (induction f "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair_it_rec.induct)
