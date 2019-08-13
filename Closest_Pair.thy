@@ -38,9 +38,9 @@ proof (induction xs arbitrary: i j)
     hence "set xs = set (take (j-1) xs) \<union> set (drop (i-1) xs)"
       by (simp add: Cons diff_le_mono)
     moreover have "set (take j (x#xs)) = insert x (set (take (j-1) xs))"
-      using False Cons.prems by (auto simp add: take_Cons')
+      using False Cons.prems by (auto simp: take_Cons')
     moreover have "set (drop i (x#xs)) = set (drop (i-1) xs)"
-      using False Cons.prems by (auto simp add: drop_Cons')
+      using False Cons.prems by (auto simp: drop_Cons')
     ultimately show ?thesis
       by auto
   qed
@@ -80,12 +80,12 @@ lemma set_merge:
 lemma distinct_merge:
   assumes "set xs \<inter> set ys = {}" "distinct xs" "distinct ys"
   shows "distinct (merge f xs ys)"
-  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
+  using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
 lemma sorted_merge:
   assumes "P = (\<lambda>x y. f x \<le> f y)"
   shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
-  using assms by (induction f xs ys rule: merge.induct) (auto simp add: set_merge)
+  using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
 
 function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
@@ -100,12 +100,12 @@ function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Right
   by pat_completeness auto
 termination msort
   apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-  apply (auto simp add: split_at_take_drop_conv Let_def)
+  apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
 lemma sorted_wrt_msort:
   "sorted_wrt (\<lambda>x y. f x \<le> f y) (msort f xs)"
-  by (induction f xs rule: msort.induct) (auto simp add: split_at_take_drop_conv sorted_merge)
+  by (induction f xs rule: msort.induct) (auto simp: split_at_take_drop_conv sorted_merge)
 
 lemma set_msort:
   "set (msort f xs) = set xs"
@@ -115,23 +115,23 @@ lemma set_msort:
 
 lemma length_msort:
   "length (msort f xs) = length xs"
-  by (induction f xs rule: msort.induct) (auto simp add: length_merge split_at_take_drop_conv)
+  by (induction f xs rule: msort.induct) (auto simp: length_merge split_at_take_drop_conv)
 
 lemma distinct_msort:
   "distinct xs \<Longrightarrow> distinct (msort f xs)"
 proof (induction f xs rule: msort.induct)
   case (3 f x y xs)
-  let ?lr = "split_at (length (x # y # xs) div 2) (x # y # xs)"
-  let ?l = "fst ?lr"
-  let ?r = "snd ?lr"
-  have "distinct ?l" "distinct ?r"
-    using "3.prems" split_at_take_drop_conv by (metis distinct_take distinct_drop fst_conv snd_conv)+
-  hence "distinct (msort f ?l)" "distinct (msort f ?r)"
-    using "3.IH" by (metis eq_fst_iff eq_snd_iff)+
-  moreover have "set ?l \<inter> set ?r = {}"
-    using "3.prems" split_at_take_drop_conv by (metis append_take_drop_id distinct_append fst_conv snd_conv)
+  let ?xs' = "x # y # xs"
+  obtain l r where lr_def: "(l, r) = split_at (length ?xs' div 2) ?xs'"
+    by (metis surj_pair)
+  have "distinct l" "distinct r"
+    using "3.prems" split_at_take_drop_conv distinct_take distinct_drop lr_def by (metis prod.sel)+
+  hence "distinct (msort f l)" "distinct (msort f r)"
+    using "3.IH" lr_def by auto
+  moreover have "set l \<inter> set r = {}"
+    using "3.prems" split_at_take_drop_conv lr_def by (metis append_take_drop_id distinct_append prod.sel)
   ultimately show ?case
-    by (auto simp add: distinct_merge set_msort split: prod.splits)
+    using lr_def by (auto simp: distinct_merge set_msort split: prod.splits)
 qed auto
 
 
@@ -147,7 +147,7 @@ lemma sortX:
         length_sortX: "length (sortX ps) = length ps" and
         distinct_sortX: "distinct ps \<Longrightarrow> distinct (sortX ps)"
   unfolding sortX_def sortedX_def
-  by (auto simp add: sorted_wrt_msort set_msort length_msort distinct_msort)
+  by (auto simp: sorted_wrt_msort set_msort length_msort distinct_msort)
 
 lemma sortY:
   shows sortedY_sortY: "sortedY (sortY ps)" and
@@ -155,7 +155,7 @@ lemma sortY:
         length_sortY: "length (sortY ps) = length ps" and
         distinct_sortY: "distinct ps \<Longrightarrow> distinct (sortY ps)"
   unfolding sortY_def sortedY_def
-  by (auto simp add: sorted_wrt_msort set_msort length_msort distinct_msort)
+  by (auto simp: sorted_wrt_msort set_msort length_msort distinct_msort)
 
 lemma sorted_wrt_filter:
   "sorted_wrt f xs \<Longrightarrow> sorted_wrt f (filter P xs)"
@@ -220,7 +220,7 @@ lemma min_dist_update:
   assumes "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
   assumes "dist p\<^sub>0 p\<^sub>1 \<le> dist c\<^sub>0 c\<^sub>1" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
   shows "min_dist (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
-  using assms apply (auto simp add: dist_commute min_dist_def) by force+
+  using assms apply (auto simp: dist_commute min_dist_def) by force+
 
 
 subsection "Finding Closest Point"
@@ -238,15 +238,15 @@ fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
 
 lemma find_closest_dist:
   "\<forall>p \<in> set ps. dist p\<^sub>0 (find_closest p\<^sub>0 ps) \<le> dist p\<^sub>0 p"
-  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
+  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp: Let_def)
 
 lemma find_closest_set:
   "0 < length ps \<Longrightarrow> find_closest p\<^sub>0 ps \<in> set ps"
-  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
+  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp: Let_def)
 
 lemma find_closest_ne:
   "0 < length ps \<Longrightarrow> p\<^sub>0 \<notin> set ps \<Longrightarrow> p\<^sub>0 \<noteq> find_closest p\<^sub>0 ps"
-  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp add: Let_def)
+  by (induction p\<^sub>0 ps rule: find_closest.induct) (auto simp: Let_def)
 
 
 subsection "Generic Closest Pair Algorithm"
@@ -269,7 +269,7 @@ lemma gen_closest_pair_c0:
 proof (induction f ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
   case (4 f p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   thus ?case using find_closest_set[of "f (p\<^sub>1 # p\<^sub>2 # ps)" p\<^sub>0]
-    by (auto simp add: Let_def split!: if_splits prod.splits)
+    by (auto simp: Let_def split!: if_splits prod.splits)
 qed auto
 
 lemma gen_closest_pair_c1:
@@ -358,40 +358,34 @@ lemma bf_closest_pair_dist:
   using assms unfolding bf_closest_pair_def
 proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair.induct)
   case (4 f p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-
   let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
-  let ?c = "gen_closest_pair (\<lambda>ps. ps) ?ps"
-  let ?c\<^sub>0 = "fst ?c"
-  let ?c\<^sub>1 = "snd ?c"
-
-  have IH: "min_dist (dist ?c\<^sub>0 ?c\<^sub>1) (set (p\<^sub>1 # p\<^sub>2 # ps))"
+  obtain c\<^sub>0' c\<^sub>1' where c\<^sub>0\<^sub>1_def: "(c\<^sub>0', c\<^sub>1') = gen_closest_pair (\<lambda>ps. ps) ?ps"
+    using prod.collapse by blast
+  hence IH: "min_dist (dist c\<^sub>0' c\<^sub>1') (set ?ps)"
     using 4 by simp
   have *: "\<forall>p \<in> set ?ps. dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist p\<^sub>0 p"
     using find_closest_dist by blast
-
   show ?case
-  proof (cases "dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
+  proof (cases "dist c\<^sub>0' c\<^sub>1' \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
     case True
-    hence "\<forall>p \<in> set ?ps. dist ?c\<^sub>0 ?c\<^sub>1 \<le> dist p\<^sub>0 p"
+    hence "\<forall>p \<in> set ?ps. dist c\<^sub>0' c\<^sub>1' \<le> dist p\<^sub>0 p"
       using * by auto
-    hence "min_dist (dist ?c\<^sub>0 ?c\<^sub>1) (set (p\<^sub>0 # ?ps))"
+    hence "min_dist (dist c\<^sub>0' c\<^sub>1') (set (p\<^sub>0 # ?ps))"
       using min_dist_identity IH by blast
-    moreover have "(c\<^sub>0, c\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
-      using True "4.prems" by (auto split: prod.splits)
-    ultimately show ?thesis
-      by blast
+    thus ?thesis
+      using True "4.prems" c\<^sub>0\<^sub>1_def by (auto split: prod.splits)
   next
     case False
-    hence "dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist ?c\<^sub>0 ?c\<^sub>1"
+    hence "dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist c\<^sub>0' c\<^sub>1'"
       by simp
     hence "min_dist (dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)) (set (p\<^sub>0 # ?ps))"
       using min_dist_update IH * by blast
     moreover have "(c\<^sub>0, c\<^sub>1) = (p\<^sub>0, (find_closest p\<^sub>0 ?ps))"
-      using False "4.prems" by (auto split: prod.splits)
+      using False "4.prems" c\<^sub>0\<^sub>1_def by (auto split: prod.splits)
     ultimately show ?thesis
       by simp
   qed
-qed (auto simp add: dist_commute min_dist_def)
+qed (auto simp: dist_commute min_dist_def)
 
 
 subsection "2D-Boxes and Points"
@@ -779,13 +773,12 @@ next
   case (4 f x y z zs)
 
   define YS where "YS = y # z # zs"
-  define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = gen_closest_pair f YS"
-  define C\<^sub>0 where "C\<^sub>0 = fst C\<^sub>0\<^sub>1"
-  define C\<^sub>1 where "C\<^sub>1 = snd C\<^sub>0\<^sub>1"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f YS"
+    using prod.collapse by blast
   define P\<^sub>1 where "P\<^sub>1 = find_closest x (f YS)"
   define YS\<^sub>L where "YS\<^sub>L = ys\<^sub>L - { x }"
   define YS\<^sub>R where "YS\<^sub>R = ys\<^sub>R - { x }"
-  note defs = YS_def C\<^sub>0\<^sub>1_def C\<^sub>0_def C\<^sub>1_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
+  note defs = YS_def C\<^sub>0\<^sub>1_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
 
   show ?case
   proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set YS \<and> p\<^sub>1 \<in> set YS \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
@@ -817,15 +810,15 @@ next
       proof cases
         assume ASM: "dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1"
         hence "min_dist (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
-          using * # by (auto simp add: min_dist_def dist_commute)
+          using * # by (auto simp: min_dist_def dist_commute)
         moreover have "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f (x # YS)"
-          using ASM YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
+          using ASM YS_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
         ultimately show ?thesis
           using "4.prems"(12,13) YS_def by (metis fst_conv snd_conv)
       next
         assume ASM: "\<not> (dist C\<^sub>0 C\<^sub>1 \<le> dist x P\<^sub>1)"
         hence "min_dist (dist x P\<^sub>1) (set (x # YS))"
-          using * # apply (auto simp add: min_dist_def dist_commute) by force+
+          using * # apply (auto simp: min_dist_def dist_commute) by force+
         moreover have "(x, P\<^sub>1) = gen_closest_pair f (x # YS)"
           using ASM defs by (auto split: prod.splits)
         ultimately show ?thesis
@@ -838,9 +831,9 @@ next
       hence "dist C\<^sub>0 C\<^sub>1 < dist x P\<^sub>1"
         using DC0C1 False by auto
       hence "(C\<^sub>0, C\<^sub>1) = gen_closest_pair f (x # YS)"
-        using YS_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp add: Let_def split: prod.splits)
+        using YS_def C\<^sub>0\<^sub>1_def P\<^sub>1_def by (auto simp: Let_def split: prod.splits)
       moreover have "min_dist (dist C\<^sub>0 C\<^sub>1) (set (x # YS))"
-        using * DC0C1 False by (auto simp add: min_dist_def dist_commute)
+        using * DC0C1 False by (auto simp: min_dist_def dist_commute)
       ultimately show ?thesis
         using "4.prems"(12,13) YS_def by (metis fst_conv snd_conv)    
     qed
@@ -855,15 +848,15 @@ next
     moreover have "(\<And>ps. distinct ps \<longrightarrow> distinct (f ps))"
       using "4.prems"(13) by simp
     ultimately have C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
-      using C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def gen_closest_pair_c0_c1 prod.collapse by metis+
+      using C\<^sub>0\<^sub>1_def gen_closest_pair_c0_c1 by metis+
     have 0: "\<exists>x' \<in> set YS. dist x x' < \<delta>"
-      using False YS_def "4.prems"(11) by (auto simp add: dist_commute)
+      using False YS_def "4.prems"(11) by (auto simp: dist_commute)
     hence "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
       using defs find_closest_dist_take_7[of x YS \<delta> ys\<^sub>L ys\<^sub>R l] "4.prems" by blast
     moreover have "dist x P\<^sub>1 < \<delta>"
       using 0 calculation by auto
     ultimately have *: "min_dist (dist x P\<^sub>1) (set (x # YS))"
-      using False apply (auto simp add: min_dist_def dist_commute) by force+
+      using False apply (auto simp: min_dist_def dist_commute) by force+
     hence "dist x P\<^sub>1 < dist C\<^sub>0 C\<^sub>1"
       using C01 \<open>dist x P\<^sub>1 < \<delta>\<close> False by (meson not_less order.strict_trans2)
     hence "(x, P\<^sub>1) = gen_closest_pair f (x # YS)"
@@ -891,121 +884,106 @@ fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real
   )"
 
 lemma combine_c0:
-  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
   shows "c\<^sub>0 = p\<^sub>0\<^sub>L \<or> c\<^sub>0 = p\<^sub>0\<^sub>R \<or> c\<^sub>0 \<in> set ys"
 proof -
-  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+    using prod.collapse by blast
+  let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
   let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
-  let ?p\<^sub>0\<^sub>1 = "closest_pair_7 ?ys'"
-  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 ?ys'"
+    using prod.collapse by blast
+  note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
 
   show ?thesis
   proof cases
-    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
-    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence "(c\<^sub>0, c\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
-      using assms(1) by argo
-    moreover have "?c\<^sub>0 = p\<^sub>0\<^sub>L \<or> ?c\<^sub>0 = p\<^sub>0\<^sub>R"
-      by simp
+    assume "length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>)"
+    hence "(C\<^sub>0, C\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split: prod.splits)
+    moreover have "C\<^sub>0 = p\<^sub>0\<^sub>L \<or> C\<^sub>0 = p\<^sub>0\<^sub>R"
+      using defs prod.inject by metis
     ultimately show ?thesis
-      using * by blast
+      using assms(1) by (metis prod.inject)
   next
-    assume ASM: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
-    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence #: "(c\<^sub>0, c\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
-      using assms(1) by argo
-    have "(?p\<^sub>0, ?p\<^sub>1) = closest_pair_7 ?ys'"
-      by auto
-    hence "?p\<^sub>0 \<in> set ?ys'"
-      using ASM closest_pair_7_c0[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith
-    thus ?thesis
-      using * # by fastforce
+    assume *: "\<not> (length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>))"
+    hence "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
+    moreover have "(c\<^sub>0, c\<^sub>1) = (P\<^sub>0, P\<^sub>1)"
+      using assms(1) calculation by argo
+    moreover have "P\<^sub>0 \<in> set ?ys'"
+      using * defs closest_pair_7_c0[of ?ys' P\<^sub>0 P\<^sub>1] by linarith
+    ultimately show ?thesis
+      by fastforce
   qed
 qed
 
 lemma combine_c1:
-  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
+  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
   shows "c\<^sub>1 = p\<^sub>1\<^sub>L \<or> c\<^sub>1 = p\<^sub>1\<^sub>R \<or> c\<^sub>1 \<in> set ys"
 proof -
-  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+    using prod.collapse by blast
+  let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
   let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
-  let ?p\<^sub>0\<^sub>1 = "closest_pair_7 ?ys'"
-  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 ?ys'"
+    using prod.collapse by blast
+  note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
 
   show ?thesis
   proof cases
-    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
-    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence "(c\<^sub>0, c\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
-      using assms(1) by argo
-    moreover have "?c\<^sub>1 = p\<^sub>1\<^sub>L \<or> ?c\<^sub>1 = p\<^sub>1\<^sub>R"
-      by simp
+    assume "length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>)"
+    hence "(C\<^sub>0, C\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
+    moreover have "C\<^sub>1 = p\<^sub>1\<^sub>L \<or> C\<^sub>1 = p\<^sub>1\<^sub>R"
+      using defs prod.inject by metis
     ultimately show ?thesis
-      using * by blast
+      using assms(1) by (metis prod.inject)
   next
-    assume ASM: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
-    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence #: "(c\<^sub>0, c\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
-      using assms(1) by argo
-    have "(?p\<^sub>0, ?p\<^sub>1) = closest_pair_7 ?ys'"
-      by auto
-    hence "?p\<^sub>1 \<in> set ?ys'"
-      using ASM closest_pair_7_c1[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith
-    thus ?thesis
-      using * # by fastforce
+    assume *: "\<not> (length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>))"
+    hence "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
+    moreover have "(c\<^sub>0, c\<^sub>1) = (P\<^sub>0, P\<^sub>1)"
+      using assms(1) calculation by argo
+    moreover have "P\<^sub>1 \<in> set ?ys'"
+      using * defs closest_pair_7_c1[of ?ys' P\<^sub>0 P\<^sub>1] by linarith
+    ultimately show ?thesis
+      by fastforce
   qed
 qed
 
 lemma combine_c0_ne_c1:
-  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R" "distinct ys"
+  assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R" "distinct ys"
   shows "c\<^sub>0 \<noteq> c\<^sub>1"
 proof -
-  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?\<delta> = "dist ?c\<^sub>0 ?c\<^sub>1"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+    using prod.collapse by blast
+  let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
   let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
-  let ?p\<^sub>0\<^sub>1 = "closest_pair_7 ?ys'"
-  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 ?ys'"
+    using prod.collapse by blast
+  note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
 
   show ?thesis
   proof cases
-    assume "length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>)"
-    hence *: "(?c\<^sub>0, ?c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence "(c\<^sub>0, c\<^sub>1) = (?c\<^sub>0, ?c\<^sub>1)"
-      using assms(1) by argo
-    moreover have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
-      using assms(2,3) by auto
+    assume "length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>)"
+    hence "(C\<^sub>0, C\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
+    moreover have "C\<^sub>0 \<noteq> C\<^sub>1"
+      using assms(2,3) defs prod.inject by metis
     ultimately show ?thesis
-      using * by blast
+      using assms(1) by (metis prod.inject)
   next
-    assume assm: "\<not> (length ?ys' < 2 \<or> \<not> (dist ?p\<^sub>0 ?p\<^sub>1 < ?\<delta>))"
-    hence *: "(?p\<^sub>0, ?p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
-    hence #: "(c\<^sub>0, c\<^sub>1) = (?p\<^sub>0, ?p\<^sub>1)"
-      using assms(1) by argo
-    have "distinct ?ys'" "2 \<le> length ?ys'"
-      using assms(4) assm by auto
-    moreover have "(?p\<^sub>0, ?p\<^sub>1) = closest_pair_7 ?ys'"
-      by auto
-    ultimately have "?p\<^sub>0 \<noteq> ?p\<^sub>1"
-      using closest_pair_7_c0_ne_c1[of ?ys' ?p\<^sub>0 ?p\<^sub>1] by linarith
-    thus ?thesis
-      using * # by fastforce
+    assume *: "\<not> (length ?ys' < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < ?\<delta>))"
+    hence "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
+    moreover have "(c\<^sub>0, c\<^sub>1) = (P\<^sub>0, P\<^sub>1)"
+      using assms(1) calculation by argo
+    moreover have "distinct ?ys'" "2 \<le> length ?ys'"
+      using assms(4) * by auto
+    moreover have "P\<^sub>0 \<noteq> P\<^sub>1"
+      using * defs calculation closest_pair_7_c0_ne_c1[of ?ys' P\<^sub>0 P\<^sub>1] by linarith
+    ultimately show ?thesis
+      by fastforce
   qed
 qed
 
@@ -1102,22 +1080,20 @@ lemma combine_dist:
   assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ys)"
 proof -
-  define C\<^sub>0\<^sub>1 where "C\<^sub>0\<^sub>1 = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  define C\<^sub>0 where "C\<^sub>0 = fst C\<^sub>0\<^sub>1"
-  define C\<^sub>1 where "C\<^sub>1 = snd C\<^sub>0\<^sub>1"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+    using prod.collapse by blast
   define \<delta> where "\<delta> = dist C\<^sub>0 C\<^sub>1"
   define YS where "YS = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys"
-  define P\<^sub>0\<^sub>1 where "P\<^sub>0\<^sub>1 = closest_pair_7 YS"
-  define P\<^sub>0 where "P\<^sub>0 = fst P\<^sub>0\<^sub>1"
-  define P\<^sub>1 where "P\<^sub>1 = snd P\<^sub>0\<^sub>1"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 YS"
+    using prod.collapse by blast
   define YS\<^sub>L where "YS\<^sub>L = { p \<in> ys\<^sub>L. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
   define YS\<^sub>R where "YS\<^sub>R = { p \<in> ys\<^sub>R. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
-  note defs = C\<^sub>0\<^sub>1_def C\<^sub>0_def C\<^sub>1_def \<delta>_def YS_def P\<^sub>0\<^sub>1_def P\<^sub>0_def P\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
+  note defs = C\<^sub>0\<^sub>1_def \<delta>_def YS_def P\<^sub>0\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
 
   have \<delta>_ys\<^sub>L: "min_dist \<delta> ys\<^sub>L"
-    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def min_dist_def apply (auto) by force+
+    using assms(7,8) \<delta>_def C\<^sub>0\<^sub>1_def min_dist_def apply (auto split: if_splits) by force+
   have \<delta>_ys\<^sub>R: "min_dist \<delta> ys\<^sub>R"
-    using assms(7,8) \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def min_dist_def apply (auto) by force+
+    using assms(7,8) \<delta>_def C\<^sub>0\<^sub>1_def min_dist_def apply (auto split: if_splits) by force+
 
   show ?thesis
   proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
@@ -1129,7 +1105,7 @@ proof -
     moreover have "distinct YS" "sortedY YS"
       using assms(4,5) sortedY_def sorted_wrt_filter YS_def by simp_all
     moreover have "0 < \<delta>"
-      using \<delta>_def C\<^sub>0_def C\<^sub>1_def C\<^sub>0\<^sub>1_def by (simp add: assms(2,3))
+      using \<delta>_def C\<^sub>0\<^sub>1_def assms(2,3) calculation(1) by auto
     moreover have "set YS = YS\<^sub>L \<union> YS\<^sub>R"
       using assms(6) set_Un_filter defs by auto
     moreover have "\<forall>p \<in> set YS. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
@@ -1159,7 +1135,7 @@ proof -
     next
       assume "\<not> (length YS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>))"
       hence "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
-        by (auto simp add: defs Let_def split!: prod.splits)
+        using defs by (auto split: prod.split)
       moreover have "(c\<^sub>0, c\<^sub>1) = (P\<^sub>0, P\<^sub>1)"
         using assms(1) calculation by argo
       ultimately show ?thesis
@@ -1173,7 +1149,7 @@ proof -
     proof cases
       assume "length YS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>)"
       hence "(C\<^sub>0, C\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-        by (auto simp add: defs Let_def split!: prod.splits)
+        using defs by (auto simp: Let_def split: prod.split)
       moreover have "(c\<^sub>0, c\<^sub>1) = (C\<^sub>0, C\<^sub>1)"
         using assms(1) calculation by argo
       ultimately show ?thesis
@@ -1181,7 +1157,7 @@ proof -
     next
       assume ASM: "\<not> (length YS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>))"
       hence combine: "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-        by (auto simp add: defs Let_def split!: prod.splits)
+        using defs by (auto simp: Let_def split: prod.split)
       have "(P\<^sub>0, P\<^sub>1) = closest_pair_7 YS"
         using defs by auto
       hence "P\<^sub>0 \<in> set YS" "P\<^sub>1 \<in> set YS"
@@ -1219,7 +1195,7 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
   by pat_completeness auto
 termination closest_pair_rec
   apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp add: split_at_take_drop_conv Let_def)
+  apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
 lemma closest_pair_rec_simps:
@@ -1232,9 +1208,10 @@ lemma closest_pair_rec_simps:
     let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
     (ys, combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys) 
   )"
-  using assms by (auto simp add: Let_def)
+  using assms by (auto simp: Let_def)
 
 declare closest_pair_rec.simps [simp del]
+declare combine.simps [simp del]
 
 lemma closest_pair_rec_set_length_sortedY:
   assumes "(ys, cp) = closest_pair_rec xs"
@@ -1247,48 +1224,44 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     thus ?thesis using "1.prems" sortY(1,2,3)
-      by (auto simp add: closest_pair_rec.simps)
+      by (auto simp: closest_pair_rec.simps)
   next
     case False
 
-    let ?xs = "split_at (?n div 2) xs"
-    let ?xs\<^sub>L = "fst ?xs"
-    let ?xs\<^sub>R = "snd ?xs"
-    let ?l = "fst (hd ?xs\<^sub>R)"
+    obtain XS\<^sub>L XS\<^sub>R where XS\<^sub>L\<^sub>R_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) xs"
+      using prod.collapse by blast
+    define L where "L = fst (hd XS\<^sub>R)"
+    obtain YS\<^sub>L CP\<^sub>L where YSCP\<^sub>L_def: "(YS\<^sub>L, CP\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by blast
+    obtain YS\<^sub>R CP\<^sub>R where YSCP\<^sub>R_def: "(YS\<^sub>R, CP\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by blast
+    define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
+    define CP where "CP = combine CP\<^sub>L CP\<^sub>R L YS"
+    note defs = XS\<^sub>L\<^sub>R_def L_def YSCP\<^sub>L_def YSCP\<^sub>R_def YS_def CP_def
 
-    let ?cp\<^sub>L = "closest_pair_rec ?xs\<^sub>L"
-    let ?ys\<^sub>L = "fst ?cp\<^sub>L"
-    let ?c\<^sub>L = "snd ?cp\<^sub>L"
-    let ?cp\<^sub>R = "closest_pair_rec ?xs\<^sub>R"
-    let ?ys\<^sub>R = "fst ?cp\<^sub>R"
-    let ?c\<^sub>R = "snd ?cp\<^sub>R"
+    have "length XS\<^sub>L < length xs" "length XS\<^sub>R < length xs"
+      using False defs by (auto simp: split_at_take_drop_conv)
+    hence IH: "set XS\<^sub>L = set YS\<^sub>L" "set XS\<^sub>R = set YS\<^sub>R"
+              "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
+              "sortedY YS\<^sub>L" "sortedY YS\<^sub>R"
+      using "1.IH" defs by metis+
 
-    let ?ys = "merge (\<lambda>p. snd p) ?ys\<^sub>L ?ys\<^sub>R"
-    let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
+    have "set xs = set XS\<^sub>L \<union> set XS\<^sub>R"
+      using defs by (auto simp: set_take_drop split_at_take_drop_conv)
+    hence SET: "set xs = set YS"
+      using set_merge IH(1,2) defs by fast
 
-    have "length ?xs\<^sub>L < length xs" "length ?xs\<^sub>R < length xs"
-      using False by (auto simp add: split_at_take_drop_conv)
-    hence IH: "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R"
-              "length ?xs\<^sub>L = length ?ys\<^sub>L" "length ?xs\<^sub>R = length ?ys\<^sub>R"
-              "sortedY ?ys\<^sub>L" "sortedY ?ys\<^sub>R"
-      using "1.IH" prod.collapse by metis+
+    have "length xs = length XS\<^sub>L + length XS\<^sub>R"
+      using defs by (auto simp: split_at_take_drop_conv)
+    hence LENGTH: "length xs = length YS"
+      using IH(3,4) length_merge defs by metis
 
-    have "set xs = set ?xs\<^sub>L \<union> set ?xs\<^sub>R"
-      by (auto simp add: set_take_drop split_at_take_drop_conv)
-    hence SET: "set xs = set ?ys"
-      using set_merge IH(1,2) by fast
+    have SORTED: "sortedY YS"
+      using IH(5,6) by (simp add: defs sortedY_def sorted_merge)
 
-    have "length xs = length ?xs\<^sub>L + length ?xs\<^sub>R"
-      by (auto simp add: split_at_take_drop_conv)
-    hence LENGTH: "length xs = length ?ys"
-      using IH(3,4) length_merge by metis
-
-    have SORTED: "sortedY ?ys"
-      using IH(5,6) by (simp add: sortedY_def sorted_merge)
-
-    have "(?ys, ?cp) = closest_pair_rec xs"
-      using False closest_pair_rec_simps by (auto simp add: Let_def split: prod.splits)
-    hence "(ys, cp) = (?ys, ?cp)"
+    have "(YS, CP) = closest_pair_rec xs"
+      using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
+    hence "(ys, cp) = (YS, CP)"
       using "1.prems" by argo
     thus ?thesis
       using SET LENGTH SORTED by simp
@@ -1306,44 +1279,40 @@ proof (induction xs arbitrary: ys cp rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     thus ?thesis using "1.prems" sortY(4)
-      by (auto simp add: closest_pair_rec.simps)
+      by (auto simp: closest_pair_rec.simps)
   next
     case False
 
-    let ?xs = "split_at (?n div 2) xs"
-    let ?xs\<^sub>L = "fst ?xs"
-    let ?xs\<^sub>R = "snd ?xs"
-    let ?l = "fst (hd ?xs\<^sub>R)"
+    obtain XS\<^sub>L XS\<^sub>R where XS\<^sub>L\<^sub>R_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) xs"
+      using prod.collapse by blast
+    define L where "L = fst (hd XS\<^sub>R)"
+    obtain YS\<^sub>L CP\<^sub>L where YSCP\<^sub>L_def: "(YS\<^sub>L, CP\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by blast
+    obtain YS\<^sub>R CP\<^sub>R where YSCP\<^sub>R_def: "(YS\<^sub>R, CP\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by blast
+    define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
+    define CP where "CP = combine CP\<^sub>L CP\<^sub>R L YS"
+    note defs = XS\<^sub>L\<^sub>R_def L_def YSCP\<^sub>L_def YSCP\<^sub>R_def YS_def CP_def
 
-    let ?cp\<^sub>L = "closest_pair_rec ?xs\<^sub>L"
-    let ?ys\<^sub>L = "fst ?cp\<^sub>L"
-    let ?c\<^sub>L = "snd ?cp\<^sub>L"
-    let ?cp\<^sub>R = "closest_pair_rec ?xs\<^sub>R"
-    let ?ys\<^sub>R = "fst ?cp\<^sub>R"
-    let ?c\<^sub>R = "snd ?cp\<^sub>R"
+    have "length XS\<^sub>L < length xs" "length XS\<^sub>R < length xs"
+      using False defs by (auto simp: split_at_take_drop_conv)
+    moreover have "distinct XS\<^sub>L" "distinct XS\<^sub>R"
+      using "1.prems"(1) defs by (auto simp: split_at_take_drop_conv)
+    ultimately have IH: "distinct YS\<^sub>L" "distinct YS\<^sub>R" 
+      using "1.IH" defs by blast+
 
-    let ?ys = "merge (\<lambda>p. snd p) ?ys\<^sub>L ?ys\<^sub>R"
-    let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
-
-    have "length ?xs\<^sub>L < length xs" "length ?xs\<^sub>R < length xs"
-      using False by (auto simp add: split_at_take_drop_conv)
-    moreover have "distinct ?xs\<^sub>L" "distinct ?xs\<^sub>R"
-      using "1.prems"(1) by (auto simp add: split_at_take_drop_conv)
-    ultimately have IH: "distinct ?ys\<^sub>L" "distinct ?ys\<^sub>R" 
-      using "1.IH" prod.collapse by blast+
-
-    have "set ?xs\<^sub>L \<inter> set ?xs\<^sub>R = {}"
-      using "1.prems"(1) by (auto simp add: split_at_take_drop_conv set_take_disj_set_drop_if_distinct)
-    moreover have "set ?xs\<^sub>L = set ?ys\<^sub>L" "set ?xs\<^sub>R = set ?ys\<^sub>R"
-      using closest_pair_rec_set_length_sortedY prod.collapse by blast+
-    ultimately have "set ?ys\<^sub>L \<inter> set ?ys\<^sub>R = {}"
+    have "set XS\<^sub>L \<inter> set XS\<^sub>R = {}"
+      using "1.prems"(1) defs by (auto simp: split_at_take_drop_conv set_take_disj_set_drop_if_distinct)
+    moreover have "set XS\<^sub>L = set YS\<^sub>L" "set XS\<^sub>R = set YS\<^sub>R"
+      using closest_pair_rec_set_length_sortedY defs by blast+
+    ultimately have "set YS\<^sub>L \<inter> set YS\<^sub>R = {}"
       by blast
-    hence DISTINCT: "distinct ?ys"
-      using distinct_merge IH by blast
+    hence DISTINCT: "distinct YS"
+      using distinct_merge IH defs by blast
 
-    have "(?ys, ?cp) = closest_pair_rec xs"
-      using False closest_pair_rec_simps by (auto simp add: Let_def split: prod.splits)
-    hence "(ys, cp) = (?ys, ?cp)"
+    have "(YS, CP) = closest_pair_rec xs"
+      using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
+    hence "(ys, cp) = (YS, CP)"
       using "1.prems" by argo
     thus ?thesis
       using DISTINCT by blast
@@ -1367,52 +1336,45 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   next
     case False
 
-    let ?xs = "split_at (?n div 2) xs"
-    let ?xs\<^sub>L = "fst ?xs"
-    let ?xs\<^sub>R = "snd ?xs"
-    let ?l = "fst (hd ?xs\<^sub>R)"
+    obtain XS\<^sub>L XS\<^sub>R where XS\<^sub>L\<^sub>R_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) xs"
+      using prod.collapse by blast
+    define L where "L = fst (hd XS\<^sub>R)"
 
-    let ?cp\<^sub>L = "closest_pair_rec ?xs\<^sub>L"
-    let ?ys\<^sub>L = "fst ?cp\<^sub>L"
-    let ?c\<^sub>L = "snd ?cp\<^sub>L"
-    let ?c\<^sub>0\<^sub>L = "fst ?c\<^sub>L"
-    let ?c\<^sub>1\<^sub>L = "snd ?c\<^sub>L"
-    let ?cp\<^sub>R = "closest_pair_rec ?xs\<^sub>R"
-    let ?ys\<^sub>R = "fst ?cp\<^sub>R"
-    let ?c\<^sub>R = "snd ?cp\<^sub>R"
-    let ?c\<^sub>0\<^sub>R = "fst ?c\<^sub>R"
-    let ?c\<^sub>1\<^sub>R = "snd ?c\<^sub>R"
+    obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where YSC\<^sub>0\<^sub>1\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by metis
+    obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where YSC\<^sub>0\<^sub>1\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by metis
 
-    let ?ys = "merge (\<lambda>p. snd p) ?ys\<^sub>L ?ys\<^sub>R"
-    let ?cp = "combine ?c\<^sub>L ?c\<^sub>R ?l ?ys"
-    let ?c\<^sub>0 = "fst ?cp"
-    let ?c\<^sub>1 = "snd ?cp"
+    define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
+    obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+      using prod.collapse by blast
+    note defs = XS\<^sub>L\<^sub>R_def L_def YSC\<^sub>0\<^sub>1\<^sub>L_def YSC\<^sub>0\<^sub>1\<^sub>R_def YS_def C\<^sub>0\<^sub>1_def
 
-    have "1 < length ?xs\<^sub>L" "length ?xs\<^sub>L < length xs" "distinct ?xs\<^sub>L"
-      using False "1.prems"(2) by (auto simp add: split_at_take_drop_conv)
-    hence "?c\<^sub>0\<^sub>L \<in> set ?xs\<^sub>L" "?c\<^sub>1\<^sub>L \<in> set ?xs\<^sub>L" and IHL1: "?c\<^sub>0\<^sub>L \<noteq> ?c\<^sub>1\<^sub>L"
-      using "1.IH" prod.collapse by metis+
-    hence IHL2: "?c\<^sub>0\<^sub>L \<in> set xs" "?c\<^sub>1\<^sub>L \<in> set xs"
-      using split_at_take_drop_conv in_set_takeD fst_conv by metis+
+    have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs" "distinct XS\<^sub>L"
+      using False "1.prems"(2) defs by (auto simp: split_at_take_drop_conv)
+    hence "C\<^sub>0\<^sub>L \<in> set XS\<^sub>L" "C\<^sub>1\<^sub>L \<in> set XS\<^sub>L" and IHL1: "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
+      using "1.IH" defs by metis+
+    hence IHL2: "C\<^sub>0\<^sub>L \<in> set xs" "C\<^sub>1\<^sub>L \<in> set xs"
+      using split_at_take_drop_conv in_set_takeD fst_conv defs by metis+
 
-    have "1 < length ?xs\<^sub>R" "length ?xs\<^sub>R< length xs" "distinct ?xs\<^sub>R"
-      using False "1.prems"(2) by (auto simp add: split_at_take_drop_conv)
-    hence "?c\<^sub>0\<^sub>R \<in> set ?xs\<^sub>R" "?c\<^sub>1\<^sub>R \<in> set ?xs\<^sub>R" and IHR1: "?c\<^sub>0\<^sub>R\<noteq> ?c\<^sub>1\<^sub>R"
-      using "1.IH" prod.collapse by metis+
-    hence IHR2: "?c\<^sub>0\<^sub>R \<in> set xs" "?c\<^sub>1\<^sub>R \<in> set xs"
-      using split_at_take_drop_conv in_set_dropD snd_conv by metis+
+    have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs" "distinct XS\<^sub>R"
+      using False "1.prems"(2) defs by (auto simp: split_at_take_drop_conv)
+    hence "C\<^sub>0\<^sub>R \<in> set XS\<^sub>R" "C\<^sub>1\<^sub>R \<in> set XS\<^sub>R" and IHR1: "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
+      using "1.IH" defs by metis+
+    hence IHR2: "C\<^sub>0\<^sub>R \<in> set xs" "C\<^sub>1\<^sub>R \<in> set xs"
+      using split_at_take_drop_conv in_set_dropD snd_conv defs by metis+
 
-    have *: "(?ys, ?c\<^sub>0, ?c\<^sub>1) = closest_pair_rec xs"
-      using False by (auto simp add: closest_pair_rec_simps Let_def split: prod.split)
-    have YS: "set xs = set ?ys" "distinct ?ys"
+    have *: "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
+      using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
+    have YS: "set xs = set YS" "distinct YS"
       using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
 
-    have "?c\<^sub>0 \<in> set xs"
-      using combine_c0 IHL2(1) IHR2(1) YS prod.collapse by (metis (no_types, lifting))
-    moreover have "?c\<^sub>1 \<in> set xs"
-      using combine_c1 IHL2(2) IHR2(2) YS prod.collapse by (metis (no_types, lifting))
-    moreover have "?c\<^sub>0 \<noteq> ?c\<^sub>1"
-      using combine_c0_ne_c1 IHL1 IHR1 YS prod.collapse by (metis (no_types, lifting))
+    have "C\<^sub>0 \<in> set xs"
+      using combine_c0 IHL2(1) IHR2(1) YS defs by blast
+    moreover have "C\<^sub>1 \<in> set xs"
+      using combine_c1 IHL2(2) IHR2(2) YS defs by blast
+    moreover have "C\<^sub>0 \<noteq> C\<^sub>1"
+      using combine_c0_ne_c1 IHL1 IHR1 YS defs by blast
     ultimately show ?thesis
       using "1.prems"(3) * by (metis Pair_inject)
   qed
@@ -1435,59 +1397,45 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
   next
     case False
 
-    define XS where "XS = split_at (?n div 2) xs"
-    define XS\<^sub>L where "XS\<^sub>L = fst XS"
-    define XS\<^sub>R where "XS\<^sub>R = snd XS"
+    obtain XS\<^sub>L XS\<^sub>R where XS\<^sub>L\<^sub>R_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) xs"
+      using prod.collapse by blast
     define L where "L = fst (hd XS\<^sub>R)"
-    note divide_defs = XS_def XS\<^sub>L_def XS\<^sub>R_def L_def
 
-    define CP\<^sub>L where "CP\<^sub>L = closest_pair_rec XS\<^sub>L"
-    define YS\<^sub>L where "YS\<^sub>L = fst CP\<^sub>L"
-    define C\<^sub>L where "C\<^sub>L = snd CP\<^sub>L"
-    define C\<^sub>0\<^sub>L where "C\<^sub>0\<^sub>L = fst C\<^sub>L"
-    define C\<^sub>1\<^sub>L where "C\<^sub>1\<^sub>L = snd C\<^sub>L"
-    define CP\<^sub>R where "CP\<^sub>R = closest_pair_rec XS\<^sub>R"
-    define YS\<^sub>R where "YS\<^sub>R = fst CP\<^sub>R"
-    define C\<^sub>R where "C\<^sub>R = snd CP\<^sub>R"
-    define C\<^sub>0\<^sub>R where "C\<^sub>0\<^sub>R = fst C\<^sub>R"
-    define C\<^sub>1\<^sub>R where "C\<^sub>1\<^sub>R = snd C\<^sub>R"
-    note conquer_defs = CP\<^sub>L_def YS\<^sub>L_def C\<^sub>L_def C\<^sub>0\<^sub>L_def C\<^sub>1\<^sub>L_def CP\<^sub>R_def YS\<^sub>R_def C\<^sub>R_def C\<^sub>0\<^sub>R_def C\<^sub>1\<^sub>R_def
+    obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where YSC\<^sub>0\<^sub>1\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by metis
+    obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where YSC\<^sub>0\<^sub>1\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by metis
 
     define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
-    define C where "C = combine C\<^sub>L C\<^sub>R L YS"
-    define C\<^sub>0 where "C\<^sub>0 = fst C"
-    define C\<^sub>1 where "C\<^sub>1 = snd C"
-    note combine_defs = YS_def C_def C\<^sub>0_def C\<^sub>1_def
+    obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+      using prod.collapse by blast
+    note defs = XS\<^sub>L\<^sub>R_def L_def YSC\<^sub>0\<^sub>1\<^sub>L_def YSC\<^sub>0\<^sub>1\<^sub>R_def YS_def C\<^sub>0\<^sub>1_def
 
     have XSLR: "XS\<^sub>L = take (?n div 2) xs" "XS\<^sub>R = drop (?n div 2) xs"
-      using divide_defs by (auto simp add: split_at_take_drop_conv)
+      using defs by (auto simp: split_at_take_drop_conv)
 
     have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs"
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>L" "sortedX XS\<^sub>L"
-      using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_take)
-    moreover have "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
-      using XSLR by (auto simp add: divide_defs conquer_defs)
+      using "1.prems"(2,3) XSLR by (auto simp: sortedX_def sorted_wrt_take)
     ultimately have L: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set XS\<^sub>L)"
                        "set XS\<^sub>L = set YS\<^sub>L" "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 YSC\<^sub>0\<^sub>1\<^sub>L_def by blast+
     hence IHL: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
       by argo
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs"
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>R" "sortedX XS\<^sub>R"
-      using "1.prems"(2,3) XSLR by (auto simp add: sortedX_def sorted_wrt_drop)
-    moreover have "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
-      using XSLR by (auto simp add: divide_defs conquer_defs)
+      using "1.prems"(2,3) XSLR by (auto simp: sortedX_def sorted_wrt_drop)
     ultimately have R: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set XS\<^sub>R)"
                        "set XS\<^sub>R = set YS\<^sub>R" "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1 YSC\<^sub>0\<^sub>1\<^sub>R_def by blast+
     hence IHR: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
       by argo
 
     have *: "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
-      using False by (auto simp add: closest_pair_rec_simps Let_def divide_defs conquer_defs combine_defs split: prod.split)
+      using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
 
     have "set xs = set YS" "distinct YS" "sortedY YS"
       using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
@@ -1496,9 +1444,9 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     moreover have "\<forall>p \<in> set YS\<^sub>R. L \<le> fst p"
       using False "1.prems"(3) XSLR L_def R(2) sortedX_hd_drop_less_drop by simp
     moreover have "set YS = set YS\<^sub>L \<union> set YS\<^sub>R"
-      using set_merge combine_defs by fast
+      using set_merge defs by fast
     moreover have "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
-      by (auto simp add: divide_defs conquer_defs combine_defs)
+      by (auto simp add: defs)
     ultimately have "min_dist (dist C\<^sub>0 C\<^sub>1) (set xs)"
       using combine_dist IHL IHR L(3) R(3) by presburger
     moreover have "(YS, C\<^sub>0, C\<^sub>1) = (ys, c\<^sub>0, c\<^sub>1)"
