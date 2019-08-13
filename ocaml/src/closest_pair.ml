@@ -1,3 +1,5 @@
+(* Common Code *)
+
 type point = float * float
 
 let dist ((x0, y0) : point) ((x1, y1) : point): float =
@@ -21,142 +23,155 @@ let random_points (n : int): point array =
   done;
   arr
 
+
+(* Timing Module *)
+
 module Time : sig
-  val statistics : (unit -> 'a) list -> int -> float list
+  val statistics : (unit -> 'a) list -> int -> int list
 end =
 struct
-  let time (f : unit -> 'a): float =
-    let start = Sys.time()
-    and _ = f () in
-    Sys.time() -. start
 
-  let times (f : unit -> 'a) (n : int): float =
-    let cnt = ref 0.0 in
-    for _ = 1 to n do
-      cnt := !cnt +. time f
-    done;
-    !cnt /. float_of_int n
+let time (f : unit -> 'a): float =
+  let start = Sys.time()
+  and _ = f () in
+  Sys.time() -. start
 
-  let statistics fs n =
-    List.map(fun f -> times f n) fs
+let times (f : unit -> 'a) (n : int): int =
+  let cnt = ref 0.0 in
+  for _ = 1 to n do
+    cnt := !cnt +. time f
+  done;
+  int_of_float (!cnt /. float_of_int n *. 1000.0)
+
+let statistics fs n =
+  List.map(fun f -> times f n) fs
+
 end
+
+
+(* Mutable Implementation of the Closest Pair of Points Algorithm *)
 
 module Mutable : sig
   val bf_closest_pair : point array -> point * point
   val closest_pair : point array -> point * point
 end =
 struct
-  let bf_closest_pair' (ps : point array) (l : int) (h : int): point * point =
-    let p0 = ref (Array.unsafe_get ps l)
-    and p1 = ref (Array.unsafe_get ps (l + 1)) in
-    let delta = ref (dist !p0 !p1) in
-    for i = l to h do
-      let c0 = Array.unsafe_get ps i in
-      for j = i + 1 to h do
-        let c1 = Array.unsafe_get ps j in
-        let d = dist c0 c1 in
-        if d < !delta then
-          begin
-            p0 := c0;
-            p1 := c1;
-            delta := d;
-          end
-      done;
+
+let bf_closest_pair' (ps : point array) (l : int) (h : int): point * point =
+  let p0 = ref (Array.unsafe_get ps l)
+  and p1 = ref (Array.unsafe_get ps (l + 1)) in
+  let delta = ref (dist !p0 !p1) in
+  for i = l to h do
+    let c0 = Array.unsafe_get ps i in
+    for j = i + 1 to h do
+      let c1 = Array.unsafe_get ps j in
+      let d = dist c0 c1 in
+      if d < !delta then
+        begin
+          p0 := c0;
+          p1 := c1;
+          delta := d;
+        end
     done;
-    (!p0, !p1)
+  done;
+  (!p0, !p1)
 
-  let bf_closest_pair ps =
-    bf_closest_pair' ps 0 (Array.length ps - 1)
+let bf_closest_pair ps =
+  bf_closest_pair' ps 0 (Array.length ps - 1)
 
-  let sort_by_y (ps : point array) (l : int) (h : int): unit =
-    let arr = Array.sub ps l (h - l + 1) in
-    Array.stable_sort (fun (_, y0) (_, y1) -> int_of_float (y0 -. y1)) arr;
-    Array.blit arr 0 ps l (h - l + 1)
+let sort_by_y (ps : point array) (l : int) (h : int): unit =
+  let arr = Array.sub ps l (h - l + 1) in
+  Array.stable_sort (fun (_, y0) (_, y1) -> int_of_float (y0 -. y1)) arr;
+  Array.blit arr 0 ps l (h - l + 1)
 
-  let sort_by_x (ps : point array) (l : int) (h : int): unit =
-    let arr = Array.sub ps l (h - l + 1) in
-    Array.stable_sort (fun (x0, _) (x1, _) -> int_of_float (x0 -. x1)) arr;
-    Array.blit arr 0 ps l (h - l + 1)
+let sort_by_x (ps : point array) (l : int) (h : int): unit =
+  let arr = Array.sub ps l (h - l + 1) in
+  Array.stable_sort (fun (x0, _) (x1, _) -> int_of_float (x0 -. x1)) arr;
+  Array.blit arr 0 ps l (h - l + 1)
 
-  let merge (ps : point array) (aux : point array) (l : int) (m : int) (h : int): unit =
-    for k = l to h do
-      Array.unsafe_set aux k (Array.unsafe_get ps k)
-    done;
-    let i = ref l
-    and j = ref (m + 1) in
-    for k = l to h do
-      if !i > m then
-        begin
-          Array.unsafe_set ps k (Array.unsafe_get aux !j);
-          j := !j + 1
-        end
-      else if !j > h then
-        begin
-          Array.unsafe_set ps k (Array.unsafe_get aux !i);
-          i := !i + 1
-        end
-      else if snd (Array.unsafe_get aux !j) <= snd (Array.unsafe_get aux !i) then
-        begin
-          Array.unsafe_set ps k (Array.unsafe_get aux !j);
-          j := !j + 1
-        end
-      else
-        begin
-          Array.unsafe_set ps k (Array.unsafe_get aux !i);
-          i := !i + 1
-        end;
-    done
-
-  let rec closest_pair_rec (xs : point array) (ys : point array) (aux : point array) (l : int) (h : int): point * point =
-    if (h - l <= 2) then
+let merge (ps : point array) (aux : point array) (l : int) (m : int) (h : int): unit =
+  for k = l to h do
+    Array.unsafe_set aux k (Array.unsafe_get ps k)
+  done;
+  let i = ref l
+  and j = ref (m + 1) in
+  for k = l to h do
+    if !i > m then
       begin
-        sort_by_y ys l h;
-        bf_closest_pair' xs l h
+        Array.unsafe_set ps k (Array.unsafe_get aux !j);
+        j := !j + 1
+      end
+    else if !j > h then
+      begin
+        Array.unsafe_set ps k (Array.unsafe_get aux !i);
+        i := !i + 1
+      end
+    else if snd (Array.unsafe_get aux !j) <= snd (Array.unsafe_get aux !i) then
+      begin
+        Array.unsafe_set ps k (Array.unsafe_get aux !j);
+        j := !j + 1
       end
     else
       begin
-        let m = l + (h - l) / 2 in
-        let median = Array.unsafe_get xs m in
-        let (lp0, lp1) = closest_pair_rec xs ys aux l m in
-        let (rp0, rp1) = closest_pair_rec xs ys aux (m + 1) h in
-        let (p0', p1') = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
-        let p0 = ref p0' in
-        let p1 = ref p1' in
-        let delta = ref (dist !p0 !p1) in
+        Array.unsafe_set ps k (Array.unsafe_get aux !i);
+        i := !i + 1
+      end;
+  done
 
-        merge ys aux l m h;
+let rec closest_pair_rec (xs : point array) (ys : point array) (aux : point array) (l : int) (h : int): point * point =
+  if (h - l <= 2) then
+    begin
+      sort_by_y ys l h;
+      bf_closest_pair' xs l h
+    end
+  else
+    begin
+      let m = l + (h - l) / 2 in
+      let median = Array.unsafe_get xs m in
+      let (lp0, lp1) = closest_pair_rec xs ys aux l m in
+      let (rp0, rp1) = closest_pair_rec xs ys aux (m + 1) h in
+      let (p0', p1') = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
+      let p0 = ref p0' in
+      let p1 = ref p1' in
+      let delta = ref (dist !p0 !p1) in
 
-        let k = ref 0 in
-        for i = l to h do
-          if abs_float (fst (Array.unsafe_get ys i) -. fst median) <= !delta then
+      merge ys aux l m h;
+
+      let k = ref 0 in
+      for i = l to h do
+        if abs_float (fst (Array.unsafe_get ys i) -. fst median) <= !delta then
+          begin
+            Array.unsafe_set aux !k (Array.unsafe_get ys i);
+            k := !k + 1
+          end
+      done;
+
+      for i = 0 to !k - 1 do
+        let j = ref (i + 1) in
+        while !j < !k && snd (Array.unsafe_get aux !j) -. snd (Array.unsafe_get aux i) < !delta do
+          let d = dist (Array.unsafe_get aux i) (Array.unsafe_get aux !j) in
+          if d < !delta then
             begin
-              Array.unsafe_set aux !k (Array.unsafe_get ys i);
-              k := !k + 1
-            end
+              delta := d;
+              p0 := Array.unsafe_get aux i;
+              p1 := Array.unsafe_get aux !j
+            end;
+          j := !j + 1
         done;
+      done;
 
-        for i = 0 to !k - 1 do
-          let j = ref (i + 1) in
-          while !j < !k && snd (Array.unsafe_get aux !j) -. snd (Array.unsafe_get aux i) < !delta do
-            let d = dist (Array.unsafe_get aux i) (Array.unsafe_get aux !j) in
-            if d < !delta then
-              begin
-                delta := d;
-                p0 := Array.unsafe_get aux i;
-                p1 := Array.unsafe_get aux !j
-              end;
-            j := !j + 1
-          done;
-        done;
+      (!p0, !p1)
+    end
 
-        (!p0, !p1)
-      end
+let closest_pair ps =
+  let n = Array.length ps in
+  sort_by_x ps 0 (n - 1);
+  closest_pair_rec ps (Array.copy ps) (Array.init n (fun _ -> (0.0, 0.0))) 0 (n - 1)
 
-  let closest_pair ps =
-    let n = Array.length ps in
-    sort_by_x ps 0 (n - 1);
-    closest_pair_rec ps (Array.copy ps) (Array.init n (fun _ -> (0.0, 0.0))) 0 (n - 1)
 end
+
+
+(* Immutable Implementation of the Closest Pair of Points Algorithm *)
 
 module Immutable : sig
   val bf_closest_pair : point list -> point * point
@@ -164,136 +179,98 @@ module Immutable : sig
 end =
 struct
 
-  let rec length_rec (acc : int) (xs : 'a list): int =
-    match xs with
-    | [] -> acc
-    | _ :: xs -> (length_rec[@tailcall]) (acc + 1) xs
+let rec split_at (n : int) (acc : 'a list) (xs : 'a list): 'a list * 'a list =
+  match xs with
+  | [] -> (List.rev acc, xs)
+  | x :: xs ->
+    if n <= 0 then
+      (List.rev acc, x :: xs)
+    else
+      (split_at (n - 1)[@tailcall]) (x :: acc) xs
 
-  let length (xs : 'a list) : int =
-    length_rec 0 xs
+let split_at (n : int) (xs : 'a list): 'a list * 'a list =
+  split_at n [] xs
 
-  let rec reverse_rec (acc : 'a list) (xs : 'a list): 'a list =
-      match xs with
-      | [] -> acc
-      | x :: xs -> (reverse_rec[@tailcall]) (x :: acc) xs
+let rec find_closest (p : point) (c0: point) (ps: point list): point =
+  match ps with
+  | [] -> c0
+  | c1 :: ps ->
+    if dist p c0 <= dist p c1 then
+      (find_closest[@tailcall]) p c0 ps
+    else
+      (find_closest[@tailcall]) p c1 ps
 
-  let reverse (xs : 'a list): 'a list =
-    reverse_rec [] xs
+let rec bf_closest_pair_rec (f : point list -> point list) (c0 : point) (c1 : point) (ps : point list): point * point =
+  match ps with
+  | p0 :: p2 :: ps ->
+    let p1 = find_closest p0 p2 (f ps) in
+    if dist c0 c1 <= dist p0 p1 then
+      (bf_closest_pair_rec[@tailcall]) f c0 c1 (p2 :: ps)
+    else
+      (bf_closest_pair_rec[@tailcall]) f p0 p1 (p2 :: ps)
+  | _ -> (c0, c1)
 
-  let rec filter_rec (f : 'a -> bool) (acc : 'a list) (xs : 'a list): 'a list =
-      match xs with
-      | [] -> reverse acc
-      | x :: xs -> if f x then (filter_rec[@tailcall]) f (x :: acc) xs else (filter_rec[@tailcall]) f acc xs
+let bf_closest_pair (ps : point list): point * point =
+  match ps with
+  | p0 :: p1 :: ps -> bf_closest_pair_rec (fun ps -> ps) p0 p1 (p0 :: p1 :: ps)
+  | _ -> raise (Invalid_argument "Not enough points")
 
-  let filter (f : 'a -> bool) (xs : 'a list): 'a list =
-      filter_rec f [] xs
+let bf_closest_pair_7 (ps: point list): point * point =
+  match ps with
+  | p0 :: p1 :: ps -> bf_closest_pair_rec (fun ps -> fst (split_at 6 ps)) p0 p1 (p0 :: p1 :: ps)
+  | _ -> raise (Invalid_argument "Not enough points")
 
-  let rec split_at (n : int) (acc : 'a list) (xs : 'a list): 'a list * 'a list =
-    match xs with
-    | [] -> (reverse acc, xs)
-    | x :: xs -> if n <= 0 then (reverse acc, x :: xs) else (split_at (n - 1)[@tailcall]) (x :: acc) xs
-
-  let split_at (n : int) (xs : 'a list): 'a list * 'a list =
-    split_at n [] xs
-
-  let rec find_closest (p : point) (c0: point) (ps: point list): point =
-    match ps with
-    | [] -> c0
-    | c1 :: ps -> if dist p c0 <= dist p c1 then (find_closest[@tailcall]) p c0 ps else (find_closest[@tailcall]) p c1 ps
-
-  let rec bf_closest_pair_rec (f : point list -> point list) (c0 : point) (c1 : point) (ps : point list): point * point =
-    match ps with
-    | p0 :: p2 :: ps ->
-      let p1 = find_closest p0 p2 (f ps) in
-      if dist c0 c1 <= dist p0 p1 then
-        (bf_closest_pair_rec[@tailcall]) f c0 c1 (p2 :: ps)
+let rec merge (f : point -> float) (ps : point list) (ps0 : point list) (ps1 : point list): point list =
+  match (ps0, ps1) with
+  | (p0 :: ps0, p1 :: ps1) ->
+      if f p0 <= f p1 then
+        (merge[@tailcall]) f (p0 :: ps) ps0 (p1 :: ps1)
       else
-        (bf_closest_pair_rec[@tailcall]) f p0 p1 (p2 :: ps)
-    | _ -> (c0, c1)
+        (merge[@tailcall]) f (p1 :: ps) (p0 :: ps0) ps1
+  | ([], p1 :: ps1) -> (merge[@tailcall]) f (p1 :: ps) [] ps1
+  | (p0 :: ps0, []) -> (merge[@tailcall]) f (p0 :: ps) ps0 []
+  | ([], []) -> List.rev ps
 
-  let bf_closest_pair (ps : point list): point * point =
-    match ps with
-    | p0 :: p1 :: ps -> bf_closest_pair_rec (fun ps -> ps) p0 p1 (p0 :: p1 :: ps)
-    | _ -> raise (Invalid_argument "Not enough points")
+let merge (f : point -> float) (ps0 : point list) (ps1 : point list): point list =
+  merge f [] ps0 ps1
 
-  let bf_closest_pair_7 (ps: point list): point * point =
-    match ps with
-    | p0 :: p1 :: ps -> bf_closest_pair_rec (fun ps -> fst (split_at 6 ps)) p0 p1 (p0 :: p1 :: ps)
-    | _ -> raise (Invalid_argument "Not enough points")
+let rec msort (f : point -> float) (ps : point list): point list =
+  let n = List.length ps in
+  if n <= 1 then
+    ps
+  else
+    let (l, r) = split_at (n / 2) ps in
+    merge f (msort f l) (msort f r)
 
-  let rec merge (f : point -> float) (ps : point list) (ps0 : point list) (ps1 : point list): point list =
-    match (ps0, ps1) with
-    | (p0 :: ps0, p1 :: ps1) ->
-        if f p0 <= f p1 then
-          (merge[@tailcall]) f (p0 :: ps) ps0 (p1 :: ps1)
-        else
-          (merge[@tailcall]) f (p1 :: ps) (p0 :: ps0) ps1
-    | ([], p1 :: ps1) -> (merge[@tailcall]) f (p1 :: ps) [] ps1
-    | (p0 :: ps0, []) -> (merge[@tailcall]) f (p0 :: ps) ps0 []
-    | ([], []) -> reverse ps
-
-  let merge (f : point -> float) (ps0 : point list) (ps1 : point list): point list =
-    merge f [] ps0 ps1
-
-  let rec msort (f : point -> float) (ps : point list): point list =
-    let n = length ps in
-    if n <= 1 then
-      ps
+let rec closest_pair_rec (psX : point list): point list * (point * point) =
+  let n = List.length psX in
+  if n <= 3 then
+    (msort snd psX, bf_closest_pair psX)
+  else
+    let (lx, rx) = split_at (n / 2) psX in
+    let l = fst (List.hd rx) in
+    let (ysL, (lp0, lp1)) = closest_pair_rec lx in
+    let (ysR, (rp0, rp1)) = closest_pair_rec rx in
+    let psY = merge snd ysL ysR in
+    let (p0, p1) = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
+    let delta = dist p0 p1 in
+    let ys = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in
+    if List.length ys < 2 then
+      (psY, (p0, p1))
     else
-      let (l, r) = split_at (n / 2) ps in
-      merge f (msort f l) (msort f r)
-
-  let rec closest_pair_rec (psX : point list): point list * (point * point) =
-    let n = length psX in
-    if n <= 3 then
-      (msort snd psX, bf_closest_pair psX)
-    else
-      let (lx, rx) = split_at (n / 2) psX in
-      let l = fst (List.hd rx) in
-      let (ysL, (lp0, lp1)) = closest_pair_rec lx in
-      let (ysR, (rp0, rp1)) = closest_pair_rec rx in
-      let psY = merge snd ysL ysR in
-      let (p0, p1) = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
-      let delta = dist p0 p1 in
-      let ys = filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in
-      if length ys < 2 then
+      let (c0, c1) = bf_closest_pair_7 ys in
+      if dist p0 p1 <= dist c0 c1 then
         (psY, (p0, p1))
       else
-        let (c0, c1) = bf_closest_pair_7 ys in
-        if dist p0 p1 <= dist c0 c1 then
-          (psY, (p0, p1))
-        else
-          (psY, (c0, c1))
+        (psY, (c0, c1))
 
-    let closest_pair ps =
-      snd (closest_pair_rec (msort fst ps))
+let closest_pair ps =
+  snd (closest_pair_rec (msort fst ps))
+
 end
 
-module Z : sig
-  type t = int
-  val zero : t
-  val leq : t -> t -> bool
-  val lt : t -> t -> bool
-  val equal : t -> t -> bool
-  val of_int : t -> int
-  val sub : t -> t -> t
-  val add : t -> t -> t
-  val neg : t -> t
-  val abs : t -> t
-  val div_rem : t -> t -> t * t
-end = struct
-  type t = int
-  let zero = 0
-  let leq = (<=)
-  let lt = (<)
-  let equal = (=)
-  let of_int x = x
-  let sub = (-)
-  let add = (+)
-  let neg x = -x
-  let abs = Pervasives.abs
-  let div_rem x y = (x / y, x mod y)
-end
+
+(* Copy Verified Code Here *)
 
 module Verified : sig
   val closest_pair : (float * float) list -> (float * float) * (float * float)
@@ -536,16 +513,19 @@ let rec closest_pair_rec
 
 let rec closest_pair ps = (let (_, c) = closest_pair_rec (sortX ps) in c);;
 
-end;; (*struct Verified*)
+end;;
+
+
+(* Helpers and Main *)
 
 let print_header (header : int list): unit =
   Printf.printf "  \t";
   List.iter (fun n -> Printf.printf "%d\t\t" n) header;
   print_newline ()
 
-let print_stat_row (label : string) (row : float list): unit =
+let print_stat_row (label : string) (row : int list): unit =
   Printf.printf "%s:\t" label;
-  List.iter (fun stat -> Printf.printf "%.5f\t\t" stat) row;
+  List.iter (fun stat -> Printf.printf "%dms\t\t" stat) row;
   print_newline ()
 
 let _ =
