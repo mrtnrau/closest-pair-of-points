@@ -121,7 +121,7 @@ definition take_cost :: "nat \<Rightarrow> real" where
 
 lemma t_take_conv_take_cost:
   "t_take n xs \<le> take_cost (length xs)"
-  unfolding take_cost_def by (auto simp add: min_def t_take)
+  unfolding take_cost_def by (auto simp: min_def t_take)
 
 lemma t_take_bigo:
   "t_take n \<in> O[length going_to at_top](take_cost o length)"
@@ -156,7 +156,7 @@ lemma split_at_cost_nonneg[simp]:
 
 lemma t_split_at_conv_split_at_cost:
   "t_split_at n xs \<le> split_at_cost (length xs)"
-  unfolding split_at_cost_def by (auto simp add: min_def t_split_at)
+  unfolding split_at_cost_def by (auto simp: min_def t_split_at)
 
 lemma t_split_at_bigo:
   "t_split_at n \<in> O[length going_to at_top](split_at_cost o length)"
@@ -223,7 +223,7 @@ function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rig
   by pat_completeness auto
 termination t_msort
   apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-  apply (auto simp add: split_at_take_drop_conv Let_def)
+  apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
 definition t_sortX :: "point list \<Rightarrow> nat" where
@@ -271,10 +271,9 @@ next
 
   define XS where "XS = x # y # xs'"
   define N where "N = length XS"
-  define LR where "LR = split_at (N div 2) XS"
-  define L where "L = fst LR"
-  define R where "R = snd LR"
-  note defs = XS_def N_def LR_def L_def R_def
+  obtain L R where LR_def: "(L, R) = split_at (N div 2) XS"
+    using prod.collapse by blast
+  note defs = XS_def N_def LR_def
 
   let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
   let ?RHS = "length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) +
@@ -286,7 +285,7 @@ next
     using defs "3.IH"(2) prod.collapse by blast
 
   have *: "length L = N div 2" "length R = N - N div 2"
-    by (auto simp add: defs split_at_take_drop_conv)
+    using defs by (auto simp: split_at_take_drop_conv)
   hence "(nat \<lfloor>real N / 2\<rfloor>) = length L" "(nat \<lceil>real N / 2\<rceil>) = length R"
     by linarith+
   hence IH: "t_msort f L \<le> msort_cost (nat \<lfloor>real N / 2\<rfloor>)"
@@ -304,7 +303,7 @@ next
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
   moreover have "t_msort f XS = ?LHS"
-    by (auto simp add: Let_def defs split: prod.split)
+    using defs by (auto simp: Let_def split: prod.split)
   moreover have "msort_cost N = ?RHS"
     by (simp add: defs)
   ultimately have "t_msort f XS \<le> msort_cost N"
@@ -323,7 +322,7 @@ corollary t_sortY_conv_sortY_cost:
 
 theorem msort_cost:
   "msort_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
-  by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def)
+  by (master_theorem) (auto simp: length_cost_def split_at_cost_def merge_cost_def)
 
 corollary sortX_cost:
   "sortX_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
@@ -506,22 +505,21 @@ definition combine_cost :: "nat \<Rightarrow> real" where
 lemma t_combine:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> 9 * length ys"
 proof -
-  let ?c\<^sub>0\<^sub>1 = "(if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
-  let ?c\<^sub>0 = "fst ?c\<^sub>0\<^sub>1"
-  let ?c\<^sub>1 = "snd ?c\<^sub>0\<^sub>1"
-  let ?P = "(\<lambda>p. l -  dist ?c\<^sub>0 ?c\<^sub>1 \<le> fst p \<and> fst p \<le> l +  dist ?c\<^sub>0 ?c\<^sub>1)"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
+    using prod.collapse by blast
+  let ?P = "(\<lambda>p. l - dist C\<^sub>0 C\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist C\<^sub>0 C\<^sub>1)"
   let ?ys' = "filter ?P ys"
   let ?t_f = "t_filter ?P ys"
-  let ?p\<^sub>0\<^sub>1 = "closest_pair_7 ?ys'"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 ?ys'"
+    using prod.collapse by blast
   let ?t_c = "t_closest_pair_7 ?ys'"
-  let ?p\<^sub>0 = "fst ?p\<^sub>0\<^sub>1"
-  let ?p\<^sub>1 = "snd ?p\<^sub>0\<^sub>1"
+  note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
 
   show ?thesis
   proof cases
     assume "length ?ys' < 2"
-    hence "?t_f = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R)  l ys"
-      by (auto simp add: Let_def split!: prod.splits)
+    hence "?t_f = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+      using defs by (auto simp: Let_def split!: prod.splits)
     moreover have "?t_f = length ys"
       using t_filter[of ?P ys] by simp
     ultimately show ?thesis
@@ -535,7 +533,7 @@ proof -
     ultimately have "?t_c \<le> 8 * length ys"
       by linarith
     moreover have "?t_f + ?t_c = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
-      using * by (auto simp add: Let_def split!: prod.splits)
+      using * defs by (auto simp: Let_def split!: prod.splits)
     moreover have "?t_f = length ys"
       using t_filter[of ?P ys] by simp
     ultimately show ?thesis
@@ -585,7 +583,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
   by pat_completeness auto
 termination t_closest_pair_rec
   apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp add: split_at_take_drop_conv Let_def)
+  apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
 lemma t_closest_pair_rec_simps_1:
@@ -640,36 +638,25 @@ proof (induction ps rule: length_induct)
   next
     case False
 
-    define XS where "XS = split_at (?n div 2) ps"
+    obtain XS\<^sub>L XS\<^sub>R where XS_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) ps"
+      using prod.collapse by blast
     define TS where "TS = t_split_at (?n div 2) ps"
-    define XS\<^sub>L where "XS\<^sub>L = fst XS"
-    define XS\<^sub>R where "XS\<^sub>R = snd XS"
     define L where "L = fst (hd XS\<^sub>R)"
-    note divide_defs = XS_def TS_def XS\<^sub>L_def XS\<^sub>R_def L_def
 
-    define CP\<^sub>L where "CP\<^sub>L = closest_pair_rec XS\<^sub>L"
+    obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where CP\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by metis
     define TL where "TL = t_closest_pair_rec XS\<^sub>L"
-    define YS\<^sub>L where "YS\<^sub>L = fst CP\<^sub>L"
-    define C\<^sub>L where "C\<^sub>L = snd CP\<^sub>L"
-    define C\<^sub>0\<^sub>L where "C\<^sub>0\<^sub>L = fst C\<^sub>L"
-    define C\<^sub>1\<^sub>L where "C\<^sub>1\<^sub>L = snd C\<^sub>L"
-    define CP\<^sub>R where "CP\<^sub>R = closest_pair_rec XS\<^sub>R"
+    obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where CP\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by metis
     define TR where "TR = t_closest_pair_rec XS\<^sub>R"
-    define YS\<^sub>R where "YS\<^sub>R = fst CP\<^sub>R"
-    define C\<^sub>R where "C\<^sub>R = snd CP\<^sub>R"
-    define C\<^sub>0\<^sub>R where "C\<^sub>0\<^sub>R = fst C\<^sub>R"
-    define C\<^sub>1\<^sub>R where "C\<^sub>1\<^sub>R = snd C\<^sub>R"
-    note conquer_defs = CP\<^sub>L_def TL_def YS\<^sub>L_def C\<^sub>L_def C\<^sub>0\<^sub>L_def C\<^sub>1\<^sub>L_def
-                        CP\<^sub>R_def TR_def YS\<^sub>R_def C\<^sub>R_def C\<^sub>0\<^sub>R_def C\<^sub>1\<^sub>R_def
 
     define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
     define TM where "TM = t_merge (\<lambda>p. snd p) (YS\<^sub>L, YS\<^sub>R)"
     define TC where "TC = t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
-    note combine_defs = YS_def TM_def TC_def
+    note defs = XS_def TS_def L_def CP\<^sub>L_def TL_def CP\<^sub>R_def TR_def YS_def TM_def TC_def
 
     have FL: "t_closest_pair_rec ps = t_length ps + TS + TL + TR + TM + TC"
-      using False t_closest_pair_rec_simps_2
-      by (auto simp add:  divide_defs conquer_defs combine_defs split: prod.splits)
+      using False t_closest_pair_rec_simps_2 defs by (auto split: prod.splits)
 
     have FR: "closest_pair_rec_cost (length ps) =
               length_cost ?n + split_at_cost ?n + closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>) +
@@ -677,15 +664,15 @@ proof (induction ps rule: length_induct)
       using False by simp
 
     have XSLR: "XS\<^sub>L = take (?n div 2) ps" "XS\<^sub>R = drop (?n div 2) ps"
-      using divide_defs by (auto simp add: split_at_take_drop_conv)
+      using defs by (auto simp: split_at_take_drop_conv)
     hence "length XS\<^sub>L = ?n div 2" "length XS\<^sub>R = ?n - ?n div 2"
       by simp_all
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
       by linarith+
     have "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
-      using conquer_defs closest_pair_rec_set_length_sortedY prod.collapse by metis+
+      using defs closest_pair_rec_set_length_sortedY by metis+
     hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
-      using divide_defs XSLR by fastforce
+      using defs XSLR by fastforce
 
     have "length XS\<^sub>L < length ps"
       using False XSLR by simp
@@ -712,7 +699,7 @@ proof (induction ps rule: length_induct)
     moreover have "TM \<le> merge_cost ?n"
       using L t_merge_conv_merge_cost TM_def by auto
     moreover have "TC \<le> combine_cost ?n"
-      using L combine_defs length_merge t_combine_conv_combine_cost by metis
+      using L defs length_merge t_combine_conv_combine_cost by metis
     ultimately show ?thesis
       using FL FR by linarith
   qed
@@ -720,7 +707,7 @@ qed
 
 theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
-  by (master_theorem) (auto simp add: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
+  by (master_theorem) (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
 theorem t_closest_pair_rec_bigo:
   "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"

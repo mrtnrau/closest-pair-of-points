@@ -145,11 +145,11 @@ fun find_closest_it :: "point \<Rightarrow> point list \<Rightarrow> point" wher
 
 lemma find_closest_drop_snd:
   "dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>0 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
+  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp: Let_def)
 
 lemma find_closest_drop_fst:
   "\<not> dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>1 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp add: Let_def)
+  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp: Let_def)
 
 lemma find_closest_conv_find_closest_it_rec:
   "find_closest p (c\<^sub>0 # cs) = find_closest_it_rec p c\<^sub>0 cs"
@@ -220,7 +220,7 @@ fun prefixes :: "'a list \<Rightarrow> 'a list list" where
 lemma gen_closest_pair_it_rec_conv_foldl:
   "gen_closest_pair_it_rec f (c\<^sub>0, c\<^sub>1) ps = foldl (fl f) (c\<^sub>0, c\<^sub>1) (prefixes ps)"
   apply (induction f "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 rule: gen_closest_pair_it_rec.induct)
-  apply (auto simp add: Let_def)
+  apply (auto simp: Let_def)
   done
 
 lemma gen_closest_pair_conv_foldr:
@@ -228,7 +228,7 @@ lemma gen_closest_pair_conv_foldr:
   shows "gen_closest_pair f ps = foldr (fr f) (prefixes ps) (ps!(n-2), ps!(n-1))"
   using assms
   apply (induction f ps arbitrary: n rule: gen_closest_pair.induct)
-  apply (auto simp add: Let_def case_prod_unfold)
+  apply (auto simp: Let_def case_prod_unfold)
   done
 
 lemma fl_foldl_conv_fr_foldr:
@@ -255,23 +255,23 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 d\<^sub>0 d\<^sub>1)
       also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
       also have "... = fr f [d\<^sub>0, d\<^sub>1] ((fr f) (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
-        using * Cons.prems by (cases ps) (auto simp add: Let_def)
+        using * Cons.prems by (cases ps) (auto simp: Let_def)
       also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     next 
       assume ASM: "\<not> fl f (d\<^sub>0, d\<^sub>1) (p # ps) = (d\<^sub>0, d\<^sub>1)"
       hence *: "fl f (d\<^sub>0, d\<^sub>1) (p # ps) = (p, find_closest p (f ps))"
-        by (cases ps) (auto simp add: Let_def)
+        by (cases ps) (auto simp: Let_def)
       have "fl f (foldl (fl f) (d\<^sub>0, d\<^sub>1) (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
             fl f (foldl (fl f) (fl f (d\<^sub>0, d\<^sub>1) (p # ps)) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
       also have "... = fl f (foldl (fl f) (p, ?p') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
-        using Cons.prems * by (cases ps) (auto simp add: Let_def)
+        using Cons.prems * by (cases ps) (auto simp: Let_def)
       also have "... = fr f [p, ?p'] (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
       also have "... = fr f [d\<^sub>0, d\<^sub>1] (fr f (p # ps) (foldr (fr f) (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
-        using Cons.prems * by (cases ps) (auto simp add: Let_def)
+        using Cons.prems * by (cases ps) (auto simp: Let_def)
       also have "... = fr f [d\<^sub>0, d\<^sub>1] (foldr (fr f) (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
@@ -314,7 +314,7 @@ proof -
   have "foldl (fl f) (p, p') (prefixes ?ps) = fl f (foldl (fl f) (p, p') ls) ?psn"
     using * by simp
   also have "... = fl f (fl f (foldl (fl f) (p, p') ls) ?psn) ?psn"
-    by (cases ?ps) (auto simp add: Let_def)
+    by (cases ?ps) (auto simp: Let_def)
   also have "... = fl f (foldl (fl f) (p, p') (prefixes ?ps)) ?psn"
     using * by auto
   finally show ?thesis .
@@ -441,7 +441,7 @@ fun combine_code :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow>
 
 lemma combine_conv_combine_code[code_unfold]:
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
-  using dist_transform by simp
+  using dist_transform combine.simps by simp
 
 
 subsection "Export Code"
