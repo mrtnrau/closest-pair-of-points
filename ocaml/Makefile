@@ -11,6 +11,7 @@ all: native byte # profile debug
 
 clean:
 	$(OCB) -clean
+	rm out.txt
 
 native: sanity
 	$(OCB) closest_pair.native

@@ -518,15 +518,15 @@ end;;
 
 (* Helpers and Main *)
 
-let print_header (header : int list): unit =
-  Printf.printf "  \t";
-  List.iter (fun n -> Printf.printf "%d\t\t" n) header;
-  print_newline ()
+let print_header (header : int list) (out : out_channel): unit =
+  Printf.fprintf out "  \t";
+  List.iter (fun n -> Printf.fprintf out "%d\t\t" n) header;
+  Printf.fprintf out "\n"
 
-let print_stat_row (label : string) (row : int list): unit =
-  Printf.printf "%s:\t" label;
-  List.iter (fun stat -> Printf.printf "%dms\t\t" stat) row;
-  print_newline ()
+let print_stat_row (label : string) (row : int list) (out : out_channel): unit =
+  Printf.fprintf out "%s:\t" label;
+  List.iter (fun stat -> Printf.fprintf out "%dms\t\t" stat) row;
+  Printf.fprintf out "\n"
 
 let _ =
   let iteration = int_of_string (Sys.argv.(1)) in
@@ -537,7 +537,10 @@ let _ =
   let istats = List.map (fun ps -> fun () -> Immutable.closest_pair ps) (List.map Array.to_list ps) in
   let vstats = List.map (fun ps -> fun () -> Verified.closest_pair ps) (List.map Array.to_list ps) in
 
-  print_header ns;
-  print_stat_row "M" (Time.statistics mstats iteration);
-  print_stat_row "I" (Time.statistics istats iteration);
-  print_stat_row "V" (Time.statistics vstats iteration)
+  let file = "out.txt" in
+  let oc = open_out file in
+  print_header ns oc;
+  print_stat_row "M" (Time.statistics mstats iteration) oc;
+  print_stat_row "I" (Time.statistics istats iteration) oc;
+  print_stat_row "V" (Time.statistics vstats iteration) oc;
+  close_out oc
