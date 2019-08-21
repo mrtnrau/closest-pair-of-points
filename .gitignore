@@ -2,3 +2,5 @@
 /ocaml/_build/
 /ocaml/closest_pair.*
 /ocaml/out*
+/ocaml/main.byte
+/ocaml/main.native
