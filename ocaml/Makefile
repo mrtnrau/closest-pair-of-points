@@ -11,23 +11,23 @@ all: native byte # profile debug
 
 clean:
 	$(OCB) -clean
-	rm out.txt
+	rm -f out.txt
 
 native: sanity
-	$(OCB) closest_pair.native
+	$(OCB) main.native
 
 byte: sanity
-	$(OCB) closest_pair.byte
+	$(OCB) main.byte
 
 profile: sanity
-	$(OCB) -tag profile closest_pair.native
+	$(OCB) -tag profile main.native
 
 debug: sanity
-	$(OCB) -tag debug closest_pair.byte
+	$(OCB) -tag debug main.byte
 
 # check that packages can be found
 sanity:
 	ocamlfind query zarith
 
 test: native
-	./closest_pair.native 1 50000 60000 70000 80000 90000 100000
+	./main.native 1 true 10000 100000 10000
