@@ -30,4 +30,4 @@ sanity:
 	ocamlfind query zarith
 
 test: native
-	./main.native 1 true 10000 100000 10000
+	./main.native 10 true 100000 1000000 100000
