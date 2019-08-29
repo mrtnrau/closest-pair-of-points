@@ -29,5 +29,8 @@ debug: sanity
 sanity:
 	ocamlfind query zarith
 
-test: native
-	./main.native 10 true 100000 1000000 100000
+benchmark_small: native
+	./main.native 100 true 10000 90000 10000
+
+benchmark_large: native
+	./main.native 10 true 100000 900000 100000

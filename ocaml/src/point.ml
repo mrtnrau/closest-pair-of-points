@@ -3,7 +3,7 @@ type point = float * float
 let dist ((x0, y0) : point) ((x1, y1) : point): float =
   let dx = x0 -. x1
   and dy = y0 -. y1 in
-  dx *. dx +. dy *. dy
+  sqrt (dx *. dx +. dy *. dy)
 
 let format_point ((x, y) : point): string =
   Printf.sprintf "(%.2f, %.2f)" x y
