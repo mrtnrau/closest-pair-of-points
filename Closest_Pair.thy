@@ -499,7 +499,6 @@ proof (rule ccontr)
   finally show False by simp
 qed
 
-
 subsection "\<delta> Sparse Points within a Square"
 
 lemma max_points_square:
@@ -669,11 +668,9 @@ proof -
       using card_lys_rys by simp
   qed 
 
-  have "snd y\<^sub>0 \<le> snd y\<^sub>1"
-    using assms(2,10) sortedY_def by simp
-  moreover have "dist (snd y\<^sub>0) (snd y\<^sub>1) < \<delta>"
+  have "dist (snd y\<^sub>0) (snd y\<^sub>1) < \<delta>"
     using assms(11) dist_snd_le le_less_trans by blast
-  ultimately have "snd y\<^sub>1 \<le> snd y\<^sub>0 + \<delta>"
+  hence "snd y\<^sub>1 \<le> snd y\<^sub>0 + \<delta>"
     by (simp add: dist_real_def)
   moreover have "l - \<delta> \<le> fst y\<^sub>1" "fst y\<^sub>1 \<le> l + \<delta>"
     using assms(5,10) by auto
