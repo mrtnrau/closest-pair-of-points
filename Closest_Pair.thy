@@ -578,55 +578,39 @@ lemma closest_pair_in_take_7:
 proof -
   define YS where "YS = y\<^sub>0 # ys"
   define R where "R = cbox (l - \<delta>, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define RYS where "RYS = filter (\<lambda>p. p \<in> R) YS"
+  define RYS where "RYS = R \<inter> set YS"
   define LSQ where "LSQ = cbox (l - \<delta>, snd y\<^sub>0) (l, snd y\<^sub>0 + \<delta>)"
-  define LSQYS where "LSQYS = filter (\<lambda>p. p \<in> LSQ \<and> p \<in> ys\<^sub>L) YS"
+  define LSQYS where "LSQYS = LSQ \<inter> ys\<^sub>L"
   define RSQ where "RSQ = cbox (l, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define RSQYS where "RSQYS = filter (\<lambda>p. p \<in> RSQ \<and> p \<in> ys\<^sub>R) YS"
+  define RSQYS where "RSQYS = RSQ \<inter> ys\<^sub>R"
   note defs = YS_def R_def RYS_def LSQ_def LSQYS_def RSQ_def RSQYS_def
 
   have "R = LSQ \<union> RSQ"
     using defs cbox_right_un by auto
-
-  have overlap\<^sub>L: "\<forall>p \<in> ys\<^sub>L. p \<in> RSQ \<longrightarrow> p \<in> LSQ"
+  moreover have "\<forall>p \<in> ys\<^sub>L. p \<in> RSQ \<longrightarrow> p \<in> LSQ"
     using RSQ_def LSQ_def assms(6) by auto
-  have overlap\<^sub>R: "\<forall>p \<in> ys\<^sub>R. p \<in> LSQ \<longrightarrow> p \<in> RSQ"
+  moreover have "\<forall>p \<in> ys\<^sub>R. p \<in> LSQ \<longrightarrow> p \<in> RSQ"
     using RSQ_def LSQ_def assms(7) by auto
+  ultimately have "RYS = LSQYS \<union> RSQYS"
+    using LSQYS_def RSQYS_def YS_def RYS_def assms(4) by blast
 
-  have R_equals_LRSQ: "set RYS = set LSQYS \<union> set RSQYS"
-  proof standard
-    have "set (filter (\<lambda>p. p \<in> LSQ) YS) \<subseteq> set LSQYS \<union> set RSQYS"
-      using overlap\<^sub>L overlap\<^sub>R YS_def LSQYS_def RSQYS_def assms(4) by auto
-    moreover have "set (filter (\<lambda>p. p \<in> RSQ) YS) \<subseteq> set LSQYS \<union> set RSQYS"
-      using overlap\<^sub>L overlap\<^sub>R YS_def LSQYS_def RSQYS_def assms(4) by auto
-    ultimately show "set RYS \<subseteq> set LSQYS \<union> set RSQYS"
-      using \<open>R = LSQ \<union> RSQ\<close> RYS_def by auto
-  next
-    show "set LSQYS \<union> set RSQYS \<subseteq> set RYS"
-      using \<open>R = LSQ \<union> RSQ\<close> LSQYS_def RSQYS_def YS_def RYS_def by auto
-  qed
-
-  have "min_dist \<delta> (set LSQYS)"
+  have "min_dist \<delta> LSQYS"
     using assms(8) LSQYS_def min_dist_def by simp
-  moreover have "\<forall>p \<in> set LSQYS. p \<in> LSQ"
-    using LSQYS_def by auto
-  ultimately have card_lys: "card (set LSQYS) \<le> 4"
-    using max_points_square[of "set LSQYS" "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) LSQ_def by auto
+  hence CLSQYS: "card LSQYS \<le> 4"
+    using max_points_square[of LSQYS "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) LSQ_def LSQYS_def by auto
 
-  have "min_dist \<delta> (set RSQYS)"
+  have "min_dist \<delta> RSQYS"
     using assms(9) RSQYS_def min_dist_def by simp
-  moreover have "\<forall>p \<in> set RSQYS. p \<in> RSQ"
-    using RSQYS_def by auto
-  ultimately have card_rys: "card (set RSQYS) \<le> 4"
-    using max_points_square[of "set RSQYS" l "snd y\<^sub>0" \<delta>] assms(3) RSQ_def by auto
+  hence CRSQYS: "card RSQYS \<le> 4"
+    using max_points_square[of RSQYS l "snd y\<^sub>0" \<delta>] assms(3) RSQ_def RSQYS_def by auto
 
-  have card_rys: "card (set RYS) \<le> 8"
-    using card_lys card_rys card_Un_le[of "set LSQYS" "set RSQYS"] RYS_def R_equals_LRSQ by auto
+  have CRYS: "card RYS \<le> 8"
+    using CLSQYS CRSQYS card_Un_le[of LSQYS RSQYS] \<open>RYS = LSQYS \<union> RSQYS\<close> by auto
 
-  have "set RYS \<subseteq> set (take 8 YS)"
+  have "RYS \<subseteq> set (take 8 YS)"
   proof (rule ccontr)
-    assume "\<not> (set RYS \<subseteq> set (take 8 YS))"
-    then obtain p where *: "p \<in> set YS" "p \<in> set RYS" "p \<notin> set (take 8 YS)" "p \<in> R"
+    assume "\<not> (RYS \<subseteq> set (take 8 YS))"
+    then obtain p where *: "p \<in> set YS" "p \<in> RYS" "p \<notin> set (take 8 YS)" "p \<in> R"
       using RYS_def by auto
 
     have "\<forall>p\<^sub>0 \<in> set (take 8 YS). \<forall>p\<^sub>1 \<in> set (drop 8 YS). snd p\<^sub>0 \<le> snd p\<^sub>1"
@@ -644,9 +628,9 @@ proof -
     ultimately have "\<forall>p \<in> set (take 8 YS). p \<in> R"
       using R_def mem_cbox_2D by fastforce
 
-    hence "set (take 8 YS) \<subseteq> set RYS"
+    hence "set (take 8 YS) \<subseteq> RYS"
       using RYS_def set_take_subset by fastforce
-    hence nine_point_set: "{ p } \<union> set (take 8 YS) \<subseteq> set RYS"
+    hence NINE: "{ p } \<union> set (take 8 YS) \<subseteq> RYS"
       using * by simp
 
     have "8 \<le> length YS"
@@ -660,12 +644,12 @@ proof -
       using *(3) card_Un_disjoint by blast
     hence "card ({ p } \<union> set (take 8 YS)) = 9"
       using assms(1) \<open>length (take 8 YS) = 8\<close> distinct_card[of "take 8 YS"] distinct_take[of YS] YS_def by fastforce
-    moreover have "finite (set RYS)"
-      by simp
-    ultimately have "9 \<le> card (set RYS)"
-      using nine_point_set card_mono by metis
+    moreover have "finite RYS"
+      using RYS_def by simp
+    ultimately have "9 \<le> card RYS"
+      using NINE card_mono by metis
     thus False
-      using card_rys by simp
+      using CRYS by simp
   qed 
 
   have "dist (snd y\<^sub>0) (snd y\<^sub>1) < \<delta>"
@@ -681,7 +665,7 @@ proof -
   moreover have "y\<^sub>1 \<in> set YS"
     using YS_def assms(10) by simp
   ultimately have "y\<^sub>1 \<in> set (take 8 YS)"
-    using RYS_def \<open>set RYS \<subseteq> set (take 8 YS)\<close> by auto
+    using RYS_def \<open>RYS \<subseteq> set (take 8 YS)\<close> by auto
   thus ?thesis
     using assms(1,10) YS_def by auto
 qed
