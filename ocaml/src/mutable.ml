@@ -1,25 +1,24 @@
 open Point
 
 let bf_closest_pair' (ps : point array) (l : int) (h : int): point * point =
-  let p0 = ref (Array.unsafe_get ps l)
-  and p1 = ref (Array.unsafe_get ps (l + 1)) in
+  let p0 = ref (Array.unsafe_get ps l) in
+  let p1 = ref (Array.unsafe_get ps (l + 1)) in
   let delta = ref (dist !p0 !p1) in
   for i = l to h do
     let c0 = Array.unsafe_get ps i in
     for j = i + 1 to h do
       let c1 = Array.unsafe_get ps j in
       let d = dist c0 c1 in
-      if d < !delta then
-        begin
+      if d < !delta then (
           p0 := c0;
           p1 := c1;
           delta := d;
-        end
+      )
     done;
   done;
   (!p0, !p1)
 
-let bf_closest_pair ps =
+let bf_closest_pair (ps : point array): point * point =
   bf_closest_pair' ps 0 (Array.length ps - 1)
 
 let sort_by_y (ps : point array) (l : int) (h : int): unit =
@@ -36,39 +35,29 @@ let merge (ps : point array) (aux : point array) (l : int) (m : int) (h : int): 
   for k = l to h do
     Array.unsafe_set aux k (Array.unsafe_get ps k)
   done;
-  let i = ref l
-  and j = ref (m + 1) in
+  let i = ref l in
+  let j = ref (m + 1) in
   for k = l to h do
-    if !i > m then
-      begin
+    if !i > m then (
         Array.unsafe_set ps k (Array.unsafe_get aux !j);
         j := !j + 1
-      end
-    else if !j > h then
-      begin
+    ) else if !j > h then (
         Array.unsafe_set ps k (Array.unsafe_get aux !i);
         i := !i + 1
-      end
-    else if snd (Array.unsafe_get aux !j) <= snd (Array.unsafe_get aux !i) then
-      begin
+    ) else if snd (Array.unsafe_get aux !j) <= snd (Array.unsafe_get aux !i) then (
         Array.unsafe_set ps k (Array.unsafe_get aux !j);
         j := !j + 1
-      end
-    else
-      begin
+    ) else (
         Array.unsafe_set ps k (Array.unsafe_get aux !i);
         i := !i + 1
-      end;
+    )
   done
 
 let rec closest_pair_rec (xs : point array) (ys : point array) (aux : point array) (l : int) (h : int): point * point =
-  if (h - l <= 2) then
-    begin
+  if (h - l <= 2) then (
       sort_by_y ys l h;
       bf_closest_pair' xs l h
-    end
-  else
-    begin
+  ) else (
       let m = l + (h - l) / 2 in
       let median = Array.unsafe_get xs m in
       let (lp0, lp1) = closest_pair_rec xs ys aux l m in
@@ -82,31 +71,29 @@ let rec closest_pair_rec (xs : point array) (ys : point array) (aux : point arra
 
       let k = ref 0 in
       for i = l to h do
-        if abs_float (fst (Array.unsafe_get ys i) -. fst median) <= !delta then
-          begin
+        if abs_float (fst (Array.unsafe_get ys i) -. fst median) <= !delta then (
             Array.unsafe_set aux !k (Array.unsafe_get ys i);
             k := !k + 1
-          end
+        )
       done;
 
       for i = 0 to !k - 1 do
         let j = ref (i + 1) in
         while !j < !k && snd (Array.unsafe_get aux !j) -. snd (Array.unsafe_get aux i) < !delta do
           let d = dist (Array.unsafe_get aux i) (Array.unsafe_get aux !j) in
-          if d < !delta then
-            begin
+          if d < !delta then (
               delta := d;
               p0 := Array.unsafe_get aux i;
               p1 := Array.unsafe_get aux !j
-            end;
+          );
           j := !j + 1
         done;
       done;
 
       (!p0, !p1)
-    end
+  )
 
-let closest_pair ps =
+let closest_pair (ps : point array): point * point =
   let n = Array.length ps in
   sort_by_x ps 0 (n - 1);
   closest_pair_rec ps (Array.copy ps) (Array.init n (fun _ -> (0.0, 0.0))) 0 (n - 1)

@@ -108,5 +108,5 @@ let rec closest_pair_rec (psX : point list): point list * (point * point) =
       else
         (psY, (c0, c1))
 
-let closest_pair ps =
+let closest_pair (ps : point list): point * point =
   snd (closest_pair_rec (msort fst ps))
