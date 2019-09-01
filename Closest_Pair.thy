@@ -654,7 +654,7 @@ proof -
 
   have "dist (snd y\<^sub>0) (snd y\<^sub>1) < \<delta>"
     using assms(11) dist_snd_le le_less_trans by blast
-  hence "snd y\<^sub>1 \<le> snd y\<^sub>0 + \<delta>"
+  hence "snd y\<^sub>1 < snd y\<^sub>0 + \<delta>"
     by (simp add: dist_real_def)
   moreover have "l - \<delta> \<le> fst y\<^sub>1" "fst y\<^sub>1 \<le> l + \<delta>"
     using assms(5,10) by auto
@@ -984,10 +984,10 @@ proof (rule ccontr)
       using assms(1,2,5,8) by auto
     hence "fst p\<^sub>0 < l - \<delta>" "l + \<delta> < fst p\<^sub>1"
       using assms(1,2,6,7) by force+
-    hence "\<delta> \<le> dist (fst p\<^sub>0) (fst p\<^sub>1)"
+    hence "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
       using dist_real_def by simp
-    hence "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using dist_fst_le order.trans by blast
+    hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+      using dist_fst_le by (metis dual_order.strict_trans1)
     then show ?thesis
       using assms(4) by fastforce
   next
