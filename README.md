@@ -17,4 +17,3 @@ Run the benchmarks with ```main.native to_file from to by```. E.g. ```main.nativ
 The benchmark folder contains a matlab script to visualize the benchmarking results.
 
 ![Benchmarking Results](./benchmark/Benchmarks.png)
-
