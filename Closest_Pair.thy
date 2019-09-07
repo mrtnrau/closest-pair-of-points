@@ -691,12 +691,6 @@ proof -
   qed
 qed
 
-lemma set_Un_filter:
-  "set xs = A \<union> B \<Longrightarrow> set (filter P xs) = { x \<in> A. P x } \<union> { x \<in> B. P x}"
-  apply (induction xs arbitrary: A B)
-  apply (auto)
-  by blast+
-
 lemma combine_dist:
   assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps" "p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L" "p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R"
   assumes "distinct ps" "sortedY ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
@@ -745,7 +739,7 @@ proof -
     next
       assume "\<not> (length PS < 2 \<or> \<not> (dist P\<^sub>0 P\<^sub>1 < \<delta>))"
       hence "(P\<^sub>0, P\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
-        using defs by (auto simp: Let_def split: prod.split)
+        using defs by (auto simp: Let_def split!: prod.split)
       moreover have "(c\<^sub>0, c\<^sub>1) = (P\<^sub>0, P\<^sub>1)"
         using assms(1) calculation by argo
       ultimately show ?thesis
