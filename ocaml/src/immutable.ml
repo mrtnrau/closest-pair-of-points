@@ -36,12 +36,12 @@ let bf_closest_pair (ps : point list): point * point =
   | p0 :: p1 :: ps -> bf_closest_pair_rec p0 p1 (p0 :: p1 :: ps)
   | _ -> raise (Invalid_argument "Not enough points")
 
-let rec find_closest_delta (p : point) (delta : float) (c0 : point) (ps : point list): float * point =
+let rec find_closest_delta (p : point) (delta : float) (c0 : point) (ps : point list): point =
     match ps with
-    | [] -> (delta, c0)
+    | [] -> c0
     | c1 :: ps ->
       if delta <= snd c1 -. snd p then
-        (delta, c0)
+        c0
       else
         let delta' = dist p c1 in
         if delta <= delta' then
@@ -52,8 +52,9 @@ let rec find_closest_delta (p : point) (delta : float) (c0 : point) (ps : point 
 let rec closest_pair_combine_rec (delta : float) (c0 : point) (c1 : point) (ps : point list): point * point =
   match ps with
   | p0 :: p2 :: ps ->
-    let (delta', p1) = find_closest_delta p0 delta p2 ps in
-    if dist c0 c1 <= dist p0 p1 then
+    let p1 = find_closest_delta p0 delta p2 ps in
+    let delta' = dist p0 p1 in
+    if delta <= delta' then
       (closest_pair_combine_rec[@tailcall]) delta c0 c1 (p2 :: ps)
     else
       (closest_pair_combine_rec[@tailcall]) delta' p0 p1 (p2 :: ps)
@@ -66,10 +67,10 @@ let closest_pair_combine (delta : float) (ps : point list): point * point =
 
 (* Alternative 1 *)
 
-(* let rec closest_pair_combine_rec' (c0 : point) (c1 : point) (ps : point list): point * point =
+let rec closest_pair_combine_rec' (c0 : point) (c1 : point) (ps : point list): point * point =
   match ps with
   | p0 :: p2 :: ps ->
-    let p1 = find_closest p0 p2 (fst (split_at 7 ps)) in
+    let p1 = find_closest p0 p2 (fst (split_at 6 ps)) in
     if dist c0 c1 <= dist p0 p1 then
       (closest_pair_combine_rec'[@tailcall]) c0 c1 (p2 :: ps)
     else
@@ -79,32 +80,39 @@ let closest_pair_combine (delta : float) (ps : point list): point * point =
 let closest_pair_combine' (ps : point list): point * point =
   match ps with
   | p0 :: p1 :: ps -> closest_pair_combine_rec' p0 p1 (p0 :: p1 :: ps)
-  | _ -> raise (Invalid_argument "Not enough points") *)
+  | _ -> raise (Invalid_argument "Not enough points")
 
 (* Alternative 2 *)
 
-(* let rec find_closest' (delta : float) (c0 : point) (c1 : point) (p : point) (cs : point list): float * point * point =
-  match cs with
-  | [] -> (delta, c0, c1)
-  | c :: cs ->
-    if snd p +. delta <= snd c -. snd p then
-      (delta, c0, c1)
-    else
-      let delta' = dist p c in
-      if delta <= delta' then
-        (delta, c0, c1)
-      else
-        (find_closest'[@tailcall]) delta' p c p cs
-
-let rec closest_pair_combine'' (delta : float) (c0 : point) (c1 : point) (ps : point list) (cs : point list): float * point * point =
+let rec closest_pair_combine'' (delta : float) (c0 : point) (c1 : point) (ps : point list) (cs : point list): point * point =
   match (ps, cs) with
   | (p :: ps, c :: cs) ->
     if snd c < snd p then
       (closest_pair_combine''[@tailcall]) delta c0 c1 (p :: ps) cs
     else
-      let (delta', c0', c1') = find_closest' delta c0 c1 p (c :: cs) in
-      (closest_pair_combine''[@tailcall]) delta' c0' c1' ps (c :: cs)
-  | _ -> (delta, c0, c1) *)
+      let p' = find_closest_delta p delta c cs in
+      let delta' = min delta (dist p p') in
+      if delta <= delta' then
+        (closest_pair_combine''[@tailcall]) delta c0 c1 ps (c :: cs)
+      else
+        (closest_pair_combine''[@tailcall]) delta' p p' ps (c :: cs)
+  | _ -> (c0, c1)
+
+(* Alternative 3 *)
+
+let rec closest_pair_combine''' (delta : float) (c0 : point) (c1 : point) (ps : point list) (cs : point list): point * point =
+  match (ps, cs) with
+  | (p :: ps, c :: cs) ->
+    if snd c < snd p then
+      (closest_pair_combine'''[@tailcall]) delta c0 c1 (p :: ps) cs
+    else
+      let p' = find_closest p c (fst (split_at 3 cs)) in
+      let delta' = min delta (dist p p') in
+      if delta <= delta' then
+        (closest_pair_combine'''[@tailcall]) delta c0 c1 ps (c :: cs)
+      else
+        (closest_pair_combine'''[@tailcall]) delta' p p' ps (c :: cs)
+  | _ -> (c0, c1)
 
 let rec merge (f : point -> float) (ps : point list) (ps0 : point list) (ps1 : point list): point list =
   match (ps0, ps1) with
@@ -137,25 +145,25 @@ let rec closest_pair_rec (psX : point list): point list * (point * point) =
     let l = fst (List.hd rx) in
     let (ysL, (lp0, lp1)) = closest_pair_rec lx in
     let (ysR, (rp0, rp1)) = closest_pair_rec rx in
-    let psY = merge snd ysL ysR in
+    (* let psY = merge snd ysL ysR in *)
     let (p0, p1) = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
     let delta = dist p0 p1 in
-    let ys = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in
+    (* let ys = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in *)
 
-    (* let ysLF = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) ysL in
+    let ysLF = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) ysL in
     let ysRF = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) ysR in
-    let (delta', c0, c1) = closest_pair_combine'' delta p0 p1 ysLF ysRF in
-    let (_, c0', c1') = closest_pair_combine'' delta' c0 c1 ysRF ysLF in
-    (merge snd ysL ysR, (c0', c1')) *)
+    let (c0, c1) = closest_pair_combine'' delta p0 p1 ysLF ysRF in
+    let (c0', c1') = closest_pair_combine'' (dist c0 c1) c0 c1 ysRF ysLF in
+    (merge snd ysL ysR, (c0', c1'))
 
-    if List.length ys < 2 then
+    (* if List.length ys < 2 then
       (psY, (p0, p1))
     else
       let (c0, c1) = closest_pair_combine delta ys in
       if dist p0 p1 <= dist c0 c1 then
         (psY, (p0, p1))
       else
-        (psY, (c0, c1))
+        (psY, (c0, c1)) *)
 
 let closest_pair (ps : point list): point * point =
   snd (closest_pair_rec (msort fst ps))
