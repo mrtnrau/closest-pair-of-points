@@ -11,6 +11,90 @@ begin
 
 type_synonym point = "real * real"
 
+section "Implementations"
+
+subsection "Find_closest naive"
+
+fun find_closest :: "point \<Rightarrow> point list \<Rightarrow> point" where
+  "find_closest p [] = undefined"
+| "find_closest p [c] = c"
+| "find_closest p (c\<^sub>0 # cs) = (
+    let c\<^sub>1 = find_closest p cs in
+    if dist p c\<^sub>0 \<le> dist p c\<^sub>1 then c\<^sub>1
+    else c\<^sub>0
+  )"
+
+subsection "Find_closest optimized"
+
+fun find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> point" where
+  "find_closest_\<delta> p \<delta> [] = undefined"
+| "find_closest_\<delta> p \<delta> [c] = c"
+| "find_closest_\<delta> p \<delta> (c\<^sub>0 # cs) = (
+    if \<delta> \<le> snd c\<^sub>0 - snd p then c\<^sub>0
+    else
+      let c\<^sub>1 = find_closest_\<delta> p \<delta> cs in
+      if dist p c\<^sub>0 \<le> dist p c\<^sub>1 then c\<^sub>0
+      else c\<^sub>1
+  )"
+
+subsection "Approach A"
+
+fun closest_pair_combine_A :: "point list \<Rightarrow> (point * point)" where
+  "closest_pair_combine_A [] = undefined"
+| "closest_pair_combine_A [p] = undefined"
+| "closest_pair_combine_A [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "closest_pair_combine_A (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine_A ps in
+    let c = find_closest p\<^sub>0 (take 7 ps) in
+    \<comment>\<open> let c = find_closest_\<delta> p\<^sub>0 (min \<delta> (dist c\<^sub>0 c\<^sub>1)) ps in *) \<close>
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 c then (c\<^sub>0, c\<^sub>1)
+    else (p\<^sub>0, c) 
+  )"
+
+subsection "Approach B"
+
+fun closest_pair_combine_B :: "real \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> point * point" where
+  "closest_pair_combine_B \<delta> [] _ = undefined"
+| "closest_pair_combine_B \<delta> _ [] = undefined"
+| "closest_pair_combine_B \<delta> [p] [c] = (p, c)"
+| "closest_pair_combine_B \<delta> (p # ps) [c] = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine_B \<delta> ps [c] in
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p c then (c\<^sub>0, c\<^sub>1)
+    else (p, c) 
+  )"
+| "closest_pair_combine_B \<delta> [p] (c # cs) = (
+    if snd c < snd p then
+      closest_pair_combine_B \<delta> [p] cs
+    else
+      (p, find_closest p (take 4 (c # cs)))
+      \<comment>\<open> (p, find_closest_\<delta> p \<delta> (c # cs)) \<close>
+  )"
+| "closest_pair_combine_B \<delta> (p\<^sub>0 # ps) (c # cs) = (
+    if snd c < snd p\<^sub>0 then
+      closest_pair_combine_B \<delta> (p\<^sub>0 # ps) cs
+    else
+      let (c\<^sub>0, c\<^sub>1) = closest_pair_combine_B \<delta> ps (c # cs) in
+      let p\<^sub>1 = find_closest p\<^sub>0 (take 4 (c # cs)) in
+      \<comment>\<open> let p\<^sub>1 = find_closest_\<delta> p\<^sub>0 (min \<delta> (dist c\<^sub>0 c\<^sub>1)) (c # cs) in \<close>
+      if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then (c\<^sub>0, c\<^sub>1)
+      else (p\<^sub>0, p\<^sub>1)
+  )"
+
+fun closest_pair_combine_B_it :: "real \<Rightarrow> point \<Rightarrow> point \<Rightarrow> point list \<Rightarrow> point list \<Rightarrow> point * point" where
+  "closest_pair_combine_B_it \<delta> c\<^sub>0 c\<^sub>1 (p # ps) (c # cs) = (
+    if snd c < snd p then
+      closest_pair_combine_B_it \<delta> c\<^sub>0 c\<^sub>1 (p # ps) cs
+    else
+      let p' = find_closest p (take 4 (c # cs)) in
+      \<comment>\<open> let p' = find_closest_\<delta> p \<delta> (c # cs) in \<close>
+      let \<delta>' = min \<delta> (dist p p') in
+      if \<delta> \<le> \<delta>' then
+        closest_pair_combine_B_it \<delta> c\<^sub>0 c\<^sub>1 ps (c # cs)
+      else
+        closest_pair_combine_B_it \<delta>' p p' ps (c # cs)
+  )"
+| "closest_pair_combine_B_it \<delta> c\<^sub>0 c\<^sub>1 _ _ = (c\<^sub>0, c\<^sub>1)"
+
 section "Functional Correctness"
 
 subsection "Defining Sparsity"
