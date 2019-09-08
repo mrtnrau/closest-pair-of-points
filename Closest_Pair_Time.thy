@@ -189,105 +189,85 @@ qed
 subsection "Final Lemma"
 
 lemma closest_pair_in_take_7:
-  assumes "distinct (y\<^sub>0 # ys)" "sortedY (y\<^sub>0 # ys)" "0 < \<delta>" "set (y\<^sub>0 # ys) = ys\<^sub>L \<union> ys\<^sub>R"
-  assumes "\<forall>p \<in> set (y\<^sub>0 # ys). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-  assumes "\<forall>p \<in> ys\<^sub>L. fst p \<le> l" "\<forall>p \<in> ys\<^sub>R. l \<le> fst p"
-  assumes "min_dist \<delta> ys\<^sub>L" "min_dist \<delta> ys\<^sub>R"
-  assumes "y\<^sub>1 \<in> set ys" "dist y\<^sub>0 y\<^sub>1 < \<delta>"
-  shows "y\<^sub>1 \<in> set (take 7 ys)"
+  assumes "distinct (p # ps)" "sortedY (p # ps)" "0 < \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
+  assumes "\<forall>p' \<in> ps\<^sub>L. fst p' \<le> l" "\<forall>p' \<in> ps\<^sub>R. l \<le> fst p'"
+  assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
+  shows "length (filter (\<lambda>c. snd c - snd p \<le> \<delta>) ps) \<le> 7"
 proof -
-  define YS where "YS = y\<^sub>0 # ys"
-  define R where "R = cbox (l - \<delta>, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define RYS where "RYS = R \<inter> set YS"
-  define LSQ where "LSQ = cbox (l - \<delta>, snd y\<^sub>0) (l, snd y\<^sub>0 + \<delta>)"
-  define LSQYS where "LSQYS = LSQ \<inter> ys\<^sub>L"
-  define RSQ where "RSQ = cbox (l, snd y\<^sub>0) (l + \<delta>, snd y\<^sub>0 + \<delta>)"
-  define RSQYS where "RSQYS = RSQ \<inter> ys\<^sub>R"
-  note defs = YS_def R_def RYS_def LSQ_def LSQYS_def RSQ_def RSQYS_def
+  define PS where "PS = p # ps"
+  define R where "R = cbox (l - \<delta>, snd p) (l + \<delta>, snd p + \<delta>)"
+  define RPS where "RPS = R \<inter> set PS"
+  define LSQ where "LSQ = cbox (l - \<delta>, snd p) (l, snd p + \<delta>)"
+  define LSQPS where "LSQPS = LSQ \<inter> ps\<^sub>L"
+  define RSQ where "RSQ = cbox (l, snd p) (l + \<delta>, snd p + \<delta>)"
+  define RSQPS where "RSQPS = RSQ \<inter> ps\<^sub>R"
+  note defs = PS_def R_def RPS_def LSQ_def LSQPS_def RSQ_def RSQPS_def
 
   have "R = LSQ \<union> RSQ"
     using defs cbox_right_un by auto
-  moreover have "\<forall>p \<in> ys\<^sub>L. p \<in> RSQ \<longrightarrow> p \<in> LSQ"
+  moreover have "\<forall>p \<in> ps\<^sub>L. p \<in> RSQ \<longrightarrow> p \<in> LSQ"
     using RSQ_def LSQ_def assms(6) by auto
-  moreover have "\<forall>p \<in> ys\<^sub>R. p \<in> LSQ \<longrightarrow> p \<in> RSQ"
+  moreover have "\<forall>p \<in> ps\<^sub>R. p \<in> LSQ \<longrightarrow> p \<in> RSQ"
     using RSQ_def LSQ_def assms(7) by auto
-  ultimately have "RYS = LSQYS \<union> RSQYS"
-    using LSQYS_def RSQYS_def YS_def RYS_def assms(4) by blast
+  ultimately have "RPS = LSQPS \<union> RSQPS"
+    using LSQPS_def RSQPS_def PS_def RPS_def assms(4) by blast
 
-  have "min_dist \<delta> LSQYS"
-    using assms(8) LSQYS_def min_dist_def by simp
-  hence CLSQYS: "card LSQYS \<le> 4"
-    using max_points_square[of LSQYS "l - \<delta>" "snd y\<^sub>0" \<delta>] assms(3) LSQ_def LSQYS_def by auto
+  have "min_dist \<delta> LSQPS"
+    using assms(8) LSQPS_def min_dist_def by simp
+  hence CLSQPS: "card LSQPS \<le> 4"
+    using max_points_square[of LSQPS "l - \<delta>" "snd p" \<delta>] assms(3) LSQ_def LSQPS_def by auto
 
-  have "min_dist \<delta> RSQYS"
-    using assms(9) RSQYS_def min_dist_def by simp
-  hence CRSQYS: "card RSQYS \<le> 4"
-    using max_points_square[of RSQYS l "snd y\<^sub>0" \<delta>] assms(3) RSQ_def RSQYS_def by auto
+  have "min_dist \<delta> RSQPS"
+    using assms(9) RSQPS_def min_dist_def by simp
+  hence CRSQPS: "card RSQPS \<le> 4"
+    using max_points_square[of RSQPS l "snd p" \<delta>] assms(3) RSQ_def RSQPS_def by auto
 
-  have CRYS: "card RYS \<le> 8"
-    using CLSQYS CRSQYS card_Un_le[of LSQYS RSQYS] \<open>RYS = LSQYS \<union> RSQYS\<close> by auto
+  have CRPS: "card RPS \<le> 8"
+    using CLSQPS CRSQPS card_Un_le[of LSQPS RSQPS] \<open>RPS = LSQPS \<union> RSQPS\<close> by auto
 
-  have "RYS \<subseteq> set (take 8 YS)"
-  proof (rule ccontr)
-    assume "\<not> (RYS \<subseteq> set (take 8 YS))"
-    then obtain p where *: "p \<in> set YS" "p \<in> RYS" "p \<notin> set (take 8 YS)" "p \<in> R"
-      using RYS_def by auto
+  have PYMIN: "\<forall>p' \<in> set PS. snd p \<le> snd p'"
+    using assms(2) PS_def sortedY_def by simp
 
-    have "\<forall>p\<^sub>0 \<in> set (take 8 YS). \<forall>p\<^sub>1 \<in> set (drop 8 YS). snd p\<^sub>0 \<le> snd p\<^sub>1"
-      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" YS 8] assms(2) sortedY_def YS_def by fastforce
-    hence "\<forall>p' \<in> set (take 8 YS). snd p' \<le> snd p"
-      using append_take_drop_id set_append Un_iff *(1,3) by metis
-    moreover have "snd p \<le> snd y\<^sub>0 + \<delta>"
-      using \<open>p \<in> R\<close> R_def by (metis mem_cbox_2D prod.collapse)
-    ultimately have "\<forall>p \<in> set (take 8 YS). snd p \<le> snd y\<^sub>0 + \<delta>"
-      by fastforce
-    moreover have "\<forall>p \<in> set (take 8 YS). snd y\<^sub>0 \<le> snd p"
-      using sorted_wrt_hd_less_take[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" y\<^sub>0 ys 8] assms(2) sortedY_def YS_def by fastforce
-    moreover have "\<forall>p \<in> set (take 8 YS). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using assms(5) YS_def by (meson in_set_takeD)
-    ultimately have "\<forall>p \<in> set (take 8 YS). p \<in> R"
-      using R_def mem_cbox_2D by fastforce
-
-    hence "set (take 8 YS) \<subseteq> RYS"
-      using RYS_def set_take_subset by fastforce
-    hence NINE: "{ p } \<union> set (take 8 YS) \<subseteq> RYS"
-      using * by simp
-
-    have "8 \<le> length YS"
-      using *(1,3) nat_le_linear by fastforce
-    hence "length (take 8 YS) = 8"
-      by simp
-
-    have "finite { p }" "finite (set (take 8 YS))"
-      by simp_all
-    hence "card ({ p } \<union> set (take 8 YS)) = card ({ p }) + card (set (take 8 YS))"
-      using *(3) card_Un_disjoint by blast
-    hence "card ({ p } \<union> set (take 8 YS)) = 9"
-      using assms(1) \<open>length (take 8 YS) = 8\<close> distinct_card[of "take 8 YS"] distinct_take[of YS] YS_def by fastforce
-    moreover have "finite RYS"
-      using RYS_def by simp
-    ultimately have "9 \<le> card RYS"
-      using NINE card_mono by metis
-    thus False
-      using CRYS by simp
-  qed 
-
-  have "dist (snd y\<^sub>0) (snd y\<^sub>1) < \<delta>"
-    using assms(11) dist_snd_le le_less_trans by blast
-  hence "snd y\<^sub>1 < snd y\<^sub>0 + \<delta>"
-    by (simp add: dist_real_def)
-  moreover have "l - \<delta> \<le> fst y\<^sub>1" "fst y\<^sub>1 \<le> l + \<delta>"
-    using assms(5,10) by auto
-  moreover have "snd y\<^sub>0 \<le> snd y\<^sub>1"
-    using sortedY_def assms(2,10) by auto
-  ultimately have "y\<^sub>1 \<in> R"
-    using mem_cbox_2D[of "l - \<delta>" "fst y\<^sub>1" "l + \<delta>" "snd y\<^sub>0" "snd y\<^sub>1" "snd y\<^sub>0 + \<delta>"] defs by simp
-  moreover have "y\<^sub>1 \<in> set YS"
-    using YS_def assms(10) by simp
-  ultimately have "y\<^sub>1 \<in> set (take 8 YS)"
-    using RYS_def \<open>RYS \<subseteq> set (take 8 YS)\<close> by auto
+  have "RPS = set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+  proof standard
+    show "RPS \<subseteq> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+    proof (rule ccontr)
+      assume "\<not> (RPS \<subseteq> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS))"
+      then obtain p' where *: "p' \<in> RPS" "p' \<notin> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+        using RPS_def by blast
+      hence "p' \<in> R"
+        using RPS_def by blast
+      hence "snd p' - snd p \<le> \<delta>"
+        using R_def mem_cbox_2D prod.collapse by smt
+      hence "p' \<in> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+        using * RPS_def by simp
+      thus False
+        using * by blast
+    qed
+  next
+    show "set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS) \<subseteq> RPS"
+    proof standard
+      fix c
+      assume *: "c \<in> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+      hence CPS: "c \<in> set PS"
+        by simp
+      hence "snd p \<le> snd c" "snd c \<le> snd p + \<delta>"
+        using PYMIN * by auto
+      moreover have "l - \<delta> \<le> fst c" "fst c \<le> l + \<delta>"
+        using CPS assms(5) PS_def by blast+
+      ultimately have "c \<in> R"
+        using R_def mem_cbox_2D[of "l - \<delta>" "fst c" "l + \<delta>" "snd p" "snd c" "snd p + \<delta>"] by simp
+      thus "c \<in> RPS"
+        using CPS RPS_def by simp
+    qed
+  qed
+  hence "card (set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)) \<le> 8"
+    using CRPS by blast
+  hence "length (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS) \<le> 8"
+    using assms(1) PS_def by (simp add: distinct_card)
   thus ?thesis
-    using assms(1,10) YS_def by auto
+    using PS_def by (smt One_nat_def Suc_le_mono add.right_neutral add_Suc_right assms(3) filter.simps(2) landau_product_preprocess(10) landau_product_preprocess(4) list.size(4) numeral_code(1) numeral_plus_numeral)
 qed
 
 
@@ -633,6 +613,26 @@ corollary t_sortY_bigo:
   "t_sortY \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
   unfolding t_sortY_def sortY_cost_def using t_msort_bigo by blast
 
+subsection "find_closest_\<delta>"
+
+fun t_find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat" where
+  "t_find_closest_\<delta> p \<delta> [] = 0"
+| "t_find_closest_\<delta> p \<delta> [c] = 0"
+| "t_find_closest_\<delta> p \<delta> (c\<^sub>0 # cs) = (
+    if \<delta> \<le> snd c\<^sub>0 - snd p then
+      0
+    else
+      let c\<^sub>1 = find_closest_\<delta> p \<delta> cs in
+      let t = t_find_closest_\<delta> p \<delta> cs in
+      if dist p c\<^sub>0 \<le> dist p c\<^sub>1 then
+        1 + t
+      else
+        1 + t
+  )"
+
+lemma t_find_closest_cnt:
+  "t_find_closest_\<delta> p \<delta> ps \<le> length (filter (\<lambda>c. snd c - snd p \<le> \<delta>) ps)"
+  by (induction p \<delta> ps rule: t_find_closest_\<delta>.induct) auto
 
 subsection "find_closest"
 
