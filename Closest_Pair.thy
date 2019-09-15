@@ -378,9 +378,9 @@ fun closest_pair_combine :: "real \<Rightarrow> point list \<Rightarrow> point *
   "closest_pair_combine \<delta> [] = undefined"
 | "closest_pair_combine \<delta> [p] = undefined"
 | "closest_pair_combine \<delta> [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
-| "closest_pair_combine \<delta> (p\<^sub>0 # p\<^sub>1 # ps) = (
-    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine \<delta> (p\<^sub>1 # ps) in
-    let c = find_closest_\<delta> p\<^sub>0 (min \<delta> (dist c\<^sub>0 c\<^sub>1)) (p\<^sub>1 # ps) in
+| "closest_pair_combine \<delta> (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine \<delta> ps in
+    let c = find_closest_\<delta> p\<^sub>0 (min \<delta> (dist c\<^sub>0 c\<^sub>1)) ps in
     if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 c then
       (c\<^sub>0, c\<^sub>1)
     else
