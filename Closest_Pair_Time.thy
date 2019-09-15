@@ -123,73 +123,87 @@ qed
 subsection "\<delta> Sparse Points within a Square"
 
 lemma max_points_square:
-  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "min_dist \<delta> ps" "0 < \<delta>"
+  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "min_dist \<delta> ps" "0 \<le> \<delta>"
   shows "card ps \<le> 4"
-proof (rule ccontr)
-  assume *: "\<not> (card ps \<le> 4)"
-
-  let ?x' = "x + \<delta> / 2"
-  let ?y' = "y + \<delta> / 2"
-
-  let ?ll = "cbox ( x ,  y ) (?x'   , ?y'   )"
-  let ?lu = "cbox ( x , ?y') (?x'   ,  y + \<delta>)"
-  let ?rl = "cbox (?x',  y ) ( x + \<delta>, ?y'   )"
-  let ?ru = "cbox (?x', ?y') ( x + \<delta>,  y + \<delta>)"
-
-  let ?sq = "{ ?ll, ?lu, ?rl, ?ru }"
-
-  have card_le_4: "card ?sq \<le> 4"
-    by (simp add: card_insert_le_m1)
-
-  have "cbox (x, y) (?x', y + \<delta>) = ?ll \<union> ?lu"
-    using cbox_top_un assms(3) by auto
-  moreover have "cbox (?x', y) (x + \<delta>, y + \<delta>) = ?rl \<union> ?ru"
-    using cbox_top_un assms(3) by auto
-  moreover have "cbox (x, y) (?x', y + \<delta>) \<union> cbox (?x', y) (x + \<delta>, y + \<delta>) = cbox (x, y) (x + \<delta>, y + \<delta>)"
-    using cbox_right_un assms(3) by simp
-  ultimately have "?ll \<union> ?lu \<union> ?rl \<union> ?ru = cbox (x, y) (x + \<delta>, y + \<delta>)"
-    by blast
-
-  hence "ps \<subseteq> \<Union>?sq"
-    using assms(1) by auto
-  moreover have "card ?sq < card ps"
-    using * card_insert_le_m1 card_le_4 by simp
-  moreover have "finite ?sq"
-    by simp
-  ultimately have "\<exists>p\<^sub>0 \<in> ps. \<exists>p\<^sub>1 \<in> ps. \<exists>S \<in> ?sq. (p\<^sub>0 \<noteq> p\<^sub>1 \<and> p\<^sub>0 \<in> S \<and> p\<^sub>1 \<in> S)"
-    using pigeonhole[of ?sq ps] by blast
-  then obtain S p\<^sub>0 p\<^sub>1 where #: "p\<^sub>0 \<in> ps" "p\<^sub>1 \<in> ps" "S \<in> ?sq" "p\<^sub>0 \<noteq> p\<^sub>1" "p\<^sub>0 \<in> S" "p\<^sub>1 \<in> S"
-    by blast
-
-  have D: "0 \<le> \<delta> / 2"
+proof (cases "\<delta> = 0")
+  case True
+  hence "{ (x, y) } = cbox (x, y) (x + \<delta>, y + \<delta>)"
+    using cbox_def by simp
+  hence "\<forall>p \<in> ps. p = (x, y)"
+    using assms(1) by blast
+  thus ?thesis
+    by (metis card_le_1_if_pairwise_eq one_le_numeral order.trans)
+next
+  case False
+  hence \<delta>: "0 < \<delta>"
     using assms(3) by simp
-  have LL: "\<forall>p\<^sub>0 \<in> ?ll. \<forall>p\<^sub>1 \<in> ?ll. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
-    using cbox_max_dist[of "(x, y)" x y "(?x', ?y')" "\<delta> / 2"] D by auto
-  have LU: "\<forall>p\<^sub>0 \<in> ?lu. \<forall>p\<^sub>1 \<in> ?lu. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
-    using cbox_max_dist[of "(x, ?y')" x ?y' "(?x', y + \<delta>)" "\<delta> / 2"] D by auto
-  have RL: "\<forall>p\<^sub>0 \<in> ?rl. \<forall>p\<^sub>1 \<in> ?rl. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
-    using cbox_max_dist[of "(?x', y)" ?x' y "(x + \<delta>, ?y')" "\<delta> / 2"] D by auto
-  have RU: "\<forall>p\<^sub>0 \<in> ?ru. \<forall>p\<^sub>1 \<in> ?ru. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
-    using cbox_max_dist[of "(?x', ?y')" ?x' ?y' "(x + \<delta>, y + \<delta>)" "\<delta> / 2"] D by auto
+  show ?thesis
+  proof (rule ccontr)
+    assume *: "\<not> (card ps \<le> 4)"
 
-  have "\<forall>p\<^sub>0 \<in> S. \<forall>p\<^sub>1 \<in> S. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
-    using # LL LU RL RU by blast
-  hence "dist p\<^sub>0 p\<^sub>1 \<le> (sqrt 2 / 2) * \<delta>"
-    using # by simp
-  moreover have "(sqrt 2 / 2) * \<delta> < \<delta>"
-    using sqrt2_less_2 assms(3) by simp
-  ultimately have "dist p\<^sub>0 p\<^sub>1 < \<delta>"
-    by simp
-  moreover have "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-    using assms(2) # min_dist_def by simp
-  ultimately show False
-    by simp
+    let ?x' = "x + \<delta> / 2"
+    let ?y' = "y + \<delta> / 2"
+
+    let ?ll = "cbox ( x ,  y ) (?x'   , ?y'   )"
+    let ?lu = "cbox ( x , ?y') (?x'   ,  y + \<delta>)"
+    let ?rl = "cbox (?x',  y ) ( x + \<delta>, ?y'   )"
+    let ?ru = "cbox (?x', ?y') ( x + \<delta>,  y + \<delta>)"
+
+    let ?sq = "{ ?ll, ?lu, ?rl, ?ru }"
+
+    have card_le_4: "card ?sq \<le> 4"
+      by (simp add: card_insert_le_m1)
+
+    have "cbox (x, y) (?x', y + \<delta>) = ?ll \<union> ?lu"
+      using cbox_top_un assms(3) by auto
+    moreover have "cbox (?x', y) (x + \<delta>, y + \<delta>) = ?rl \<union> ?ru"
+      using cbox_top_un assms(3) by auto
+    moreover have "cbox (x, y) (?x', y + \<delta>) \<union> cbox (?x', y) (x + \<delta>, y + \<delta>) = cbox (x, y) (x + \<delta>, y + \<delta>)"
+      using cbox_right_un assms(3) by simp
+    ultimately have "?ll \<union> ?lu \<union> ?rl \<union> ?ru = cbox (x, y) (x + \<delta>, y + \<delta>)"
+      by blast
+
+    hence "ps \<subseteq> \<Union>?sq"
+      using assms(1) by auto
+    moreover have "card ?sq < card ps"
+      using * card_insert_le_m1 card_le_4 by simp
+    moreover have "finite ?sq"
+      by simp
+    ultimately have "\<exists>p\<^sub>0 \<in> ps. \<exists>p\<^sub>1 \<in> ps. \<exists>S \<in> ?sq. (p\<^sub>0 \<noteq> p\<^sub>1 \<and> p\<^sub>0 \<in> S \<and> p\<^sub>1 \<in> S)"
+      using pigeonhole[of ?sq ps] by blast
+    then obtain S p\<^sub>0 p\<^sub>1 where #: "p\<^sub>0 \<in> ps" "p\<^sub>1 \<in> ps" "S \<in> ?sq" "p\<^sub>0 \<noteq> p\<^sub>1" "p\<^sub>0 \<in> S" "p\<^sub>1 \<in> S"
+      by blast
+
+    have D: "0 \<le> \<delta> / 2"
+      using assms(3) by simp
+    have LL: "\<forall>p\<^sub>0 \<in> ?ll. \<forall>p\<^sub>1 \<in> ?ll. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+      using cbox_max_dist[of "(x, y)" x y "(?x', ?y')" "\<delta> / 2"] D by auto
+    have LU: "\<forall>p\<^sub>0 \<in> ?lu. \<forall>p\<^sub>1 \<in> ?lu. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+      using cbox_max_dist[of "(x, ?y')" x ?y' "(?x', y + \<delta>)" "\<delta> / 2"] D by auto
+    have RL: "\<forall>p\<^sub>0 \<in> ?rl. \<forall>p\<^sub>1 \<in> ?rl. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+      using cbox_max_dist[of "(?x', y)" ?x' y "(x + \<delta>, ?y')" "\<delta> / 2"] D by auto
+    have RU: "\<forall>p\<^sub>0 \<in> ?ru. \<forall>p\<^sub>1 \<in> ?ru. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+      using cbox_max_dist[of "(?x', ?y')" ?x' ?y' "(x + \<delta>, y + \<delta>)" "\<delta> / 2"] D by auto
+
+    have "\<forall>p\<^sub>0 \<in> S. \<forall>p\<^sub>1 \<in> S. dist p\<^sub>0 p\<^sub>1 \<le> sqrt 2 * (\<delta> / 2)"
+      using # LL LU RL RU by blast
+    hence "dist p\<^sub>0 p\<^sub>1 \<le> (sqrt 2 / 2) * \<delta>"
+      using # by simp
+    moreover have "(sqrt 2 / 2) * \<delta> < \<delta>"
+      using sqrt2_less_2 \<delta> by simp
+    ultimately have "dist p\<^sub>0 p\<^sub>1 < \<delta>"
+      by simp
+    moreover have "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
+      using assms(2) # min_dist_def by simp
+    ultimately show False
+      by simp
+  qed
 qed
 
 subsection "Final Lemma"
 
 lemma max_points_is_7:
-  assumes "distinct (p # ps)" "sortedY (p # ps)" "0 < \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct (p # ps)" "sortedY (p # ps)" "0 \<le> \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
   assumes "\<forall>p' \<in> ps\<^sub>L. fst p' \<le> l" "\<forall>p' \<in> ps\<^sub>R. l \<le> fst p'"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
@@ -720,7 +734,7 @@ lemma t_find_closest_cnt:
   by (induction p \<delta> ps rule: t_find_closest_\<delta>.induct) auto
 
 lemma t_find_closest_\<delta>:
-  assumes "distinct (p # ps)" "sortedY (p # ps)" "0 < \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct (p # ps)" "sortedY (p # ps)" "0 \<le> \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
   assumes "\<forall>p' \<in> ps\<^sub>L. fst p' \<le> l" "\<forall>p' \<in> ps\<^sub>R. l \<le> fst p'"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
@@ -746,7 +760,7 @@ fun t_closest_pair_combine :: "real \<Rightarrow> point list \<Rightarrow> nat" 
   )"
 
 lemma t_closest_pair_combine:
-  assumes "distinct ps" "sortedY ps" "0 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct ps" "sortedY ps" "0 \<le> \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> set ps. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
@@ -781,7 +795,7 @@ definition combine_cost :: "nat \<Rightarrow> real" where
   "combine_cost n = 9 * n"
 
 lemma t_combine:
-  assumes "distinct ps" "sortedY ps" "0 < dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "0 < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct ps" "sortedY ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L" "min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R"
   shows "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps \<le> 9 * length ps"
@@ -813,21 +827,21 @@ proof -
     have "?\<delta> \<le> dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "?\<delta> \<le> dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R"
       using defs by (smt Pair_inject)+
     hence "min_dist ?\<delta> ps\<^sub>L" "min_dist ?\<delta> ps\<^sub>R"
-      using assms(8,9) min_dist_def by force+
+      using assms(6,7) min_dist_def by force+
     hence "min_dist ?\<delta> ?ps\<^sub>L" "min_dist ?\<delta> ?ps\<^sub>R"
       by (auto simp: min_dist_def)
     moreover have "distinct ?ps'"
       using assms(1) by simp
     moreover have "sortedY ?ps'"
       using assms(2) sortedY_def sorted_wrt_filter by blast
-    moreover have "0 < ?\<delta>"
-      using assms(3,4) defs by (metis Pair_inject)
+    moreover have "0 \<le> ?\<delta>"
+      using assms(3,4) defs by simp
     moreover have "set ?ps' = ?ps\<^sub>L \<union> ?ps\<^sub>R"
-      using assms(5) by auto
+      using assms(3) by auto
     moreover have "\<forall>p \<in> set ?ps'. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>"
       by simp
     moreover have "\<forall>p \<in> ?ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ?ps\<^sub>R. l \<le> fst p"
-      using assms(6,7) by simp_all
+      using assms(4,5) by simp_all
     ultimately have "?t_c \<le> 8 * length ?ps'"
       using t_closest_pair_combine[of ?ps' ?\<delta> ?ps\<^sub>L ?ps\<^sub>R l] by blast
     moreover have "length ?ps' \<le> length ps"
@@ -844,7 +858,7 @@ proof -
 qed
 
 lemma t_combine_conv_combine_cost:
-  assumes "distinct ps" "sortedY ps" "0 < dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "0 < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct ps" "sortedY ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L" "min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R"
   shows "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps \<le> combine_cost (length ps)"
@@ -915,7 +929,9 @@ function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
 termination by akra_bazzi_termination simp_all
 
 lemma t_closest_pair_rec_conv_closest_pair_rec_cost:
-  "t_closest_pair_rec ps \<le> closest_pair_rec_cost (length ps)"
+  assumes "1 < length ps" "distinct ps" "sortedX ps"
+  shows "t_closest_pair_rec ps \<le> closest_pair_rec_cost (length ps)"
+  using assms
 proof (induction ps rule: length_induct)
   case (1 ps)
   let ?n = "length ps"
@@ -923,14 +939,14 @@ proof (induction ps rule: length_induct)
   proof (cases "?n \<le> 3")
     case True        
     hence "t_closest_pair_rec ps = 
-           t_length ps + t_sortY ps + t_bf_closest_pair ps"
+           t_length ps + t_sortY ps + t_closest_pair_bf ps"
       using t_closest_pair_rec_simps_1 by simp
     moreover have "closest_pair_rec_cost ?n = 
-                   length_cost ?n + sortY_cost ?n + bf_closest_pair_cost ?n"
+                   length_cost ?n + sortY_cost ?n + closest_pair_bf_cost ?n"
       using True by simp
     ultimately show ?thesis
       using t_length_conv_length_cost t_sortY_conv_sortY_cost
-            t_bf_closest_pair_conv_bf_closest_pair_cost of_nat_add by smt
+            t_closest_pair_bf_conv_closest_pair_bf_cost of_nat_add by smt
   next
     case False
 
@@ -949,6 +965,8 @@ proof (induction ps rule: length_induct)
     define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
     define TM where "TM = t_merge (\<lambda>p. snd p) (YS\<^sub>L, YS\<^sub>R)"
     define TC where "TC = t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+    obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+      using prod.collapse by blast
     note defs = XS_def TS_def L_def CP\<^sub>L_def TL_def CP\<^sub>R_def TR_def YS_def TM_def TC_def
 
     have FL: "t_closest_pair_rec ps = t_length ps + TS + TL + TR + TM + TC"
@@ -970,21 +988,42 @@ proof (induction ps rule: length_induct)
     hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
       using defs XSLR by fastforce
 
-    have "length XS\<^sub>L < length ps"
-      using False XSLR by simp
-    hence "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
-      using 1 by simp
+    have "1 < length XS\<^sub>L" "length XS\<^sub>L < length ps"
+      using False XSLR by simp_all
+    moreover have "distinct XS\<^sub>L" "sortedX XS\<^sub>L"
+      using XSLR "1.prems"(2,3) sortedX_def sorted_wrt_take by simp_all
+    ultimately have "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
+      using "1.IH" by simp
     hence IHL: "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>)"
       using * by simp
 
-    have "length XS\<^sub>R < length ps"
+    have "1 < length XS\<^sub>R" "length XS\<^sub>R < length ps"
       using False XSLR by simp_all
-    hence "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (length XS\<^sub>R)"
-      using 1 by simp
+    moreover have "distinct XS\<^sub>R" "sortedX XS\<^sub>R"
+      using XSLR "1.prems"(2,3) sortedX_def sorted_wrt_drop by simp_all
+    ultimately have "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (length XS\<^sub>R)"
+      using "1.IH" by simp
     hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
       using * by simp
 
-    have "t_length ps = length_cost ?n"
+    have "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec ps"
+      using False closest_pair_rec_simps defs C\<^sub>0\<^sub>1_def by (auto simp: Let_def split: prod.split)
+    hence "set ps = set YS" "length ps = length YS" "distinct YS" "sortedY YS"
+      using "1.prems" closest_pair_rec_set_length_sortedY closest_pair_rec_distinct by auto
+    moreover have "\<forall>p \<in> set YS\<^sub>L. fst p \<le> L"
+      using False "1.prems"(3) XSLR L_def sortedX_take_less_hd_drop
+      by (metis CP\<^sub>L_def \<open>length XS\<^sub>L < length ps\<close> \<open>length XS\<^sub>L = length ps div 2\<close> closest_pair_rec_set_length_sortedY)
+    moreover have "\<forall>p \<in> set YS\<^sub>R. L \<le> fst p"
+      using False "1.prems"(3) XSLR L_def sortedX_hd_drop_less_drop CP\<^sub>R_def closest_pair_rec_set_length_sortedY by blast
+    moreover have "set YS = set YS\<^sub>L \<union> set YS\<^sub>R"
+      using set_merge defs by fast
+    moreover have "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
+      using CP\<^sub>L_def \<open>1 < length XS\<^sub>L\<close> \<open>distinct XS\<^sub>L\<close> \<open>sortedX XS\<^sub>L\<close> closest_pair_rec_dist closest_pair_rec_set_length_sortedY by auto
+    moreover have "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
+      using CP\<^sub>R_def \<open>1 < length XS\<^sub>R\<close> \<open>distinct XS\<^sub>R\<close> \<open>sortedX XS\<^sub>R\<close> closest_pair_rec_dist closest_pair_rec_set_length_sortedY by auto
+    ultimately have "TC \<le> combine_cost ?n"
+      using TC_def t_combine_conv_combine_cost[of YS "set YS\<^sub>L" "set YS\<^sub>R" L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R] by simp
+    moreover have "t_length ps = length_cost ?n"
       using t_length_conv_length_cost by blast
     moreover have "TS \<le> split_at_cost ?n"
       using t_split_at_conv_split_at_cost TS_def by blast
@@ -994,8 +1033,6 @@ proof (induction ps rule: length_induct)
       using IHR TR_def by blast
     moreover have "TM \<le> merge_cost ?n"
       using L t_merge_conv_merge_cost TM_def by auto
-    moreover have "TC \<le> combine_cost ?n"
-      using L defs length_merge t_combine_conv_combine_cost by metis
     ultimately show ?thesis
       using FL FR by linarith
   qed
@@ -1006,12 +1043,13 @@ theorem closest_pair_rec_cost:
   by (master_theorem) (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
 theorem t_closest_pair_rec_bigo:
-  "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  assumes "1 < length ps" "distinct ps" "sortedX ps"
+  shows "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>xs. t_closest_pair_rec xs \<le> (closest_pair_rec_cost o length) xs"
-    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost by blast
+  have "t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
+    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost assms by blast
   thus ?thesis
-    by (metis (no_types, lifting) bigo_measure_trans bigthetaD1 closest_pair_rec_cost of_nat_0_le_iff)
+    using bigo_measure_trans sorry
 qed
 
 
