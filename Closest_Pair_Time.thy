@@ -729,6 +729,10 @@ fun t_find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point lis
         1 + t
   )"
 
+lemma t_find_closest_\<delta>_mono:
+  "\<delta>' \<le> \<delta> \<Longrightarrow> t_find_closest_\<delta> p \<delta>' ps \<le> t_find_closest_\<delta> p \<delta> ps"
+  by (induction rule: t_find_closest_\<delta>.induct) auto
+
 lemma t_find_closest_cnt:
   "t_find_closest_\<delta> p \<delta> ps \<le> length (filter (\<lambda>c. snd c - snd p \<le> \<delta>) ps)"
   by (induction p \<delta> ps rule: t_find_closest_\<delta>.induct) auto
@@ -768,7 +772,40 @@ lemma t_closest_pair_combine:
   using assms
 proof (induction \<delta> ps arbitrary: ps\<^sub>L ps\<^sub>R rule: t_closest_pair_combine.induct)
   case (4 \<delta> p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  then show ?case sorry
+
+  let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine \<delta> ?ps"
+    by (metis surj_pair)
+  define TCP where "TCP = t_closest_pair_combine \<delta> ?ps"
+  define C where "C = find_closest_\<delta> p\<^sub>0 (min \<delta> (dist C\<^sub>0 C\<^sub>1)) ?ps"
+  define TFC where "TFC = t_find_closest_\<delta> p\<^sub>0 (min \<delta> (dist C\<^sub>0 C\<^sub>1)) ?ps"
+  define PS\<^sub>L where "PS\<^sub>L = ps\<^sub>L - { p\<^sub>0 }"
+  define PS\<^sub>R where "PS\<^sub>R = ps\<^sub>R - { p\<^sub>0 }"
+
+  have "distinct ?ps" "sortedY ?ps"
+    using "4.prems"(1,2) sortedY_def by simp_all
+  moreover have "set ?ps = PS\<^sub>L \<union> PS\<^sub>R"
+    using "4.prems"(1,4) PS\<^sub>L_def PS\<^sub>R_def by auto
+  moreover have "\<forall>p \<in> set ?ps. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+    using "4.prems"(5) by simp
+  moreover have "\<forall>p \<in> PS\<^sub>L. fst p \<le> l" "\<forall>p \<in> PS\<^sub>R. l \<le> fst p"
+    using "4.prems"(6,7) PS\<^sub>L_def PS\<^sub>R_def by simp_all
+  moreover have "min_dist \<delta> PS\<^sub>L" "min_dist \<delta> PS\<^sub>R"
+    using "4.prems"(8,9) PS\<^sub>L_def PS\<^sub>R_def min_dist_def by simp_all
+  ultimately have 1: "TCP \<le> 8 * length ?ps"
+    using "4.prems"(3) "4.IH" TCP_def C\<^sub>0\<^sub>1 by auto
+
+  have "t_find_closest_\<delta> p\<^sub>0 \<delta> ?ps \<le> 7"
+    using "4.prems" t_find_closest_\<delta> by blast
+  moreover have "min \<delta> (dist C\<^sub>0 C\<^sub>1) \<le> \<delta>"
+    by simp
+  ultimately have 2: "TFC \<le> 7"
+    using t_find_closest_\<delta>_mono[of "min \<delta> (dist C\<^sub>0 C\<^sub>1)" \<delta> p\<^sub>0 ?ps] TFC_def by simp
+
+  have "t_closest_pair_combine \<delta> (p\<^sub>0 # ?ps) = 1 + TCP + TFC"
+    using TCP_def TFC_def C\<^sub>0\<^sub>1 by (auto split: prod.splits)
+  thus ?case
+    using 1 2 by simp
 qed auto
 
 
@@ -1062,9 +1099,11 @@ definition closest_pair_cost :: "nat \<Rightarrow> real" where
   "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
 
 lemma t_closest_pair_conv_closest_pair_cost:
-  "t_closest_pair ps \<le> closest_pair_cost (length ps)"
-  unfolding t_closest_pair_def closest_pair_cost_def
-  using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add by smt
+  assumes "1 < length ps" "distinct ps"
+  shows "t_closest_pair ps \<le> closest_pair_cost (length ps)"
+  using assms sortX unfolding t_closest_pair_def closest_pair_cost_def
+  using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add
+  by smt
 
 theorem closest_pair_cost:
   "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
