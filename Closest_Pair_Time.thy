@@ -906,8 +906,8 @@ declare t_combine.simps [simp del]
 
 subsection "closest_pair_rec"
 
-function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
-  "t_closest_pair_rec xs = (
+function t_closest_pair_rec' :: "point list \<Rightarrow> nat" where
+  "t_closest_pair_rec' xs = (
     let n = length xs in
     let t_l = t_length xs in
     if n \<le> 3 then
@@ -919,8 +919,8 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
 
       let (ys\<^sub>L, c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
       let (ys\<^sub>R, c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
-      let t_cl = t_closest_pair_rec xs\<^sub>L in
-      let t_cr = t_closest_pair_rec xs\<^sub>R in
+      let t_cl = t_closest_pair_rec' xs\<^sub>L in
+      let t_cr = t_closest_pair_rec' xs\<^sub>R in
 
       let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
       let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
@@ -928,26 +928,26 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
       t_l + t_s + t_cl + t_cr + t_m + t_c
   )"
   by pat_completeness auto
-termination t_closest_pair_rec
+termination t_closest_pair_rec'
   apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
   apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
-lemma t_closest_pair_rec_simps_1:
+lemma t_closest_pair_rec'_simps_1:
   assumes "n = length xs" "n \<le> 3"
-  shows "t_closest_pair_rec xs = t_length xs + t_sortY xs + t_closest_pair_bf xs"
+  shows "t_closest_pair_rec' xs = t_length xs + t_sortY xs + t_closest_pair_bf xs"
   using assms by simp
 
-lemma t_closest_pair_rec_simps_2:
+lemma t_closest_pair_rec'_simps_2:
   assumes "n = length xs" "\<not> (n \<le> 3)"
-  shows "t_closest_pair_rec xs = (
+  shows "t_closest_pair_rec' xs = (
     let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
     let t_s = t_split_at (n div 2) xs in
     let l = fst (hd xs\<^sub>R) in
     let (ys\<^sub>L, c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
     let (ys\<^sub>R, c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
-    let t_cl = t_closest_pair_rec xs\<^sub>L in
-    let t_cr = t_closest_pair_rec xs\<^sub>R in
+    let t_cl = t_closest_pair_rec' xs\<^sub>L in
+    let t_cr = t_closest_pair_rec' xs\<^sub>R in
     let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
     let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
     let t_c = t_combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys in
@@ -955,7 +955,7 @@ lemma t_closest_pair_rec_simps_2:
   )"
   using assms by (auto simp add: Let_def)
 
-declare t_closest_pair_rec.simps [simp del]
+declare t_closest_pair_rec'.simps [simp del]
 
 function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
   "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = length_cost n + sortY_cost n + closest_pair_bf_cost n"
@@ -965,9 +965,13 @@ function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
-lemma t_closest_pair_rec_conv_closest_pair_rec_cost:
+lemma closest_pair_rec_cost_nonneg[simp]:
+  "0 \<le> closest_pair_rec_cost n"
+  by (induction n rule: closest_pair_rec_cost.induct) (auto simp add: combine_cost_def)
+
+lemma t_closest_pair_rec'_conv_closest_pair_rec_cost:
   assumes "1 < length ps" "distinct ps" "sortedX ps"
-  shows "t_closest_pair_rec ps \<le> closest_pair_rec_cost (length ps)"
+  shows "t_closest_pair_rec' ps \<le> closest_pair_rec_cost (length ps)"
   using assms
 proof (induction ps rule: length_induct)
   case (1 ps)
@@ -975,9 +979,9 @@ proof (induction ps rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True        
-    hence "t_closest_pair_rec ps = 
+    hence "t_closest_pair_rec' ps = 
            t_length ps + t_sortY ps + t_closest_pair_bf ps"
-      using t_closest_pair_rec_simps_1 by simp
+      using t_closest_pair_rec'_simps_1 by simp
     moreover have "closest_pair_rec_cost ?n = 
                    length_cost ?n + sortY_cost ?n + closest_pair_bf_cost ?n"
       using True by simp
@@ -994,10 +998,10 @@ proof (induction ps rule: length_induct)
 
     obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where CP\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
       using prod.collapse by metis
-    define TL where "TL = t_closest_pair_rec XS\<^sub>L"
+    define TL where "TL = t_closest_pair_rec' XS\<^sub>L"
     obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where CP\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
       using prod.collapse by metis
-    define TR where "TR = t_closest_pair_rec XS\<^sub>R"
+    define TR where "TR = t_closest_pair_rec' XS\<^sub>R"
 
     define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
     define TM where "TM = t_merge (\<lambda>p. snd p) (YS\<^sub>L, YS\<^sub>R)"
@@ -1006,8 +1010,8 @@ proof (induction ps rule: length_induct)
       using prod.collapse by blast
     note defs = XS_def TS_def L_def CP\<^sub>L_def TL_def CP\<^sub>R_def TR_def YS_def TM_def TC_def
 
-    have FL: "t_closest_pair_rec ps = t_length ps + TS + TL + TR + TM + TC"
-      using False t_closest_pair_rec_simps_2 defs by (auto split: prod.splits)
+    have FL: "t_closest_pair_rec' ps = t_length ps + TS + TL + TR + TM + TC"
+      using False t_closest_pair_rec'_simps_2 defs by (auto split: prod.splits)
 
     have FR: "closest_pair_rec_cost (length ps) =
               length_cost ?n + split_at_cost ?n + closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>) +
@@ -1029,18 +1033,18 @@ proof (induction ps rule: length_induct)
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>L" "sortedX XS\<^sub>L"
       using XSLR "1.prems"(2,3) sortedX_def sorted_wrt_take by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
+    ultimately have "t_closest_pair_rec' XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
       using "1.IH" by simp
-    hence IHL: "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>)"
+    hence IHL: "t_closest_pair_rec' XS\<^sub>L \<le> closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>)"
       using * by simp
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length ps"
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>R" "sortedX XS\<^sub>R"
       using XSLR "1.prems"(2,3) sortedX_def sorted_wrt_drop by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (length XS\<^sub>R)"
+    ultimately have "t_closest_pair_rec' XS\<^sub>R \<le> closest_pair_rec_cost (length XS\<^sub>R)"
       using "1.IH" by simp
-    hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
+    hence IHR: "t_closest_pair_rec' XS\<^sub>R \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
       using * by simp
 
     have "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec ps"
@@ -1079,31 +1083,47 @@ theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem) (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
+definition t_closest_pair_rec :: "point list \<Rightarrow> nat" where
+  "t_closest_pair_rec ps = (
+    if 1 < length ps \<and> distinct ps \<and> sortedX ps then
+      t_closest_pair_rec' ps
+    else
+      0
+  )"
+
 theorem t_closest_pair_rec_bigo:
-  assumes "1 < length ps" "distinct ps" "sortedX ps"
-  shows "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair_rec \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
-    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost assms by blast
+  have "\<And>ps. t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
+    unfolding comp_def t_closest_pair_rec_def using t_closest_pair_rec'_conv_closest_pair_rec_cost by simp
   thus ?thesis
-    using bigo_measure_trans sorry
+    using bigo_measure_trans by (metis (no_types, lifting) bigthetaD1 closest_pair_rec_cost of_nat_0_le_iff)
 qed
 
 
 subsection "closest_pair"
 
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
-  "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
+  "t_closest_pair ps = (
+    if 1 < length ps \<and> distinct ps then
+      t_sortX ps + t_closest_pair_rec (sortX ps)
+    else
+      0
+  )"
 
 definition closest_pair_cost :: "nat \<Rightarrow> real" where
   "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
 
+lemma closest_pair_const_nonneg[simp]:
+  "0 \<le> closest_pair_cost n"
+  unfolding closest_pair_cost_def by simp
+
 lemma t_closest_pair_conv_closest_pair_cost:
   assumes "1 < length ps" "distinct ps"
   shows "t_closest_pair ps \<le> closest_pair_cost (length ps)"
-  using assms sortX unfolding t_closest_pair_def closest_pair_cost_def
-  using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost length_sortX of_nat_add
-  by smt
+  unfolding t_closest_pair_def closest_pair_cost_def using assms sortX of_nat_add
+  using t_sortX_conv_sortX_cost t_closest_pair_rec'_conv_closest_pair_rec_cost
+  by (smt One_nat_def t_closest_pair_rec_def)
 
 theorem closest_pair_cost:
   "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
@@ -1114,7 +1134,7 @@ theorem t_closest_pair_bigo:
   "t_closest_pair \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
   have "\<And>ps. t_closest_pair ps \<le> (closest_pair_cost o length) ps"
-    unfolding comp_def using t_closest_pair_conv_closest_pair_cost by blast
+    unfolding comp_def using t_closest_pair_conv_closest_pair_cost by (auto simp: t_closest_pair_def)
   thus ?thesis
     by (metis (no_types, lifting) bigo_measure_trans closest_pair_cost of_nat_0_le_iff)
 qed
