@@ -240,52 +240,33 @@ proof -
   have CRPS: "card RPS \<le> 8"
     using CLSQPS CRSQPS card_Un_le[of LSQPS RSQPS] \<open>RPS = LSQPS \<union> RSQPS\<close> by auto
 
-  have PYMIN: "\<forall>p' \<in> set PS. snd p \<le> snd p'"
-    using assms(2) PS_def sortedY_def by simp
-
-  have "RPS = set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+  have "set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS) \<subseteq> RPS"
   proof standard
-    show "RPS \<subseteq> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
-    proof (rule ccontr)
-      assume "\<not> (RPS \<subseteq> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS))"
-      then obtain p' where *: "p' \<in> RPS" "p' \<notin> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
-        using RPS_def by blast
-      hence "p' \<in> R"
-        using RPS_def by blast
-      hence "snd p' - snd p \<le> \<delta>"
-        using R_def mem_cbox_2D prod.collapse by smt
-      hence "p' \<in> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
-        using * RPS_def by simp
-      thus False
-        using * by blast
-    qed
-  next
-    show "set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS) \<subseteq> RPS"
-    proof standard
-      fix c
-      assume *: "c \<in> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
-      hence CPS: "c \<in> set PS"
-        by simp
-      hence "snd p \<le> snd c" "snd c \<le> snd p + \<delta>"
-        using PYMIN * by auto
-      moreover have "l - \<delta> \<le> fst c" "fst c \<le> l + \<delta>"
-        using CPS assms(5) PS_def by blast+
-      ultimately have "c \<in> R"
-        using R_def mem_cbox_2D[of "l - \<delta>" "fst c" "l + \<delta>" "snd p" "snd c" "snd p + \<delta>"] by simp
-      thus "c \<in> RPS"
-        using CPS RPS_def by simp
-    qed
+    fix c
+    assume *: "c \<in> set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"
+    hence CPS: "c \<in> set PS"
+      by simp
+    hence "snd p \<le> snd c" "snd c \<le> snd p + \<delta>"
+      using assms(2) PS_def sortedY_def * by (auto split: if_splits)
+    moreover have "l - \<delta> \<le> fst c" "fst c \<le> l + \<delta>"
+      using CPS assms(5) PS_def by blast+
+    ultimately have "c \<in> R"
+      using R_def mem_cbox_2D[of "l - \<delta>" "fst c" "l + \<delta>" "snd p" "snd c" "snd p + \<delta>"] by simp
+    thus "c \<in> RPS"
+      using CPS RPS_def by simp
   qed
-  hence "card (set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)) \<le> 8"
-    using CRPS by blast
+  moreover have "finite RPS"
+    by (simp add: RPS_def)
+  ultimately have "card (set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)) \<le> 8"
+    using CRPS card_mono[of RPS "set (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS)"] by simp
   hence "length (filter (\<lambda>c. snd c - snd p \<le> \<delta>) PS) \<le> 8"
     using assms(1) PS_def by (simp add: distinct_card)
   thus ?thesis
-    using PS_def by (smt One_nat_def Suc_le_mono add.right_neutral add_Suc_right assms(3) filter.simps(2) landau_product_preprocess(10) landau_product_preprocess(4) list.size(4) numeral_code(1) numeral_plus_numeral)
+    using PS_def assms(1,3) by simp
 qed
 
 
-section "Auxiliary"
+section "Landau Auxiliary"
 
 text \<open>
   The following lemma expresses a procedure for deriving complexity properties of
@@ -314,6 +295,7 @@ proof -
     by(rule landau_o.big.filtercomap[OF assms(2)])
   show ?thesis by(rule landau_o.big_trans[OF 1 2])
 qed
+
 
 section "Closest Pair Of Points Time Analysis"
 
@@ -377,37 +359,6 @@ proof -
     unfolding comp_def by (simp add: filter_cost_def t_filter)
   thus ?thesis
     using bigo_measure_trans[of "t_filter P" filter_cost length filter_cost] by auto
-qed
-
-
-subsection "take"
-
-fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_take n [] = 0"
-| "t_take n (x#xs) = (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc m \<Rightarrow> 1 + t_take m xs
-  )"
-
-lemma t_take:
-  "t_take n xs = min n (length xs)"
-  by (induction xs arbitrary: n) (auto split: nat.split)
-
-definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = n"
-
-lemma t_take_conv_take_cost:
-  "t_take n xs \<le> take_cost (length xs)"
-  unfolding take_cost_def by (auto simp: min_def t_take)
-
-lemma t_take_bigo:
-  "t_take n \<in> O[length going_to at_top](take_cost o length)"
-proof -
-  have "\<And>xs. t_take n xs \<le> (take_cost o length) xs"
-    unfolding comp_def by (simp add: take_cost_def t_take)
-  thus ?thesis
-    using bigo_measure_trans[of "t_take n" take_cost length take_cost] by auto
 qed
 
 
