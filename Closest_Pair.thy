@@ -288,29 +288,29 @@ lemma closest_pair_bf_dist:
 proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
   case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
-  obtain c\<^sub>0' c\<^sub>1' where c\<^sub>0\<^sub>1_def: "(c\<^sub>0', c\<^sub>1') = closest_pair_bf ?ps"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = closest_pair_bf ?ps"
     using prod.collapse by blast
-  hence IH: "min_dist (dist c\<^sub>0' c\<^sub>1') (set ?ps)"
+  hence IH: "min_dist (dist C\<^sub>0 C\<^sub>1) (set ?ps)"
     using 4 by simp
   have *: "\<forall>p \<in> set ?ps. dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist p\<^sub>0 p"
     using find_closest_dist by blast
   show ?case
-  proof (cases "dist c\<^sub>0' c\<^sub>1' \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
+  proof (cases "dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)")
     case True
-    hence "\<forall>p \<in> set ?ps. dist c\<^sub>0' c\<^sub>1' \<le> dist p\<^sub>0 p"
+    hence "\<forall>p \<in> set ?ps. dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 p"
       using * by auto
-    hence "min_dist (dist c\<^sub>0' c\<^sub>1') (set (p\<^sub>0 # ?ps))"
+    hence "min_dist (dist C\<^sub>0 C\<^sub>1) (set (p\<^sub>0 # ?ps))"
       using min_dist_identity IH by blast
     thus ?thesis
-      using True "4.prems" c\<^sub>0\<^sub>1_def by (auto split: prod.splits)
+      using True "4.prems" C\<^sub>0\<^sub>1_def by (auto split: prod.splits)
   next
     case False
-    hence "dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist c\<^sub>0' c\<^sub>1'"
+    hence "dist p\<^sub>0 (find_closest p\<^sub>0 ?ps) \<le> dist C\<^sub>0 C\<^sub>1"
       by simp
     hence "min_dist (dist p\<^sub>0 (find_closest p\<^sub>0 ?ps)) (set (p\<^sub>0 # ?ps))"
       using min_dist_update IH * by blast
     moreover have "(c\<^sub>0, c\<^sub>1) = (p\<^sub>0, (find_closest p\<^sub>0 ?ps))"
-      using False "4.prems" c\<^sub>0\<^sub>1_def by (auto split: prod.splits)
+      using False "4.prems" C\<^sub>0\<^sub>1_def by (auto split: prod.splits)
     ultimately show ?thesis
       by simp
   qed
@@ -420,41 +420,41 @@ proof (induction \<delta> ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_c
 next
   case (4 \<delta> p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
   let ?ps = "p\<^sub>1 # p\<^sub>2 # ps"
-  obtain C\<^sub>0 C\<^sub>1 where *: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine \<delta> ?ps"
+  obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine \<delta> ?ps"
     using "4.prems"(4) by (auto split: prod.splits)
   let ?c = "find_closest_\<delta> p\<^sub>0 (min \<delta> (dist C\<^sub>0 C\<^sub>1)) ?ps"
   show ?case
   proof (cases "\<exists>p\<^sub>0 p\<^sub>1'. p\<^sub>0 \<in> set ?ps \<and> p\<^sub>1' \<in> set ?ps \<and> p\<^sub>0 \<noteq> p\<^sub>1' \<and> dist p\<^sub>0 p\<^sub>1' < \<delta>")
     case True
     hence IH: "min_dist (dist C\<^sub>0 C\<^sub>1) (set ?ps)"
-      using 4 * unfolding sortedY_def by simp
+      using 4 C\<^sub>0\<^sub>1_def unfolding sortedY_def by simp
     hence 1: "dist C\<^sub>0 C\<^sub>1 < \<delta>"
       using True min_dist_def by (meson le_less_trans)
     show ?thesis
     proof cases
-      assume ASM: "\<exists>p \<in> set ?ps. dist p\<^sub>0 p < min \<delta> (dist C\<^sub>0 C\<^sub>1)"
+      assume *: "\<exists>p \<in> set ?ps. dist p\<^sub>0 p < min \<delta> (dist C\<^sub>0 C\<^sub>1)"
       hence 2: "\<forall>p \<in> set ?ps. dist p\<^sub>0 ?c \<le> dist p\<^sub>0 p"
         using find_closest_\<delta>_dist "4.prems"(2) by simp
       hence "\<forall>p \<in> set (p\<^sub>0 # ?ps). p \<noteq> p\<^sub>0 \<longrightarrow> dist p\<^sub>0 ?c \<le> dist p\<^sub>0 p"
         by simp
       moreover have 3: "dist p\<^sub>0 ?c < min \<delta> (dist C\<^sub>0 C\<^sub>1)"
-        using ASM 2 by auto
+        using * 2 by auto
       ultimately have "min_dist (dist p\<^sub>0 ?c) (set (p\<^sub>0 # ?ps))"
         by (smt IH dist_commute insert_iff list.set(2) min_dist_def)
       moreover have "(p\<^sub>0, ?c) = closest_pair_combine \<delta> (p\<^sub>0 # ?ps)"
-        using 3 * by (auto split: prod.split)
+        using 3 C\<^sub>0\<^sub>1_def by (auto split: prod.split)
       ultimately show ?thesis
         by (metis "4.prems"(4) Pair_inject)
     next
-      assume ASM: "\<not> (\<exists>p \<in> set ?ps. dist p\<^sub>0 p < min \<delta> (dist C\<^sub>0 C\<^sub>1))"
+      assume *: "\<not> (\<exists>p \<in> set ?ps. dist p\<^sub>0 p < min \<delta> (dist C\<^sub>0 C\<^sub>1))"
       hence "\<not> (\<exists>p \<in> set ?ps. dist p\<^sub>0 p < dist C\<^sub>0 C\<^sub>1)"
         using 1 by linarith
       hence 2: "dist C\<^sub>0 C\<^sub>1 \<le> dist p\<^sub>0 ?c"
         by (smt find_closest_\<delta>_set length_greater_0_conv list.discI)
       have "min_dist (dist C\<^sub>0 C\<^sub>1) (set (p\<^sub>0 # ?ps))"
-        using 1 by (smt ASM IH min_dist_identity)
+        using 1 by (smt * IH min_dist_identity)
       moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_combine \<delta> (p\<^sub>0 # ?ps)"
-        using ASM * 2 by (auto split:  prod.splits)
+        using * C\<^sub>0\<^sub>1_def 2 by (auto split:  prod.splits)
       ultimately show ?thesis
         by (metis "4.prems"(4) Pair_inject)
     qed
@@ -464,24 +464,24 @@ next
       using closest_pair_combine_c0[of ?ps C\<^sub>0 C\<^sub>1 \<delta>]
             closest_pair_combine_c1[of ?ps C\<^sub>0 C\<^sub>1 \<delta>]
             closest_pair_combine_c0_ne_c1[of ?ps C\<^sub>0 C\<^sub>1 \<delta>]
-            * "4.prems"(3)
+            C\<^sub>0\<^sub>1_def "4.prems"(3)
       by auto
     hence 1: "\<delta> \<le> dist C\<^sub>0 C\<^sub>1"
       using False le_less_linear by blast
     hence "min \<delta> (dist C\<^sub>0 C\<^sub>1) = \<delta>"
       by simp
-    moreover have #: "\<exists>p \<in> set ?ps. dist p\<^sub>0 p < \<delta>"
+    moreover have *: "\<exists>p \<in> set ?ps. dist p\<^sub>0 p < \<delta>"
       using False "4.prems"(5) by (metis dist_commute set_ConsD)
     ultimately have 2: "\<forall>p \<in> set ?ps. dist p\<^sub>0 ?c \<le> dist p\<^sub>0 p"
       using find_closest_\<delta>_dist "4.prems"(2) by simp
     hence "\<forall>p \<in> set (p\<^sub>0 # ?ps). p \<noteq> p\<^sub>0 \<longrightarrow> dist p\<^sub>0 ?c \<le> dist p\<^sub>0 p"
       by simp
     moreover have 3: "dist p\<^sub>0 ?c < \<delta>"
-      using # 2 by auto
+      using * 2 by auto
     ultimately have "min_dist (dist p\<^sub>0 ?c) (set (p\<^sub>0 # ?ps))"
       using min_dist_def False by (smt dist_commute insert_iff list.set(2))
     moreover have "(p\<^sub>0, ?c) = closest_pair_combine \<delta> (p\<^sub>0 # ?ps)"
-      using 1 3 * by (auto split: prod.split)
+      using 1 3 C\<^sub>0\<^sub>1_def by (auto split: prod.split)
     ultimately show ?thesis
       using "4.prems"(4) by (metis Pair_inject)
   qed

@@ -7,7 +7,7 @@ imports
   "Akra_Bazzi.Akra_Bazzi_Approximation"
 begin
 
-section "The Runtime Argument"
+section "Core Time Complexity Argument"
 
 subsection "2D-Boxes and Points"
 
