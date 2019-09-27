@@ -75,10 +75,7 @@ subsection "filter"
 fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat" where
   "t_filter P [] = 0"
 | "t_filter P (x#xs) = (
-    if P x then
-      1 + t_filter P xs
-    else
-      1 + t_filter P xs
+    1 + (if P x then t_filter P xs else t_filter P xs)
   )"
 
 lemma t_filter:
@@ -132,6 +129,8 @@ proof -
     using bigo_measure_trans[of "t_take n" take_cost length take_cost] by auto
 qed
 
+declare t_take.simps [simp del]
+
 
 subsection "split_at"
 
@@ -172,10 +171,7 @@ subsection "merge"
 
 fun t_merge' :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_merge' f (x#xs) (y#ys) = (
-    if f x \<le> f y then
-      1 + t_merge' f xs (y#ys)
-    else
-      1 + t_merge' f (x#xs) ys
+    1 + (if f x \<le> f y then t_merge' f xs (y#ys) else t_merge' f (x#xs) ys)
   )"
 | "t_merge' f xs [] = 0"
 | "t_merge' f [] ys = 0"
@@ -358,10 +354,7 @@ fun t_find_closest :: "point \<Rightarrow> point list \<Rightarrow> nat" where
 | "t_find_closest p\<^sub>0 (p # ps) = (
     let c = find_closest p\<^sub>0 ps in
     let t = t_find_closest p\<^sub>0 ps in
-    if dist p\<^sub>0 p < dist p\<^sub>0 c then
-      1 + t
-    else
-      1 + t
+    1 + (if dist p\<^sub>0 p < dist p\<^sub>0 c then t else t)
   )"
 
 definition find_closest_cost :: "nat \<Rightarrow> real" where
@@ -385,99 +378,120 @@ proof -
 qed
 
 
-subsection "gen_closest_pair"
+subsection "closest_pair_combine"
 
-fun t_gen_closest_pair :: "(point list \<Rightarrow> point list) \<Rightarrow> point list \<Rightarrow> nat" where
-  "t_gen_closest_pair f [] = 0"
-| "t_gen_closest_pair f [p\<^sub>0] = 1"
-| "t_gen_closest_pair f [p\<^sub>0, p\<^sub>1] = 2"
-| "t_gen_closest_pair f (p\<^sub>0 # ps) = (
-    let (c\<^sub>0, c\<^sub>1) = gen_closest_pair f ps in
-    let t_gen = t_gen_closest_pair f ps in
-    let p\<^sub>1 = find_closest p\<^sub>0 (f ps) in
-    let t_find = t_find_closest p\<^sub>0 (f ps) in
+fun closest_pair_combine :: "point list \<Rightarrow> (point * point)" where
+  "closest_pair_combine [] = undefined"
+| "closest_pair_combine [p\<^sub>0] = undefined"
+| "closest_pair_combine [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "closest_pair_combine (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps) in
     if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
-      1 + t_gen + t_find
+      (c\<^sub>0, c\<^sub>1)
     else
-      1 + t_gen + t_find
+      (p\<^sub>0, p\<^sub>1) 
   )"
 
-lemma t_gen_closest_pair_id:
-  "f = (\<lambda>ps. ps) \<Longrightarrow> t_gen_closest_pair f ps \<le> length ps * length ps"
-proof (induction f ps rule: t_gen_closest_pair.induct)
-  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+fun t_closest_pair_combine :: "point list \<Rightarrow> nat" where
+  "t_closest_pair_combine [] = 0"
+| "t_closest_pair_combine [p\<^sub>0] = 1"
+| "t_closest_pair_combine [p\<^sub>0, p\<^sub>1] = 2"
+| "t_closest_pair_combine (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps in
+    let t_c = t_closest_pair_combine ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps) in
+    let t_f = t_find_closest p\<^sub>0 (take 7 ps) in
+    let t_t = t_take 7 ps in
+    1 + (if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then t_c + t_f + t_t else t_c + t_f + t_t)
+  )"
+
+lemma t_closest_pair_combine:
+  "t_closest_pair_combine ps \<le> 15 * length ps"
+proof (induction ps rule: t_closest_pair_combine.induct)
+  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
   let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  have "t_gen_closest_pair f ?ps \<le> length ?ps * length ?ps"
+  have "t_closest_pair_combine ?ps \<le> 15 * length ?ps"
     using 4 prod_cases3 by metis
-  thus ?case
-    using "4.prems" t_find_closest by simp
+  moreover have "t_take 7 ?ps \<le> 7"
+    by (auto simp: t_take min_def)
+  ultimately show ?case
+    using "4.prems" t_find_closest by auto
 qed auto
 
-lemma t_gen_closest_pair_take_7:
-  "f = take 7 \<Longrightarrow> t_gen_closest_pair f ps \<le> 8 * length ps"
-proof (induction f ps rule: t_gen_closest_pair.induct)
-  case (4 f p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
-  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  have "t_gen_closest_pair f ?ps \<le> 8 * length ?ps"
-    using 4 prod_cases3 by metis
-  thus ?case
-    using "4.prems" t_find_closest by simp
-qed auto
+definition closest_pair_combine_cost :: "nat \<Rightarrow> real" where
+  "closest_pair_combine_cost n = 15 * n"
 
+lemma t_closest_pair_combine_conv_closest_pair_combine_cost:
+  "t_closest_pair_combine ps \<le> closest_pair_combine_cost (length ps)"
+  unfolding closest_pair_combine_cost_def using t_closest_pair_combine of_nat_mono by blast
 
-subsection "bf_closest_pair"
-
-definition t_bf_closest_pair :: "point list \<Rightarrow> nat" where
-  "t_bf_closest_pair ps = t_gen_closest_pair (\<lambda>ps. ps) ps"
-
-definition bf_closest_pair_cost :: "nat \<Rightarrow> real" where
-  "bf_closest_pair_cost n = n * n"
-
-lemma t_bf_closest_pair:
-  "t_bf_closest_pair ps \<le> length ps * length ps"
-  unfolding t_bf_closest_pair_def using t_gen_closest_pair_id by simp
-
-lemma bf_closest_pair_cost_nonneg[simp]:
-  "0 \<le> bf_closest_pair_cost n"
-  unfolding bf_closest_pair_cost_def by simp
-
-lemma t_bf_closest_pair_conv_bf_closest_pair_cost:
-  "t_bf_closest_pair ps \<le> bf_closest_pair_cost (length ps)"
-  unfolding bf_closest_pair_cost_def using t_bf_closest_pair of_nat_mono by blast
-
-lemma t_bf_closest_pair_bigo:
-  "t_bf_closest_pair \<in> O[length going_to at_top](bf_closest_pair_cost o length)"
+lemma t_closest_pair_combine_bigo:
+  "t_closest_pair_combine \<in> O[length going_to at_top](closest_pair_combine_cost o length)"
 proof -
-  have "\<And>ps. t_bf_closest_pair ps \<le> (bf_closest_pair_cost o length) ps"
-    unfolding comp_def using bf_closest_pair_cost_def t_bf_closest_pair_conv_bf_closest_pair_cost by auto
+  have "\<And>ps. t_closest_pair_combine ps \<le> (closest_pair_combine_cost o length) ps"
+    unfolding comp_def using closest_pair_combine_cost_def t_closest_pair_combine_conv_closest_pair_combine_cost by auto
   thus ?thesis
-    using bigo_measure_trans[of t_bf_closest_pair bf_closest_pair_cost length bf_closest_pair_cost] by auto
+    using bigo_measure_trans[of t_closest_pair_combine closest_pair_combine_cost length closest_pair_combine_cost] by auto
 qed
 
 
-subsection "closest_pair_7"
+subsection "closest_pair_bf"
 
-definition t_closest_pair_7 :: "point list \<Rightarrow> nat" where
-  "t_closest_pair_7 ps = t_gen_closest_pair (take 7) ps"
+fun closest_pair_bf :: "point list \<Rightarrow> (point * point)" where
+  "closest_pair_bf [] = undefined"
+| "closest_pair_bf [p\<^sub>0] = undefined"
+| "closest_pair_bf [p\<^sub>0, p\<^sub>1] = (p\<^sub>0, p\<^sub>1)"
+| "closest_pair_bf (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+    if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then
+      (c\<^sub>0, c\<^sub>1)
+    else
+      (p\<^sub>0, p\<^sub>1) 
+  )"
 
-definition closest_pair_7_cost :: "nat \<Rightarrow> real" where
-  "closest_pair_7_cost n = 8 * n"
+fun t_closest_pair_bf :: "point list \<Rightarrow> nat" where
+  "t_closest_pair_bf [] = 0"
+| "t_closest_pair_bf [p\<^sub>0] = 1"
+| "t_closest_pair_bf [p\<^sub>0, p\<^sub>1] = 2"
+| "t_closest_pair_bf (p\<^sub>0 # ps) = (
+    let (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps in
+    let t_c = t_closest_pair_bf ps in
+    let p\<^sub>1 = find_closest p\<^sub>0 ps in
+    let t_f = t_find_closest p\<^sub>0 ps in
+    1 + (if dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 then t_c + t_f else t_c + t_f)
+  )"
 
-lemma t_closest_pair_7:
-  "t_closest_pair_7 ps \<le> 8 * length ps"
-  unfolding t_closest_pair_7_def using t_gen_closest_pair_take_7 by simp
+lemma t_closest_pair_bf:
+  "t_closest_pair_bf ps \<le> length ps * length ps"
+proof (induction ps rule: t_closest_pair_combine.induct)
+  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  have "t_closest_pair_bf ?ps \<le> length ?ps * length ?ps"
+    using 4 prod_cases3 by metis
+  thus ?case
+    using "4.prems" t_find_closest by auto
+qed auto
 
-lemma t_closest_pair_7_conv_closest_pair_7_cost:
-  "t_closest_pair_7 ps \<le> closest_pair_7_cost (length ps)"
-  unfolding closest_pair_7_cost_def using t_closest_pair_7 of_nat_mono by blast
+definition closest_pair_bf_cost :: "nat \<Rightarrow> real" where
+  "closest_pair_bf_cost n = n * n"
 
-lemma t_closest_pair_7_bigo:
-  "t_closest_pair_7 \<in> O[length going_to at_top](closest_pair_7_cost o length)"
+lemma closest_pair_bf_cost_nonneg[simp]:
+  "0 \<le> closest_pair_bf_cost n"
+  unfolding closest_pair_bf_cost_def by simp
+
+lemma t_closest_pair_bf_conv_closest_pair_bf_cost:
+  "t_closest_pair_bf ps \<le> closest_pair_bf_cost (length ps)"
+  unfolding closest_pair_bf_cost_def using t_closest_pair_bf of_nat_mono by blast
+
+lemma t_closest_pair_bf_bigo:
+  "t_closest_pair_bf \<in> O[length going_to at_top](closest_pair_bf_cost o length)"
 proof -
-  have "\<And>ps. t_closest_pair_7 ps \<le> (closest_pair_7_cost o length) ps"
-    unfolding comp_def using closest_pair_7_cost_def t_closest_pair_7_conv_closest_pair_7_cost by auto
+  have "\<And>ps. t_closest_pair_bf ps \<le> (closest_pair_bf_cost o length) ps"
+    unfolding comp_def using closest_pair_bf_cost_def t_closest_pair_bf_conv_closest_pair_bf_cost by auto
   thus ?thesis
-    using bigo_measure_trans[of t_closest_pair_7 closest_pair_7_cost length closest_pair_7_cost] by auto
+    using bigo_measure_trans[of t_closest_pair_bf closest_pair_bf_cost length closest_pair_bf_cost] by auto
 qed
 
 
@@ -486,56 +500,60 @@ subsection "combine"
 fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat" where
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let ys' = filter (\<lambda>p. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) ys in
-    let t_f = t_filter (\<lambda>p. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) ys in
-    if length ys' < 2 then
-      t_f
+    let \<delta> = dist c\<^sub>0 c\<^sub>1 in
+    let ys' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys in
+    let t_f = t_filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys in
+    t_f + t_length ys' + (if length ys' < 2 then
+      0
     else
-      let (p\<^sub>0, p\<^sub>1) = closest_pair_7 ys' in
-      let t_c = t_closest_pair_7 ys' in
-      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
-        t_f + t_c
-      else
-        t_f + t_c
+      let (p\<^sub>0, p\<^sub>1) = closest_pair_combine ys' in
+      let t_c = t_closest_pair_combine ys' in
+      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then t_c else t_c
+    )
   )"
 
 definition combine_cost :: "nat \<Rightarrow> real" where
-  "combine_cost n = 9 * n"
+  "combine_cost n = 17 * n"
 
 lemma t_combine:
-  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> 9 * length ys"
+  "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys \<le> 17 * length ys"
 proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?P = "(\<lambda>p. l - dist C\<^sub>0 C\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist C\<^sub>0 C\<^sub>1)"
   let ?ys' = "filter ?P ys"
   let ?t_f = "t_filter ?P ys"
-  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_7 ?ys'"
+  let ?t_l = "t_length ?ys'"
+  obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?ys'"
     using prod.collapse by blast
-  let ?t_c = "t_closest_pair_7 ?ys'"
+  let ?t_c = "t_closest_pair_combine ?ys'"
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
 
   show ?thesis
   proof cases
     assume "length ?ys' < 2"
-    hence "?t_f = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+    hence "?t_l + ?t_f = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
       using defs by (auto simp: Let_def split!: prod.splits)
     moreover have "?t_f = length ys"
       using t_filter[of ?P ys] by simp
+    moreover have "?t_l \<le> length ys"
+      by (simp add: t_length)
     ultimately show ?thesis
       by linarith
   next
     assume *: "\<not> length ?ys' < 2"
-    have "?t_c \<le> 8 * length ?ys'"
-      using t_closest_pair_7 by simp
+    have "?t_c \<le> 15 * length ?ys'"
+      using t_closest_pair_combine by simp
     moreover have "length ?ys' \<le> length ys"
       by simp
-    ultimately have "?t_c \<le> 8 * length ys"
+    ultimately have "?t_c \<le> 15 * length ys"
       by linarith
-    moreover have "?t_f + ?t_c = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
+    moreover have "?t_l + ?t_f + ?t_c = t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
       using * defs by (auto simp: Let_def split!: prod.splits)
     moreover have "?t_f = length ys"
       using t_filter[of ?P ys] by simp
+    moreover have "?t_l \<le> length ys"
+      by (simp add: t_length)
     ultimately show ?thesis
       by linarith
   qed
@@ -564,7 +582,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
     let n = length xs in
     let t_l = t_length xs in
     if n \<le> 3 then
-      t_l + t_sortY xs + t_bf_closest_pair xs
+      n + t_l + t_sortY xs + t_closest_pair_bf xs
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let t_s = t_split_at (n div 2) xs in
@@ -578,7 +596,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
       let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
       let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
       let t_c = t_combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys in
-      t_l + t_s + t_cl + t_cr + t_m + t_c
+      1 + t_l + t_s + t_cl + t_cr + t_m + t_c
   )"
   by pat_completeness auto
 termination t_closest_pair_rec
@@ -588,7 +606,7 @@ termination t_closest_pair_rec
 
 lemma t_closest_pair_rec_simps_1:
   assumes "n = length xs" "n \<le> 3"
-  shows "t_closest_pair_rec xs = t_length xs + t_sortY xs + t_bf_closest_pair xs"
+  shows "t_closest_pair_rec xs = n + t_length xs + t_sortY xs + t_closest_pair_bf xs"
   using assms by simp
 
 lemma t_closest_pair_rec_simps_2:
@@ -604,15 +622,15 @@ lemma t_closest_pair_rec_simps_2:
     let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
     let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
     let t_c = t_combine (c\<^sub>0\<^sub>L, c\<^sub>1\<^sub>L) (c\<^sub>0\<^sub>R, c\<^sub>1\<^sub>R) l ys in
-    t_length xs + t_s + t_cl + t_cr + t_m + t_c
+    1 + t_length xs + t_s + t_cl + t_cr + t_m + t_c
   )"
   using assms by (auto simp add: Let_def)
 
 declare t_closest_pair_rec.simps [simp del]
 
 function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
-  "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = length_cost n + sortY_cost n + bf_closest_pair_cost n"
-| "3 < n \<Longrightarrow> closest_pair_rec_cost n = length_cost n + split_at_cost n + 
+  "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = n + length_cost n + sortY_cost n + closest_pair_bf_cost n"
+| "3 < n \<Longrightarrow> closest_pair_rec_cost n = 1 + length_cost n + split_at_cost n + 
     closest_pair_rec_cost (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_cost (nat \<lceil>real n / 2\<rceil>) +
     merge_cost n + combine_cost n"
   by force simp_all
@@ -627,14 +645,15 @@ proof (induction ps rule: length_induct)
   proof (cases "?n \<le> 3")
     case True        
     hence "t_closest_pair_rec ps = 
-           t_length ps + t_sortY ps + t_bf_closest_pair ps"
+           ?n + t_length ps + t_sortY ps + t_closest_pair_bf ps"
       using t_closest_pair_rec_simps_1 by simp
     moreover have "closest_pair_rec_cost ?n = 
-                   length_cost ?n + sortY_cost ?n + bf_closest_pair_cost ?n"
+                   ?n + length_cost ?n + sortY_cost ?n + closest_pair_bf_cost ?n"
       using True by simp
     ultimately show ?thesis
       using t_length_conv_length_cost t_sortY_conv_sortY_cost
-            t_bf_closest_pair_conv_bf_closest_pair_cost of_nat_add by smt
+            t_closest_pair_bf_conv_closest_pair_bf_cost of_nat_add
+      by (smt of_nat_1)
   next
     case False
 
@@ -655,11 +674,11 @@ proof (induction ps rule: length_induct)
     define TC where "TC = t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
     note defs = XS_def TS_def L_def CP\<^sub>L_def TL_def CP\<^sub>R_def TR_def YS_def TM_def TC_def
 
-    have FL: "t_closest_pair_rec ps = t_length ps + TS + TL + TR + TM + TC"
+    have FL: "t_closest_pair_rec ps = 1 + t_length ps + TS + TL + TR + TM + TC"
       using False t_closest_pair_rec_simps_2 defs by (auto split: prod.splits)
 
     have FR: "closest_pair_rec_cost (length ps) =
-              length_cost ?n + split_at_cost ?n + closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>) +
+              1 + length_cost ?n + split_at_cost ?n + closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>) +
               closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>) + merge_cost ?n + combine_cost ?n"
       using False by simp
 
