@@ -11,27 +11,27 @@ section "Auxiliary"
 
 text \<open>
   The following lemma expresses a procedure for deriving complexity properties of
-  the form @{prop"t \<in> O[m going_to at_top](f o m)"} where
+  the form @{prop"t \<in> O[c going_to at_top](f o c)"} where
     \<^item> \<open>t\<close> is a (timing) function on same data domain (e.g. lists),
-    \<^item> \<open>m\<close> is a measure function on that data domain (e.g. length),
+    \<^item> \<open>c\<close> is a cost function on that data domain (e.g. length),
     \<^item> \<open>t'\<close> is a function on @{typ nat}.
   One needs to show that
-    \<^item> \<open>t\<close> is bounded by @{term "t' o m"}
+    \<^item> \<open>t\<close> is bounded by @{term "t' o c"}
     \<^item> @{prop"t' \<in> O(f)"}
-  to conclude the overall property @{prop"t \<in> O[m going_to at_top](f o m)"}.
+  to conclude the overall property @{prop"t \<in> O[c going_to at_top](f o c)"}.
 \<close>
 
 lemma bigo_measure_trans:
-  fixes t :: "'a \<Rightarrow> real" and t' :: "nat \<Rightarrow> real" and m :: "'a \<Rightarrow> nat" and f ::"nat \<Rightarrow> real"
-  assumes "\<And>x. t x \<le> (t' o m) x"
+  fixes t :: "'a \<Rightarrow> real" and t' :: "nat \<Rightarrow> real" and c :: "'a \<Rightarrow> nat" and f ::"nat \<Rightarrow> real"
+  assumes "\<And>x. t x \<le> (t' o c) x"
       and "t' \<in> O(f)"
       and "\<And>x. 0 \<le> t x"
-  shows "t \<in> O[m going_to at_top](f o m)"
+  shows "t \<in> O[c going_to at_top](f o c)"
 proof -
-  have 0: "\<forall>x. 0 \<le> (t' o m) x" by (meson assms(1,3) order_trans)
-  have 1: "t \<in> O[m going_to at_top](t' o m)"
+  have 0: "\<forall>x. 0 \<le> (t' o c) x" by (meson assms(1,3) order_trans)
+  have 1: "t \<in> O[c going_to at_top](t' o c)"
     apply(rule bigoI[where c=1]) using assms 0 by auto
-  have 2: "t' o m \<in> O[m going_to at_top](f o m)"
+  have 2: "t' o c \<in> O[c going_to at_top](f o c)"
     unfolding o_def going_to_def
     by(rule landau_o.big.filtercomap[OF assms(2)])
   show ?thesis by(rule landau_o.big_trans[OF 1 2])
@@ -87,13 +87,13 @@ definition filter_cost :: "nat \<Rightarrow> real" where
 
 lemma t_filter_conv_filter_cost:
   "t_filter P xs = filter_cost (length xs)"
-  unfolding filter_cost_def using t_filter by auto
+  unfolding filter_cost_def using t_filter by metis
 
 lemma t_filter_bigo:
   "t_filter P \<in> O[length going_to at_top](filter_cost o length)"
 proof -
   have "\<And>xs. t_filter P xs \<le> (filter_cost o length) xs"
-    unfolding comp_def by (simp add: filter_cost_def t_filter)
+    unfolding comp_def  by (simp add: filter_cost_def t_filter)
   thus ?thesis
     using bigo_measure_trans[of "t_filter P" filter_cost length filter_cost] by auto
 qed
