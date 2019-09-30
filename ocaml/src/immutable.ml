@@ -149,14 +149,14 @@ let rec closest_pair_rec (psX : point list): point list * (point * point) =
     let (p0, p1) = if dist lp0 lp1 <= dist rp0 rp1 then (lp0, lp1) else (rp0, rp1) in
     let delta = dist p0 p1 in
     (* let ys = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in *)
-
     let ysLF = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) ysL in
     let ysRF = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) ysR in
     let (c0, c1) = closest_pair_combine'' delta p0 p1 ysLF ysRF in
     let (c0', c1') = closest_pair_combine'' (dist c0 c1) c0 c1 ysRF ysLF in
     (merge snd ysL ysR, (c0', c1'))
-
     (* if List.length ys < 2 then
+    let ys = List.filter (fun p -> l -. delta <= fst p && fst p <= l +. delta) psY in
+    if List.length ys < 2 then
       (psY, (p0, p1))
     else
       let (c0, c1) = closest_pair_combine delta ys in
