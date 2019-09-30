@@ -265,66 +265,23 @@ fun closest_pair_bf :: "point list \<Rightarrow> (point * point)" where
   )"
 
 lemma closest_pair_bf_c0:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "p\<^sub>1 # p\<^sub>2 # ps" p\<^sub>0]
-    by (auto simp: Let_def split!: if_splits prod.splits)
-qed auto
+  "2 \<le> length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  apply (auto simp: find_closest_set Let_def split: if_splits prod.splits)
+  done
 
 lemma closest_pair_bf_c1:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
-
-  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  let ?c = "closest_pair_bf ?ps"
-  let ?p\<^sub>1 = "find_closest p\<^sub>0 ?ps"
-
-  show ?case
-  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
-    case True
-    moreover have "snd ?c \<in> set (p\<^sub>0 # ?ps)"
-      using 4 by (auto split: prod.splits)
-    ultimately show ?thesis
-      using "4.IH" "4.prems"(2) by (auto split: prod.splits)
-  next
-    case False
-    moreover have "?p\<^sub>1 \<in> set (p\<^sub>0 # ?ps)"
-      using find_closest_set[of ?ps p\<^sub>0] "4.prems" by fastforce
-    ultimately show ?thesis
-      using "4.prems"(2) by (auto split: prod.splits)
-  qed
-qed auto
+  "2 \<le> length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  apply (auto simp: find_closest_set Let_def split: if_splits prod.splits)
+  using find_closest_set apply fastforce
+  done
 
 lemma closest_pair_bf_c0_ne_c1:
-  assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair_bf ps"
-  shows "c\<^sub>0 \<noteq> c\<^sub>1"
-  using assms
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
-
-  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  let ?c = "closest_pair_bf ?ps"
-  let ?p\<^sub>1 = "find_closest p\<^sub>0 ?ps"
-
-  show ?case
-  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
-    case True
-    moreover have "fst ?c \<noteq> snd ?c"
-      using "4.IH" "4.prems" by auto
-    ultimately show ?thesis
-      using "4.prems" by (auto split: prod.splits)
-  next
-    case False
-    have "p\<^sub>0 \<notin> set ?ps"
-      using "4.prems" by simp
-    hence "p\<^sub>0 \<noteq> ?p\<^sub>1"
-      using find_closest_ne[of ?ps p\<^sub>0] "4.prems" by simp
-    thus ?thesis
-      using "4.prems" False by (auto split: prod.splits)
-  qed
-qed auto
+  "2 \<le> length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  apply (auto simp add: find_closest_ne Let_def split: if_splits prod.splits)
+  done
 
 lemmas closest_pair_bf_c0_c1 = closest_pair_bf_c0
   closest_pair_bf_c1 closest_pair_bf_c0_ne_c1
@@ -682,68 +639,23 @@ fun closest_pair_combine :: "point list \<Rightarrow> (point * point)" where
   )"
 
 lemma closest_pair_combine_c0:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
-  case (4 p\<^sub>0 p\<^sub>1 p\<^sub>2 ps)
-  thus ?case using find_closest_set[of "take 7 (p\<^sub>1 # p\<^sub>2 # ps)" p\<^sub>0]
-    by (auto simp: Let_def split!: if_splits prod.splits)
-qed auto
+  "2 \<le> length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps \<Longrightarrow> c\<^sub>0 \<in> set ps"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
+  apply (auto simp: find_closest_set Let_def split: if_splits prod.splits)
+  done
 
 lemma closest_pair_combine_c1:
-  "1 < length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
-  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
-
-  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  let ?c = "closest_pair_combine ?ps"
-  let ?p\<^sub>1 = "find_closest p\<^sub>0 (take 7 ?ps)"
-
-  show ?case
-  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
-    case True
-    moreover have "snd ?c \<in> set (p\<^sub>0 # ?ps)"
-      using 4 by (auto split: prod.splits)
-    ultimately show ?thesis
-      using "4.IH" "4.prems"(2) by (auto split: prod.splits)
-  next
-    case False
-    have "?p\<^sub>1 \<in> set (p\<^sub>0 # take 7 ?ps)"
-      using find_closest_set[of "take 7 ?ps" p\<^sub>0] "4.prems" by auto
-    hence "?p\<^sub>1 \<in> set (p\<^sub>0 # ?ps)"
-      using set_take_subset by fastforce
-    thus ?thesis
-      using "4.prems"(2) False by (auto split: prod.splits)
-  qed
-qed auto
+  "2 \<le> length ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps \<Longrightarrow> c\<^sub>1 \<in> set ps"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
+  apply (auto simp: find_closest_set Let_def split: if_splits prod.splits)
+  using find_closest_set by (meson in_set_takeD length_greater_0_conv list.discI set_ConsD)
 
 lemma closest_pair_combine_c0_ne_c1:
-  assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair_combine ps"
-  shows "c\<^sub>0 \<noteq> c\<^sub>1"
-  using assms
-proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
-  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
-
-  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
-  let ?c = "closest_pair_combine ?ps"
-  let ?p\<^sub>1 = "find_closest p\<^sub>0 (take 7 ?ps)"
-
-  show ?case
-  proof (cases "dist (fst ?c) (snd ?c) \<le> dist p\<^sub>0 ?p\<^sub>1")
-    case True
-    moreover have "fst ?c \<noteq> snd ?c"
-      using "4.IH" "4.prems" by auto
-    ultimately show ?thesis
-      using "4.prems" by (auto split: prod.splits)
-  next
-    case False
-    have "p\<^sub>0 \<notin> set (take 7 ?ps)"
-      using "4.prems" by (meson distinct.simps(2) in_set_takeD)
-    hence "p\<^sub>0 \<noteq> ?p\<^sub>1"
-      using find_closest_ne[of "take 7 ?ps" p\<^sub>0] "4.prems" by simp
-    thus ?thesis
-      using "4.prems" False by (auto split: prod.splits)
-  qed
-qed auto
+  "2 \<le> length ps \<Longrightarrow> distinct ps \<Longrightarrow> (c\<^sub>0, c\<^sub>1) = closest_pair_combine ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
+  apply (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine.induct)
+  apply (auto simp add: find_closest_ne Let_def split: if_splits prod.splits)
+  apply (metis find_closest_set in_set_takeD length_greater_0_conv list.discI prod.inject set_ConsD)+
+  done
 
 lemmas closest_pair_combine_c0_c1 = closest_pair_combine_c0
   closest_pair_combine_c1 closest_pair_combine_c0_ne_c1
@@ -837,10 +749,12 @@ next
     qed
   next
     case False
-    have "distinct YS" "1 < length YS"
+    have "distinct YS" "2 \<le> length YS"
       using YS_def "4.prems"(1) by simp_all
-    hence C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
-      using C\<^sub>0\<^sub>1_def closest_pair_combine_c0_c1 by metis+
+    moreover have "(C\<^sub>0, C\<^sub>1) = closest_pair_combine YS"
+      by (simp add: C\<^sub>0\<^sub>1_def)
+    ultimately have C01: "C\<^sub>0 \<in> set YS" "C\<^sub>1 \<in> set YS" "C\<^sub>0 \<noteq> C\<^sub>1"
+      using C\<^sub>0\<^sub>1_def closest_pair_combine_c0_c1 by blast+
     have 0: "\<exists>x' \<in> set YS. dist x x' < \<delta>"
       using False YS_def "4.prems"(11) by (auto simp: dist_commute)
     hence "\<forall>x' \<in> set YS. dist x P\<^sub>1 \<le> dist x x'"
@@ -1324,8 +1238,10 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     case True
     hence "(c\<^sub>0, c\<^sub>1) = closest_pair_bf xs"
       using "1.prems"(3) closest_pair_rec.simps by simp
-    thus ?thesis
-      using "1.prems"(1,2) closest_pair_bf_c0_c1 by simp
+    moreover have "2 \<le> length xs"
+      using "1.prems"(1) by simp
+    ultimately show ?thesis
+      using "1.prems"(2) closest_pair_bf_c0_c1 by simp
   next
     case False
 
