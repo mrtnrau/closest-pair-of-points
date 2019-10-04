@@ -4,6 +4,13 @@ begin
 
 section "Closest Pair Of Points Functional Correctness"
 
+
+(*
+  TODO:
+    - optimize dist computations
+    - polish proofs
+*)
+
 type_synonym point = "real * real"
 
 
@@ -323,7 +330,7 @@ fun find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point list 
   "find_closest_\<delta> p \<delta> [] = undefined"
 | "find_closest_\<delta> p \<delta> [c] = c"
 | "find_closest_\<delta> p \<delta> (c\<^sub>0 # cs) = (
-    if \<delta> \<le> snd c\<^sub>0 - snd p then
+    if \<delta> \<le> \<bar>snd c\<^sub>0 - snd p\<bar> then
       c\<^sub>0
     else
       let c\<^sub>1 = find_closest_\<delta> p \<delta> cs in
@@ -496,12 +503,12 @@ fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
     let \<delta> = dist c\<^sub>0 c\<^sub>1 in
-    let ps' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ps in
+    let ps' = filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> \<delta>) ps in
     if length ps' < 2 then
       (c\<^sub>0, c\<^sub>1)
     else
       let (p\<^sub>0, p\<^sub>1) = closest_pair_combine \<delta> ps' in
-      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
+      if dist p\<^sub>0 p\<^sub>1 < \<delta> then
         (p\<^sub>0, p\<^sub>1)
       else
         (c\<^sub>0, c\<^sub>1) 
@@ -514,7 +521,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ps' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ps"
+  let ?ps' = "filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> ?\<delta>) ps"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?\<delta> ?ps'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -548,7 +555,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ps' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ps"
+  let ?ps' = "filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> ?\<delta>) ps"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?\<delta> ?ps'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -582,7 +589,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ps' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ps"
+  let ?ps' = "filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> ?\<delta>) ps"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?\<delta> ?ps'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -614,7 +621,7 @@ qed
 lemma set_band_filter_aux:
   assumes "p\<^sub>0 \<in> ps\<^sub>L" "p\<^sub>1 \<in> ps\<^sub>R" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
-  assumes "ps' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) (ps :: point list)"
+  assumes "ps' = filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> \<delta>) (ps :: point list)"
   shows "p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
 proof (rule ccontr)
   assume "\<not> (p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps')"
@@ -670,7 +677,7 @@ lemma set_band_filter:
   assumes "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
-  assumes "ps' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) (ps :: point list)"
+  assumes "ps' = filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> \<delta>) (ps :: point list)"
   shows "p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
 proof -
   have "p\<^sub>0 \<notin> ps\<^sub>L \<or> p\<^sub>1 \<notin> ps\<^sub>L" "p\<^sub>0 \<notin> ps\<^sub>R \<or> p\<^sub>1 \<notin> ps\<^sub>R"
@@ -701,7 +708,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   define \<delta> where "\<delta> = dist C\<^sub>0 C\<^sub>1"
-  define PS where "PS = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ps"
+  define PS where "PS = filter (\<lambda>p. \<bar>fst p - l\<bar> \<le> \<delta>) ps"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine \<delta> PS"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def \<delta>_def PS_def P\<^sub>0\<^sub>1_def
