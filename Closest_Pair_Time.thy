@@ -413,9 +413,8 @@ subsection "combine"
 fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat" where
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let \<delta> = dist c\<^sub>0 c\<^sub>1 in
-    let ys' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys in
-    t_filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys + 
+    let ys' = filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ys in
+    t_filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ys + 
     t_length ys' + (if length ys' < 2 then
       0
     else
@@ -433,7 +432,7 @@ lemma t_combine:
 proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
-  let ?P = "(\<lambda>p. l - dist C\<^sub>0 C\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist C\<^sub>0 C\<^sub>1)"
+  let ?P = "(\<lambda>p. dist p (l, snd p) \<le> dist C\<^sub>0 C\<^sub>1)"
   let ?ys' = "filter ?P ys"
   let ?t_f = "t_filter ?P ys"
   let ?t_l = "t_length ?ys'"

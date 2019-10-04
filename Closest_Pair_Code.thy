@@ -7,6 +7,24 @@ begin
 
 section "Closest Pair Of Points Without Stackoverflow"
 
+subsection "dist"
+
+definition dist_code :: "point \<Rightarrow> point \<Rightarrow> real" where
+  "dist_code p\<^sub>0 p\<^sub>1 = (fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2"
+
+lemma dist_point:
+  "dist (p\<^sub>0 :: point) p\<^sub>1 = sqrt ((fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2)"
+  by (simp add: dist_prod_def dist_real_def)
+
+lemma lt_dist_conv_lt_sq_dist[code_unfold]:
+  "dist a b < dist c d \<longleftrightarrow> dist_code a b < dist_code c d"
+  using dist_point dist_code_def by simp
+
+lemma le_dist_conv_le_sq_dist[code_unfold]:
+  "dist a b \<le> dist c d \<longleftrightarrow> dist_code a b \<le> dist_code c d"
+  using dist_point dist_code_def by simp
+
+
 subsection "length"
 
 fun length_it' :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
@@ -126,52 +144,6 @@ lemma merge_conv_merge_it':
 lemma merge_conv_merge_it[code_unfold]:
   "merge f xs ys = merge_it f xs ys"
   unfolding merge_it_def using merge_conv_merge_it' rev.simps(1) append_Nil by metis
-
-
-subsection "find_closest"
-
-fun find_closest_it' :: "point \<Rightarrow> point \<Rightarrow> point list \<Rightarrow> point" where
-  "find_closest_it' p c\<^sub>0 [] = c\<^sub>0"
-| "find_closest_it' p c\<^sub>0 (c\<^sub>1 # cs) = (
-    if dist p c\<^sub>0 < dist p c\<^sub>1 then
-      find_closest_it' p c\<^sub>0 cs
-    else 
-      find_closest_it' p c\<^sub>1 cs
-  )"
-
-fun find_closest_it :: "point \<Rightarrow> point list \<Rightarrow> point" where
-  "find_closest_it _ [] = undefined"
-| "find_closest_it p (p\<^sub>0 # ps) = find_closest_it' p p\<^sub>0 ps"
-
-lemma find_closest_drop_snd:
-  "dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>0 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp: Let_def)
-
-lemma find_closest_drop_fst:
-  "\<not> dist p p\<^sub>0 < dist p p\<^sub>1 \<Longrightarrow> find_closest p (p\<^sub>0 # p\<^sub>1 # ps) = find_closest p (p\<^sub>1 # ps)"
-  by (induction p ps arbitrary: p\<^sub>1 rule: find_closest.induct) (auto simp: Let_def)
-
-lemma find_closest_conv_find_closest_it':
-  "find_closest p (c\<^sub>0 # cs) = find_closest_it' p c\<^sub>0 cs"
-proof (induction p c\<^sub>0 cs rule: find_closest_it'.induct)
-  case (2 p c\<^sub>0 c\<^sub>1 cs)
-  then show ?case
-  proof (cases "dist p c\<^sub>0 < dist p c\<^sub>1")
-    case True
-    thus ?thesis
-      using find_closest_drop_snd "2"(1) by simp
-  next
-    case False
-    hence "find_closest_it' p c\<^sub>0 (c\<^sub>1 # cs) = find_closest p (c\<^sub>1 # cs)"
-      using False "2"(2) by simp
-    thus ?thesis
-      using find_closest_drop_fst False by simp
-  qed
-qed simp
-
-lemma find_closest_conv_find_closest_it[code_unfold]:
-  "find_closest p ps = find_closest_it p ps"
-  using find_closest_conv_find_closest_it' by (cases ps) simp_all
 
 
 subsection "closest_pair_combine"
@@ -355,55 +327,6 @@ lemma cases_list012:
 lemma closest_pair_combine_conv_closest_pair_combine_it[code_unfold]:
   "closest_pair_combine ps = closest_pair_combine_it ps"
   using closest_pair_combine_conv_closest_pair_combine_it' by (cases rule: cases_list012) auto
-
-
-subsection "dist"
-
-definition dist_code :: "point \<Rightarrow> point \<Rightarrow> real" where
-  "dist_code p\<^sub>0 p\<^sub>1 = (fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2"
-
-lemma dist_point:
-  "dist (p\<^sub>0 :: point) p\<^sub>1 = sqrt ((fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2)"
-  by (simp add: dist_prod_def dist_real_def)
-
-lemma lt_dist_conv_lt_sq_dist[code_unfold]:
-  "dist a b < dist c d \<longleftrightarrow> dist_code a b < dist_code c d"
-  using dist_point dist_code_def by simp
-
-lemma le_dist_conv_le_sq_dist[code_unfold]:
-  "dist a b \<le> dist c d \<longleftrightarrow> dist_code a b \<le> dist_code c d"
-  using dist_point dist_code_def by simp
-
-lemma dist_transform:
-  "(l - dist (c\<^sub>0 :: point) c\<^sub>1 \<le> fst (p :: point) \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1) \<longleftrightarrow> 
-   dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1"
-proof -
-  have "dist p (l, snd p) = \<bar>fst p - l\<bar>"
-    using dist_point by simp
-  thus ?thesis
-    by linarith
-qed
-
-
-subsection "combine"
-
-fun combine_code :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
-  "combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
-    let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let ys' = filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ys in
-    if length ys' < 2 then
-      (c\<^sub>0, c\<^sub>1)
-    else
-      let (p\<^sub>0, p\<^sub>1) = closest_pair_combine ys' in
-      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
-        (p\<^sub>0, p\<^sub>1)
-      else
-        (c\<^sub>0, c\<^sub>1) 
-  )"
-
-lemma combine_conv_combine_code[code_unfold]:
-  "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys"
-  using dist_transform combine.simps by (auto simp: Let_def split: prod.splits)
 
 
 subsection "Export Code"

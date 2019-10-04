@@ -778,13 +778,12 @@ subsection "Combine"
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let \<delta> = dist c\<^sub>0 c\<^sub>1 in
-    let ys' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys in
+    let ys' = filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ys in
     if length ys' < 2 then
       (c\<^sub>0, c\<^sub>1)
     else
       let (p\<^sub>0, p\<^sub>1) = closest_pair_combine ys' in
-      if dist p\<^sub>0 p\<^sub>1 < \<delta> then
+      if dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1 then
         (p\<^sub>0, p\<^sub>1)
       else
         (c\<^sub>0, c\<^sub>1) 
@@ -797,7 +796,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
+  let ?ys' = "filter (\<lambda>p. dist p (l, snd p) \<le> ?\<delta>) ys"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?ys'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -831,7 +830,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
+  let ?ys' = "filter (\<lambda>p. dist p (l, snd p) \<le> ?\<delta>) ys"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?ys'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -865,7 +864,7 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   let ?\<delta> = "dist C\<^sub>0 C\<^sub>1"
-  let ?ys' = "filter (\<lambda>p. l - ?\<delta> \<le> fst p \<and> fst p \<le> l + ?\<delta>) ys"
+  let ?ys' = "filter (\<lambda>p. dist p (l, snd p) \<le> ?\<delta>) ys"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine ?ys'"
     using prod.collapse by blast
   note defs = C\<^sub>0\<^sub>1_def P\<^sub>0\<^sub>1_def
@@ -990,11 +989,11 @@ proof -
   obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     using prod.collapse by blast
   define \<delta> where "\<delta> = dist C\<^sub>0 C\<^sub>1"
-  define YS where "YS = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ys"
+  define YS where "YS = filter (\<lambda>p. dist p (l, snd p) \<le> \<delta>) ys"
   obtain P\<^sub>0 P\<^sub>1 where P\<^sub>0\<^sub>1_def: "(P\<^sub>0, P\<^sub>1) = closest_pair_combine YS"
     using prod.collapse by blast
-  define YS\<^sub>L where "YS\<^sub>L = { p \<in> ys\<^sub>L. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
-  define YS\<^sub>R where "YS\<^sub>R = { p \<in> ys\<^sub>R. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
+  define YS\<^sub>L where "YS\<^sub>L = { p \<in> ys\<^sub>L. dist p (l, snd p) \<le> \<delta> }"
+  define YS\<^sub>R where "YS\<^sub>R = { p \<in> ys\<^sub>R. dist p (l, snd p) \<le> \<delta> }"
   note defs = C\<^sub>0\<^sub>1_def \<delta>_def YS_def P\<^sub>0\<^sub>1_def YS\<^sub>L_def YS\<^sub>R_def
 
   have \<delta>_ys\<^sub>L: "min_dist \<delta> ys\<^sub>L"
@@ -1002,11 +1001,18 @@ proof -
   have \<delta>_ys\<^sub>R: "min_dist \<delta> ys\<^sub>R"
     using assms(7,8) \<delta>_def C\<^sub>0\<^sub>1_def min_dist_def apply (auto split: if_splits) by force+
 
+  have "\<And>(p::point). dist p (l, snd p) \<le> \<delta> \<longleftrightarrow> l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+    unfolding dist_real_def dist_prod_def by auto
+  hence filter_eq: "YS = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l +  \<delta>) ys"
+                   "YS\<^sub>L = { p \<in> ys\<^sub>L. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
+                   "YS\<^sub>R = { p \<in> ys\<^sub>R. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta> }"
+    using YS_def YS\<^sub>L_def YS\<^sub>R_def by simp_all
+
   show ?thesis
   proof (cases "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ys \<and> p\<^sub>1 \<in> set ys \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>")
     case True
     hence "\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set YS \<and> p\<^sub>1 \<in> set YS \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta>"
-      using set_band_filter \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R assms(6,9,10) YS_def by blast
+      using set_band_filter \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R assms(6,9,10) YS_def filter_eq by blast
     moreover have LYS: "2 \<le> length YS"
       using calculation by (cases YS) (auto simp add: Suc_le_eq)
     moreover have "distinct YS" "sortedY YS"
@@ -1016,7 +1022,7 @@ proof -
     moreover have "set YS = YS\<^sub>L \<union> YS\<^sub>R"
       using assms(6) set_Un_filter defs by auto
     moreover have "\<forall>p \<in> set YS. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
-      using YS_def by simp
+      using YS_def filter_eq by force
     moreover have "min_dist \<delta> YS\<^sub>L"
       using \<delta>_ys\<^sub>L YS\<^sub>L_def min_dist_def by blast
     moreover have "min_dist \<delta> YS\<^sub>R"
@@ -1028,7 +1034,7 @@ proof -
     ultimately have "min_dist (dist P\<^sub>0 P\<^sub>1) (set YS)"
       using closest_pair_combine_dist[of YS \<delta> YS\<^sub>L YS\<^sub>R] by auto
     moreover have "\<forall>p\<^sub>0 \<in> set ys. \<forall>p\<^sub>1 \<in> set ys. p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta> \<longrightarrow> p\<^sub>0 \<in> set YS \<and> p\<^sub>1 \<in> set YS"
-      using set_band_filter assms(6,9,10) \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R YS_def by blast
+      using set_band_filter assms(6,9,10) \<delta>_ys\<^sub>L \<delta>_ys\<^sub>R YS_def filter_eq by blast
     ultimately have *: "min_dist (dist P\<^sub>0 P\<^sub>1) (set ys)"
       using True min_dist_def by smt
     
