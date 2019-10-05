@@ -333,7 +333,7 @@ subsection "Export Code"
 
 declare [[code drop: "(<) :: real \<Rightarrow> real \<Rightarrow> bool" "(\<le>) :: real \<Rightarrow> real \<Rightarrow> bool"]] 
 
-export_code closest_pair in SML
+export_code closest_pair in OCaml
   module_name Verified
 
 end

@@ -30,7 +30,7 @@ sanity:
 	ocamlfind query zarith
 
 benchmark_small: native
-	./main.native 10 true 10000 90000 10000
+	./main.native 100 true 10000 90000 10000
 
 benchmark_large: native
-	./main.native 1 true 100000 900000 100000
+	./main.native 10 true 100000 900000 100000

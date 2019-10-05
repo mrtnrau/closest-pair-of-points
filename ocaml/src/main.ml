@@ -41,15 +41,15 @@ let main () =
   let ns = init from until by in
   let ps = List.map random_points ns in
 
-  (* let mstats = List.map (fun ps -> fun () -> Mutable.closest_pair ps) ps in *)
+  let mstats = List.map (fun ps -> fun () -> Mutable.closest_pair ps) ps in
   let istats = List.map (fun ps -> fun () -> Immutable.closest_pair ps) (List.map Array.to_list ps) in
-  (* let vstats = List.map (fun ps -> fun () -> Verified.closest_pair ps) (List.map Array.to_list ps) in *)
+  let vstats = List.map (fun ps -> fun () -> Verified.closest_pair ps) (List.map Array.to_list ps) in
 
   let oc = if to_file then open_out "out.txt" else stdout in
   print_header ns oc;
-  (* print_stat_row "M" (statistics mstats iteration) oc; *)
+  print_stat_row "M" (statistics mstats iteration) oc;
   print_stat_row "I" (statistics istats iteration) oc;
-  (* print_stat_row "V" (statistics vstats iteration) oc; *)
+  print_stat_row "V" (statistics vstats iteration) oc;
   if to_file then close_out oc
 
 let _ =
