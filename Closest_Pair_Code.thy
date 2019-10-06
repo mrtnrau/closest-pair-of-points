@@ -185,21 +185,21 @@ fun fr :: "point list \<Rightarrow> point * point \<Rightarrow> point * point" w
       (p\<^sub>0, p\<^sub>1)
   )"
 
-fun prefixes :: "'a list \<Rightarrow> 'a list list" where
-  "prefixes [] = [[]]"
-| "prefixes (x#xs) = (x#xs) # prefixes xs"
+fun suffixes :: "'a list \<Rightarrow> 'a list list" where
+  "suffixes [] = [[]]"
+| "suffixes (x#xs) = (x#xs) # suffixes xs"
 
 lemma closest_pair_combine_it'_conv_foldl:
-  "closest_pair_combine_it' (c\<^sub>0, c\<^sub>1) ps = foldl fl (c\<^sub>0, c\<^sub>1) (prefixes ps)"
+  "closest_pair_combine_it' (c\<^sub>0, c\<^sub>1) ps = foldl fl (c\<^sub>0, c\<^sub>1) (suffixes ps)"
   by (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_combine_it'.induct) (auto simp: Let_def)
 
 lemma closest_pair_combine_conv_foldr:
   assumes "n = length ps" "2 \<le> n"
-  shows "closest_pair_combine ps = foldr fr (prefixes ps) (ps!(n-2), ps!(n-1))"
+  shows "closest_pair_combine ps = foldr fr (suffixes ps) (ps!(n-2), ps!(n-1))"
   using assms by (induction ps arbitrary: n rule: closest_pair_combine.induct) (auto simp: Let_def case_prod_unfold)
 
 lemma fl_foldl_conv_fr_foldr:
-  "fl (foldl fl (d\<^sub>0, d\<^sub>1) (prefixes ps)) [c\<^sub>0, c\<^sub>1] = fr [d\<^sub>0, d\<^sub>1] (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+  "fl (foldl fl (d\<^sub>0, d\<^sub>1) (suffixes ps)) [c\<^sub>0, c\<^sub>1] = fr [d\<^sub>0, d\<^sub>1] (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1))"
 proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 d\<^sub>0 d\<^sub>1)
   case (Cons p ps)
   show ?case 
@@ -213,44 +213,44 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 d\<^sub>0 d\<^sub>1)
     show ?thesis
     proof cases
       assume *: "fl (d\<^sub>0, d\<^sub>1) (p # ps) = (d\<^sub>0, d\<^sub>1)"
-      hence "fl (foldl fl (d\<^sub>0, d\<^sub>1) (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
-             fl (foldl fl (d\<^sub>0, d\<^sub>1) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
+      hence "fl (foldl fl (d\<^sub>0, d\<^sub>1) (suffixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+             fl (foldl fl (d\<^sub>0, d\<^sub>1) (suffixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
-      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons.IH by simp
-      also have "... = fr [d\<^sub>0, d\<^sub>1] (fr (p # ps) (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr [d\<^sub>0, d\<^sub>1] (fr (p # ps) (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1)))"
         using * by (cases ps) (auto simp: Let_def)
-      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (suffixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     next 
       assume "\<not> fl (d\<^sub>0, d\<^sub>1) (p # ps) = (d\<^sub>0, d\<^sub>1)"
       hence *: "fl (d\<^sub>0, d\<^sub>1) (p # ps) = (p, find_closest p (take 7 ps))"
         by (cases ps) (auto simp: Let_def)
-      have "fl (foldl fl (d\<^sub>0, d\<^sub>1) (prefixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
-            fl (foldl fl (fl (d\<^sub>0, d\<^sub>1) (p # ps)) (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
+      have "fl (foldl fl (d\<^sub>0, d\<^sub>1) (suffixes (p # ps))) [c\<^sub>0, c\<^sub>1] =
+            fl (foldl fl (fl (d\<^sub>0, d\<^sub>1) (p # ps)) (suffixes ps)) [c\<^sub>0, c\<^sub>1]"
         by simp
-      also have "... = fl (foldl fl (p, ?p') (prefixes ps)) [c\<^sub>0, c\<^sub>1]"
+      also have "... = fl (foldl fl (p, ?p') (suffixes ps)) [c\<^sub>0, c\<^sub>1]"
         using * by (cases ps) (auto simp: Let_def)
-      also have "... = fr [p, ?p'] (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr [p, ?p'] (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1))"
         using Cons by simp
-      also have "... = fr [d\<^sub>0, d\<^sub>1] (fr (p # ps) (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1)))"
+      also have "... = fr [d\<^sub>0, d\<^sub>1] (fr (p # ps) (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1)))"
         using * by (cases ps) (auto simp: Let_def)
-      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (prefixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
+      also have "... = fr [d\<^sub>0, d\<^sub>1] (foldr fr (suffixes (p # ps)) (c\<^sub>0, c\<^sub>1))"
         by simp
       finally show ?thesis .
     qed
   qed
 qed simp
 
-lemma prefixes_decomp_2:
-  "n = length xs \<Longrightarrow> 2 \<le> n \<Longrightarrow> \<exists>ls. prefixes xs = ls @ [xs!(n-2), xs!(n-1)] # [xs!(n-1)] # [[]]"
+lemma suffixes_decomp_2:
+  "n = length xs \<Longrightarrow> 2 \<le> n \<Longrightarrow> \<exists>ls. suffixes xs = ls @ [xs!(n-2), xs!(n-1)] # [xs!(n-1)] # [[]]"
 proof (induction xs arbitrary: n)
   case (Cons x xs)
   show ?case
   proof (cases "n = 2")
     case True
-    hence "prefixes (x#xs) = [[(x#xs)!(n - 2), (x#xs)!(n - 1)], [(x#xs)!(n - 1)], []]"
+    hence "suffixes (x#xs) = [[(x#xs)!(n - 2), (x#xs)!(n - 1)], [(x#xs)!(n - 1)], []]"
       using Cons.prems(1) by (cases xs) auto
     thus ?thesis
       by simp
@@ -258,7 +258,7 @@ proof (induction xs arbitrary: n)
     case False
     hence *: "2 < n"
       using Cons.prems(2) by simp
-    then obtain ls where "prefixes xs = ls @ [[xs!(n - 3), xs!(n - 2)], [xs!(n - 2)], []]"
+    then obtain ls where "suffixes xs = ls @ [[xs!(n - 3), xs!(n - 2)], [xs!(n - 2)], []]"
       using Cons by fastforce
     thus ?thesis using *
       by (simp; simp add: numeral_2_eq_2)
@@ -267,26 +267,26 @@ qed simp
 
 lemma foldl_fl_expand:
   assumes "ps = p\<^sub>0 # ps'" "n = length ps" "2 \<le> n"
-  shows "foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps) = fl (foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps)) [ps!(n-2), ps!(n-1)]"
+  shows "foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps) = fl (foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps)) [ps!(n-2), ps!(n-1)]"
 proof -
   let ?ps = "[ps!(n-2), ps!(n-1)]"
   let ?rs = "?ps # [ps!(n-1)] # [[]]"
-  obtain ls where *: "prefixes ps = ls @ ?rs"
-    using prefixes_decomp_2 assms by blast
-  have "foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps) = fl (foldl fl (p\<^sub>0, p\<^sub>1) ls) ?ps"
+  obtain ls where *: "suffixes ps = ls @ ?rs"
+    using suffixes_decomp_2 assms by blast
+  have "foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps) = fl (foldl fl (p\<^sub>0, p\<^sub>1) ls) ?ps"
     using * by simp
   also have "... = fl (fl (foldl fl (p\<^sub>0, p\<^sub>1) ls) ?ps) ?ps"
     by (cases ps) (auto simp: Let_def)
-  also have "... = fl (foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps)) ?ps"
+  also have "... = fl (foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps)) ?ps"
     using * by auto
   finally show ?thesis .
 qed
 
 lemma foldr_fr_expand:
   assumes "ps = p\<^sub>0 # ps'" "n = length ps" "2 \<le> n" "p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps')"
-  shows "foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1) = fr [p\<^sub>0, p\<^sub>1] (foldr fr (prefixes ps) (c\<^sub>0, c\<^sub>1))"
+  shows "foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1) = fr [p\<^sub>0, p\<^sub>1] (foldr fr (suffixes ps) (c\<^sub>0, c\<^sub>1))"
 proof -
-  define c where *: "c = foldr fr (prefixes ps') (c\<^sub>0, c\<^sub>1)"
+  define c where *: "c = foldr fr (suffixes ps') (c\<^sub>0, c\<^sub>1)"
   show ?thesis
   proof (cases "dist (fst c) (snd c) \<le> dist p\<^sub>0 p\<^sub>1")
     case True
@@ -307,13 +307,13 @@ lemma closest_pair_combine_conv_closest_pair_combine_it':
   assumes "ps = p\<^sub>0 # ps'" "n = length ps" "2 \<le> n" "p\<^sub>1 = find_closest p\<^sub>0 (take 7 ps')"
   shows "closest_pair_combine ps = closest_pair_combine_it' (p\<^sub>0, p\<^sub>1) ps"
 proof -
-  have "closest_pair_combine ps = foldr fr (prefixes ps) (ps!(n-2), ps!(n-1))"
+  have "closest_pair_combine ps = foldr fr (suffixes ps) (ps!(n-2), ps!(n-1))"
     using assms(2,3) closest_pair_combine_conv_foldr by blast
-  also have "... = fr [p\<^sub>0, p\<^sub>1] (foldr fr (prefixes ps) (ps!(n-2), ps!(n-1)))"
+  also have "... = fr [p\<^sub>0, p\<^sub>1] (foldr fr (suffixes ps) (ps!(n-2), ps!(n-1)))"
     using assms foldr_fr_expand by blast
-  also have "... = fl (foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps)) [ps!(n-2), ps!(n-1)]"
+  also have "... = fl (foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps)) [ps!(n-2), ps!(n-1)]"
     using fl_foldl_conv_fr_foldr by presburger
-  also have "... = foldl fl (p\<^sub>0, p\<^sub>1) (prefixes ps)"
+  also have "... = foldl fl (p\<^sub>0, p\<^sub>1) (suffixes ps)"
     using assms foldl_fl_expand by presburger
   also have "... = closest_pair_combine_it' (p\<^sub>0, p\<^sub>1) ps"
     using closest_pair_combine_it'_conv_foldl by simp
