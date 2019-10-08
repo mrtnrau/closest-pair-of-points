@@ -1,7 +1,7 @@
 theory Closest_Pair_Code
   imports
     Closest_Pair
-    "HOL-Library.Code_Target_Numeral"
+    "HOL-Library.Code_Target_Nat"
     "HOL-Library.Code_Real_Approx_By_Float"
 begin
 
