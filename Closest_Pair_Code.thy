@@ -96,4 +96,129 @@ lemma combine_eq_combine_code:
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = combine_code (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
   by (auto simp: Let_def closest_pair_combine_eq_closest_pair_combine_code dist_eq_dist_code_lt dist_eq_dist_code_abs_1)
 
+
+(* *)
+
+
+fun fc :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (real * point)" where
+  "fc p \<delta> [] = undefined"
+| "fc p \<delta> [c] = (dist p c, c)"
+| "fc p \<delta> (c\<^sub>0 # cs) = (
+    let \<delta>\<^sub>0 = dist p c\<^sub>0 in
+    if \<delta> \<le> \<bar>snd c\<^sub>0 - snd p\<bar> then
+      (\<delta>\<^sub>0, c\<^sub>0)
+    else
+      let (\<delta>\<^sub>1, c\<^sub>1) = fc p (min \<delta> \<delta>\<^sub>0) cs in
+      if \<delta>\<^sub>0 \<le> \<delta>\<^sub>1 then
+        (\<delta>\<^sub>0, c\<^sub>0)
+      else
+        (\<delta>\<^sub>1, c\<^sub>1)
+  )"
+
+fun fcc :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> (real * point)" where
+  "fcc p \<delta> [] = undefined"
+| "fcc p \<delta> [c] = (dist_code p c, c)"
+| "fcc p \<delta> (c\<^sub>0 # cs) = (
+    let \<delta>\<^sub>0 = dist_code p c\<^sub>0 in
+    if \<delta> \<le> (snd c\<^sub>0 - snd p)\<^sup>2 then
+      (\<delta>\<^sub>0, c\<^sub>0)
+    else
+      let (\<delta>\<^sub>1, c\<^sub>1) = fcc p (min \<delta> \<delta>\<^sub>0) cs in
+      if \<delta>\<^sub>0 \<le> \<delta>\<^sub>1 then
+        (\<delta>\<^sub>0, c\<^sub>0)
+      else
+        (\<delta>\<^sub>1, c\<^sub>1)
+  )"
+
+lemma A1:
+  "0 < length cs \<Longrightarrow> (\<delta>\<^sub>c, c) = fc p \<delta> cs \<Longrightarrow> \<delta>\<^sub>c = dist p c"
+proof (induction p \<delta> cs arbitrary: \<delta>\<^sub>c c rule: fc.induct)
+  case (3 p \<delta> c\<^sub>0 c\<^sub>2 cs)
+  show ?case
+  proof cases
+    assume "\<delta> \<le> \<bar>snd c\<^sub>0 - snd p\<bar>"
+    thus ?thesis
+      using "3.prems" by simp
+  next
+    assume *: "\<not> \<delta> \<le> \<bar>snd c\<^sub>0 - snd p\<bar>"
+    define \<delta>\<^sub>0 where \<delta>\<^sub>0_def: "\<delta>\<^sub>0 = dist p c\<^sub>0"
+    obtain \<delta>\<^sub>1 c\<^sub>1 where \<delta>\<^sub>1_def: "(\<delta>\<^sub>1, c\<^sub>1) = fc p (min \<delta> \<delta>\<^sub>0) (c\<^sub>2 # cs)"
+      by (metis surj_pair)
+    note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
+    have "\<delta>\<^sub>1 = dist p c\<^sub>1"
+      using "3.IH"[of \<delta>\<^sub>0 \<delta>\<^sub>1 c\<^sub>1] * defs by simp
+    thus ?thesis
+      using defs "3.prems" by (auto simp: Let_def split: if_splits prod.splits)
+  qed
+qed simp_all
+
+lemma A2:
+  "0 < length cs \<Longrightarrow> (\<delta>\<^sub>c, c) = fcc p \<delta> cs \<Longrightarrow> \<delta>\<^sub>c = dist_code p c"
+proof (induction p \<delta> cs arbitrary: \<delta>\<^sub>c c rule: fcc.induct)
+  case (3 p \<delta> c\<^sub>0 c\<^sub>2 cs)
+  show ?case
+  proof cases
+    assume "\<delta> \<le> (snd c\<^sub>0 - snd p)\<^sup>2"
+    thus ?thesis
+      using "3.prems" by simp
+  next
+    assume *: "\<not> \<delta> \<le> (snd c\<^sub>0 - snd p)\<^sup>2"
+    define \<delta>\<^sub>0 where \<delta>\<^sub>0_def: "\<delta>\<^sub>0 = dist_code p c\<^sub>0"
+    obtain \<delta>\<^sub>1 c\<^sub>1 where \<delta>\<^sub>1_def: "(\<delta>\<^sub>1, c\<^sub>1) = fcc p (min \<delta> \<delta>\<^sub>0) (c\<^sub>2 # cs)"
+      by (metis surj_pair)
+    note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
+    have "\<delta>\<^sub>1 = dist_code p c\<^sub>1"
+      using "3.IH"[of \<delta>\<^sub>0 \<delta>\<^sub>1 c\<^sub>1] * defs by simp
+    thus ?thesis
+      using defs "3.prems" by (auto simp: Let_def split: if_splits prod.splits)
+  qed
+qed simp_all
+
+lemma
+  assumes "0 < length cs" "\<delta> = dist p\<^sub>0 p\<^sub>1" "\<delta>' = dist_code p\<^sub>0 p\<^sub>1"
+  assumes "(\<delta>\<^sub>l, c\<^sub>l) = fc p \<delta> cs" "(\<delta>\<^sub>r, c\<^sub>r) = fcc p \<delta>' cs"
+  shows "c\<^sub>l = c\<^sub>r"
+  using assms
+proof (induction p \<delta> cs arbitrary: \<delta>' p\<^sub>0 p\<^sub>1 \<delta>\<^sub>l c\<^sub>l \<delta>\<^sub>r c\<^sub>r rule: fc.induct)
+  case (3 p \<delta> c\<^sub>0 c\<^sub>2 cs)
+
+  define \<delta>\<^sub>0 where a: "\<delta>\<^sub>0 = dist p c\<^sub>0"
+  define \<delta>\<^sub>0' where b: "\<delta>\<^sub>0' = dist_code p c\<^sub>0"
+  obtain \<delta>\<^sub>1 c\<^sub>1 where c: "(\<delta>\<^sub>1, c\<^sub>1) = fc p (min \<delta> \<delta>\<^sub>0) (c\<^sub>2 # cs)"
+    by (metis surj_pair)
+  hence B1: "\<delta>\<^sub>1 = dist p c\<^sub>1"
+    using A1 by blast
+  obtain \<delta>\<^sub>1' c\<^sub>1' where d: "(\<delta>\<^sub>1', c\<^sub>1') = fcc p (min \<delta>' \<delta>\<^sub>0') (c\<^sub>2 # cs)"
+    by (metis surj_pair)
+  hence B2: "\<delta>\<^sub>1' = dist_code p c\<^sub>1'"
+    using A2 by blast
+  note defs = a b c d
+  
+  show ?case
+  proof (cases "\<delta> \<le> \<bar>snd c\<^sub>0 - snd p\<bar>")
+    case True
+    then show ?thesis using "3.prems"
+      by (auto simp: Let_def dist_eq_dist_code_abs_2 split: if_splits prod.splits)
+  next
+    case False
+    hence *: "c\<^sub>1 = c\<^sub>1'"
+      using "3.IH"[of \<delta>\<^sub>0 _ _ "min \<delta>' \<delta>\<^sub>0'" \<delta>\<^sub>1 c\<^sub>1 \<delta>\<^sub>1' c\<^sub>1'] defs
+      by (smt "3.prems"(2) "3.prems"(3) dist_eq_dist_code_le length_greater_0_conv list.discI)
+    show ?thesis
+    proof cases
+      assume "\<delta>\<^sub>0 \<le> \<delta>\<^sub>1"
+      moreover have "\<delta>\<^sub>0' \<le> \<delta>\<^sub>1'"
+        using calculation by (simp add: * B1 B2 defs dist_eq_dist_code_le)
+      ultimately show ?thesis
+        using "3.prems" * False defs by (auto simp: Let_def split: if_splits prod.splits)
+    next
+      assume "\<not> \<delta>\<^sub>0 \<le> \<delta>\<^sub>1"
+      moreover have "\<not> \<delta>\<^sub>0' \<le> \<delta>\<^sub>1'"
+        using calculation by (simp add: * B1 B2 defs dist_eq_dist_code_le)
+      ultimately show ?thesis 
+        using "3.prems" * False defs by (auto simp: Let_def dist_eq_dist_code_abs_2 split: if_splits prod.splits)
+    qed
+  qed
+qed auto
+
 end
