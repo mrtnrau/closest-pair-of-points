@@ -4,7 +4,6 @@ begin
 
 section "Closest Pair Of Points Functional Correctness"
 
-
 type_synonym point = "real * real"
 
 
@@ -272,27 +271,60 @@ lemma closest_pair_bf_c0:
 
 lemma closest_pair_bf_c1:
   "1 < length ps \<Longrightarrow> (\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>1 \<in> set ps" 
-  using find_closest_set
-  apply (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  apply (auto simp: Let_def split: if_splits prod.splits)
-  using find_closest_set apply (metis Pair_inject neq_Nil_conv set_ConsD)+
-  done
+proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  obtain \<delta>\<^sub>c c\<^sub>0 c\<^sub>1 where \<delta>\<^sub>c_def: "(\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1) = closest_pair_bf ?ps"
+    by (metis prod_cases3)
+  obtain \<delta>\<^sub>p p\<^sub>1 where \<delta>\<^sub>p_def: "(\<delta>\<^sub>p, p\<^sub>1) = find_closest p\<^sub>0 ?ps"
+    using prod.collapse by blast
+  note defs = \<delta>\<^sub>c_def \<delta>\<^sub>p_def
+  have "c\<^sub>1 \<in> set ?ps"
+    using "4.IH" defs by simp
+  moreover have "p\<^sub>1 \<in> set ?ps"
+    using find_closest_set defs by blast
+  ultimately show ?case
+    using "4.prems"(2) defs by (auto split: prod.splits if_splits)
+qed auto
+
 
 lemma closest_pair_bf_c0_ne_c1:
   "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> c\<^sub>0 \<noteq> c\<^sub>1"
-  apply (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  apply (auto simp: Let_def split: if_splits prod.splits)
-  apply (metis find_closest_set length_greater_0_conv list.discI prod.inject set_ConsD)+
-  done
+proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  obtain \<delta>\<^sub>c c\<^sub>0 c\<^sub>1 where \<delta>\<^sub>c_def: "(\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1) = closest_pair_bf ?ps"
+    by (metis prod_cases3)
+  obtain \<delta>\<^sub>p p\<^sub>1 where \<delta>\<^sub>p_def: "(\<delta>\<^sub>p, p\<^sub>1) = find_closest p\<^sub>0 ?ps"
+    using prod.collapse by blast
+  note defs = \<delta>\<^sub>c_def \<delta>\<^sub>p_def
+  have "c\<^sub>0 \<noteq> c\<^sub>1"
+    using "4.IH" "4.prems"(2) defs by simp
+  moreover have "p\<^sub>0 \<noteq> p\<^sub>1"
+    using find_closest_set "4.prems"(2) defs by (meson distinct.simps(2) length_greater_0_conv list.discI)
+  ultimately show ?case
+    using "4.prems"(3) defs by (auto split: prod.splits if_splits)
+qed auto
 
 lemmas closest_pair_bf_c0_c1 = closest_pair_bf_c0 closest_pair_bf_c1 closest_pair_bf_c0_ne_c1
 
 lemma closest_pair_bf_dist_eq:
-  "1 < length ps \<Longrightarrow> distinct ps \<Longrightarrow> (\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> \<delta> = dist c\<^sub>0 c\<^sub>1"
-  apply (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
-  apply (auto simp: Let_def split: if_splits prod.splits)
-  apply (metis find_closest_dist_eq length_greater_0_conv list.discI)+
-  done
+  "1 < length ps \<Longrightarrow> (\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps \<Longrightarrow> \<delta> = dist c\<^sub>0 c\<^sub>1"
+proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
+  case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
+  let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
+  obtain \<delta>\<^sub>c c\<^sub>0 c\<^sub>1 where \<delta>\<^sub>c_def: "(\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1) = closest_pair_bf ?ps"
+    by (metis prod_cases3)
+  obtain \<delta>\<^sub>p p\<^sub>1 where \<delta>\<^sub>p_def: "(\<delta>\<^sub>p, p\<^sub>1) = find_closest p\<^sub>0 ?ps"
+    using prod.collapse by blast
+  note defs = \<delta>\<^sub>c_def \<delta>\<^sub>p_def
+  have "\<delta>\<^sub>c = dist c\<^sub>0 c\<^sub>1"
+    using "4.IH" defs by simp
+  moreover have "\<delta>\<^sub>p = dist p\<^sub>0 p\<^sub>1"
+    using find_closest_dist_eq defs by blast
+  ultimately show ?case
+    using "4.prems"(2) defs by (auto split: prod.splits if_splits)
+qed auto
 
 lemma closest_pair_bf_dist:
   assumes "1 < length ps" "(\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps"
@@ -1034,9 +1066,9 @@ proof (induction xs arbitrary: ys p rule: length_induct)
   qed
 qed
 
-lemma closest_pair_rec_c0_c1_dist_eq:
+lemma closest_pair_rec_c0_c1:
   assumes "1 < length xs" "distinct xs" "(ys, \<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
-  shows "c\<^sub>0 \<in> set xs \<and> c\<^sub>1 \<in> set xs \<and> c\<^sub>0 \<noteq> c\<^sub>1 \<and> \<delta> = dist c\<^sub>0 c\<^sub>1"
+  shows "c\<^sub>0 \<in> set xs \<and> c\<^sub>1 \<in> set xs \<and> c\<^sub>0 \<noteq> c\<^sub>1"
   using assms
 proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_induct)
   case (1 xs)
@@ -1047,7 +1079,7 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
     hence "(\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf xs"
       using "1.prems"(3) closest_pair_rec.simps by simp
     thus ?thesis
-      using "1.prems"(1,2) closest_pair_bf_c0_c1 closest_pair_bf_dist_eq by simp
+      using "1.prems"(1,2) closest_pair_bf_c0_c1 by simp
   next
     case False
 
@@ -1067,14 +1099,14 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
 
     have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs" "distinct XS\<^sub>L"
       using False "1.prems"(2) defs by (auto simp: split_at_take_drop_conv)
-    hence "C\<^sub>0\<^sub>L \<in> set XS\<^sub>L" "C\<^sub>1\<^sub>L \<in> set XS\<^sub>L" and IHL1: "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L" "\<Delta>\<^sub>L = dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L"
+    hence "C\<^sub>0\<^sub>L \<in> set XS\<^sub>L" "C\<^sub>1\<^sub>L \<in> set XS\<^sub>L" and IHL1: "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
       using "1.IH" defs by metis+
     hence IHL2: "C\<^sub>0\<^sub>L \<in> set xs" "C\<^sub>1\<^sub>L \<in> set xs"
       using split_at_take_drop_conv in_set_takeD fst_conv defs by metis+
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs" "distinct XS\<^sub>R"
       using False "1.prems"(2) defs by (auto simp: split_at_take_drop_conv)
-    hence "C\<^sub>0\<^sub>R \<in> set XS\<^sub>R" "C\<^sub>1\<^sub>R \<in> set XS\<^sub>R" and IHR1: "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R" "\<Delta>\<^sub>R = dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R"
+    hence "C\<^sub>0\<^sub>R \<in> set XS\<^sub>R" "C\<^sub>1\<^sub>R \<in> set XS\<^sub>R" and IHR1: "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
       using "1.IH" defs by metis+
     hence IHR2: "C\<^sub>0\<^sub>R \<in> set xs" "C\<^sub>1\<^sub>R \<in> set xs"
       using split_at_take_drop_conv in_set_dropD snd_conv defs by metis+
@@ -1088,10 +1120,58 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
       using combine_set IHL2 IHR2 YS defs by blast+
     moreover have "C\<^sub>0 \<noteq> C\<^sub>1"
       using combine_c0_ne_c1 IHL1(1) IHR1(1) YS defs by blast
-    moreover have "\<Delta> = dist C\<^sub>0 C\<^sub>1"
-      using combine_dist_eq IHL1(2) IHR1(2) C\<^sub>0\<^sub>1_def by blast
     ultimately show ?thesis
       using "1.prems"(3) * by (metis Pair_inject)
+  qed
+qed
+
+lemma closest_pair_rec_dist_eq:
+  assumes "1 < length xs" "(ys, \<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
+  shows "\<delta> = dist c\<^sub>0 c\<^sub>1"
+  using assms
+proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_induct)
+  case (1 xs)
+  let ?n = "length xs"
+  show ?case
+  proof (cases "?n \<le> 3")
+    case True
+    hence "(\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf xs"
+      using "1.prems"(2) closest_pair_rec.simps by simp
+    thus ?thesis
+      using "1.prems"(1) closest_pair_bf_dist_eq by simp
+  next
+    case False
+
+    obtain XS\<^sub>L XS\<^sub>R where XS\<^sub>L\<^sub>R_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) xs"
+      using prod.collapse by blast
+    define L where "L = fst (hd XS\<^sub>R)"
+
+    obtain YS\<^sub>L \<Delta>\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where YSC\<^sub>0\<^sub>1\<^sub>L_def: "(YS\<^sub>L, \<Delta>\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
+      using prod.collapse by metis
+    obtain YS\<^sub>R \<Delta>\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where YSC\<^sub>0\<^sub>1\<^sub>R_def: "(YS\<^sub>R, \<Delta>\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
+      using prod.collapse by metis
+
+    define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
+    obtain \<Delta> C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(\<Delta>, C\<^sub>0, C\<^sub>1) = combine (\<Delta>\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (\<Delta>\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+      using prod.collapse by metis
+    note defs = XS\<^sub>L\<^sub>R_def L_def YSC\<^sub>0\<^sub>1\<^sub>L_def YSC\<^sub>0\<^sub>1\<^sub>R_def YS_def C\<^sub>0\<^sub>1_def
+
+    have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs"
+      using False "1.prems"(1) defs by (auto simp: split_at_take_drop_conv)
+    hence IHL: "\<Delta>\<^sub>L = dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L"
+      using "1.IH" defs by metis+
+
+    have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs"
+      using False "1.prems"(1) defs by (auto simp: split_at_take_drop_conv)
+    hence IHR: "\<Delta>\<^sub>R = dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R"
+      using "1.IH" defs by metis+
+
+    have *: "(YS, \<Delta>, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
+      using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
+    moreover have "\<Delta> = dist C\<^sub>0 C\<^sub>1"
+      using combine_dist_eq IHL IHR C\<^sub>0\<^sub>1_def by blast
+    ultimately show ?thesis
+      using "1.prems"(2) * by (metis Pair_inject)
   qed
 qed
 
@@ -1137,7 +1217,8 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
                        "set XS\<^sub>L = set YS\<^sub>L"
                        "C\<^sub>0\<^sub>L \<noteq> C\<^sub>1\<^sub>L"
                        "\<Delta>\<^sub>L = dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1_dist_eq YSC\<^sub>0\<^sub>1\<^sub>L_def by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1
+              closest_pair_rec_dist_eq YSC\<^sub>0\<^sub>1\<^sub>L_def by blast+
     hence IHL: "min_dist \<Delta>\<^sub>L (set YS\<^sub>L)"
       by argo
 
@@ -1149,7 +1230,8 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
                        "set XS\<^sub>R = set YS\<^sub>R"
                        "C\<^sub>0\<^sub>R \<noteq> C\<^sub>1\<^sub>R"
                        "\<Delta>\<^sub>R = dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1_dist_eq YSC\<^sub>0\<^sub>1\<^sub>R_def by blast+
+      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1
+              closest_pair_rec_dist_eq YSC\<^sub>0\<^sub>1\<^sub>R_def by blast+
     hence IHR: "min_dist \<Delta>\<^sub>R (set YS\<^sub>R)"
       by argo
 
@@ -1175,22 +1257,30 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 rule: length_indu
   qed
 qed
 
-definition closest_pair :: "point list \<Rightarrow> (point * point)" where
-  "closest_pair ps = (let (_, _, c\<^sub>0, c\<^sub>1) = closest_pair_rec (sortX ps) in (c\<^sub>0, c\<^sub>1))"
+fun closest_pair :: "point list \<Rightarrow> (point * point)" where
+  "closest_pair [] = undefined"
+| "closest_pair [_] = undefined"
+| "closest_pair ps = (let (_, _, c\<^sub>0, c\<^sub>1) = closest_pair_rec (sortX ps) in (c\<^sub>0, c\<^sub>1))"
+
+lemma closest_pair_simps:
+  "1 < length ps \<Longrightarrow> closest_pair ps = (let (_, _, c\<^sub>0, c\<^sub>1) = closest_pair_rec (sortX ps) in (c\<^sub>0, c\<^sub>1))"
+  by (induction ps rule: induct_list012) auto
+
+declare closest_pair.simps [simp del]
 
 theorem closest_pair_c0_c1:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "c\<^sub>0 \<in> set ps" "c\<^sub>1 \<in> set ps" "c\<^sub>0 \<noteq> c\<^sub>1"
-  using assms sortX closest_pair_rec_c0_c1_dist_eq[of "sortX ps"]
-  unfolding closest_pair_def
+  using assms sortX closest_pair_simps closest_pair_rec_c0_c1[of "sortX ps"]
   by (auto split: prod.splits)
 
 theorem closest_pair_dist:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
-  using assms sortX closest_pair_rec_dist[of "sortX ps"]
-  using closest_pair_rec_c0_c1_dist_eq[of "sortX ps"]
-  unfolding closest_pair_def
+  using assms closest_pair_simps
+  using sortX closest_pair_rec_dist[of "sortX ps"]
+  using closest_pair_rec_c0_c1[of "sortX ps"]
+  using closest_pair_rec_dist_eq[of "sortX ps"]
   by (auto split: prod.splits)
 
 end
