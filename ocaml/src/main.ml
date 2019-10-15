@@ -43,7 +43,7 @@ let main () =
 
   let mstats = List.map (fun ps -> fun () -> Mutable.closest_pair ps) ps in
   let istats = List.map (fun ps -> fun () -> Immutable.closest_pair ps) (List.map Array.to_list ps) in
-  let vstats = List.map (fun ps -> fun () -> Verified.closest_pair ps) (List.map Array.to_list ps) in
+  let vstats = List.map (fun ps -> fun () -> Verified.closest_pair_code ps) (List.map Array.to_list ps) in
 
   let oc = if to_file then open_out "out.txt" else stdout in
   print_header ns oc;

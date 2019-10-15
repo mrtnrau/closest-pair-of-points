@@ -38,31 +38,11 @@ type nat = Nat of Z.t;;
 
 type num = One | Bit0 of num | Bit1 of num;;
 
-let rec integer_of_nat (Nat x) = x;;
-
-let rec max _A a b = (if less_eq _A a b then b else a);;
-
-let rec minus_nat
-  m n = Nat (max ord_integer Z.zero
-              (Z.sub (integer_of_nat m) (integer_of_nat n)));;
-
-let rec equal_nat m n = Z.equal (integer_of_nat m) (integer_of_nat n);;
-
-let zero_nat : nat = Nat Z.zero;;
-
-let one_nat : nat = Nat (Z.of_int 1);;
-
-let rec take
-  n x1 = match n, x1 with n, [] -> []
-    | n, x :: xs ->
-        (if equal_nat n zero_nat then []
-          else x :: take (minus_nat n one_nat) xs);;
-
 let rec hd (x21 :: x22) = x21;;
 
 let rec apsnd f (x, y) = (x, f y);;
 
-let divmod_integer
+let rec divmod_integer
   k l = (if Z.equal k Z.zero then (Z.zero, Z.zero)
           else (if Z.lt Z.zero l
                  then (if Z.lt Z.zero k
@@ -96,42 +76,55 @@ let rec fst (x1, x2) = x1;;
 
 let rec divide_integer k l = fst (divmod_integer k l);;
 
+let rec integer_of_nat (Nat x) = x;;
+
 let rec divide_nat
   m n = Nat (divide_integer (integer_of_nat m) (integer_of_nat n));;
 
-let rec rev_it_rec acc x1 = match acc, x1 with acc, [] -> acc
-                     | acc, x :: xs -> rev_it_rec (x :: acc) xs;;
+let rec max _A a b = (if less_eq _A a b then b else a);;
 
-let rec rev_it xs = rev_it_rec [] xs;;
+let rec minus_nat
+  m n = Nat (max ord_integer Z.zero
+              (Z.sub (integer_of_nat m) (integer_of_nat n)));;
 
-let rec split_at_it_rec
+let rec equal_nat m n = Z.equal (integer_of_nat m) (integer_of_nat n);;
+
+let zero_nat : nat = Nat Z.zero;;
+
+let one_nat : nat = Nat (Z.of_int 1);;
+
+let rec rev_ita acc x1 = match acc, x1 with acc, [] -> acc
+                  | acc, x :: xs -> rev_ita (x :: acc) xs;;
+
+let rec rev_it xs = rev_ita [] xs;;
+
+let rec split_at_ita
   acc n x2 = match acc, n, x2 with acc, n, [] -> (rev_it acc, [])
     | acc, n, x :: xs ->
         (if equal_nat n zero_nat then (rev_it acc, x :: xs)
-          else split_at_it_rec (x :: acc) (minus_nat n one_nat) xs);;
+          else split_at_ita (x :: acc) (minus_nat n one_nat) xs);;
 
-let rec split_at_it n xs = split_at_it_rec [] n xs;;
+let rec split_at_it n xs = split_at_ita [] n xs;;
 
 let rec nat_of_integer k = Nat (max ord_integer Z.zero k);;
 
 let rec plus_nat m n = Nat (Z.add (integer_of_nat m) (integer_of_nat n));;
 
-let rec length_it_rec
-  acc x1 = match acc, x1 with acc, [] -> acc
-    | acc, x :: xs -> length_it_rec (plus_nat acc one_nat) xs;;
+let rec length_ita acc x1 = match acc, x1 with acc, [] -> acc
+                     | acc, x :: xs -> length_ita (plus_nat acc one_nat) xs;;
 
-let rec length_it xs = length_it_rec zero_nat xs;;
+let rec length_it xs = length_ita zero_nat xs;;
 
-let rec merge_it_rec _B
+let rec merge_ita _B
   f acc x2 x3 = match f, acc, x2, x3 with f, acc, [], [] -> rev_it acc
-    | f, acc, x :: xs, [] -> merge_it_rec _B f (x :: acc) xs []
-    | f, acc, [], y :: ys -> merge_it_rec _B f (y :: acc) ys []
+    | f, acc, x :: xs, [] -> merge_ita _B f (x :: acc) xs []
+    | f, acc, [], y :: ys -> merge_ita _B f (y :: acc) ys []
     | f, acc, x :: xs, y :: ys ->
         (if less_eq _B.order_linorder.preorder_order.ord_preorder (f x) (f y)
-          then merge_it_rec _B f (x :: acc) xs (y :: ys)
-          else merge_it_rec _B f (y :: acc) (x :: xs) ys);;
+          then merge_ita _B f (x :: acc) xs (y :: ys)
+          else merge_ita _B f (y :: acc) (x :: xs) ys);;
 
-let rec merge_it _B f xs ys = merge_it_rec _B f [] xs ys;;
+let rec merge_it _B f xs ys = merge_ita _B f [] xs ys;;
 
 let rec msort _B
   f x1 = match f, x1 with f, [] -> []
@@ -148,6 +141,8 @@ let rec snd (x1, x2) = x2;;
 
 let rec sortY ps = msort linorder_real snd ps;;
 
+let rec min _A a b = (if less_eq _A a b then a else b);;
+
 let rec power _A
   a n = (if equal_nat n zero_nat then one _A.one_power
           else times _A.times_power a (power _A a (minus_nat n one_nat)));;
@@ -160,77 +155,95 @@ let rec dist_code
       (power power_real (Pervasives.( -. ) (snd p_0) (snd p_1))
         (nat_of_integer (Z.of_int 2)));;
 
-let rec find_closest_it_rec
-  p c_0 x2 = match p, c_0, x2 with p, c_0, [] -> c_0
-    | p, c_0, c_1 :: cs ->
-        (if Pervasives.(<) (dist_code p c_0) (dist_code p c_1)
-          then find_closest_it_rec p c_0 cs else find_closest_it_rec p c_1 cs);;
-
-let rec find_closest_it
-  uu x1 = match uu, x1 with uu, [] -> failwith "undefined"
-    | p, p_0 :: ps -> find_closest_it_rec p p_0 ps;;
-
-let rec gen_closest_pair_it_rec
-  f x1 x2 = match f, x1, x2 with f, (c_0, c_1), [] -> (c_0, c_1)
-    | f, (c_0, c_1), [p_0] -> (c_0, c_1)
-    | f, (c_0, c_1), p_0 :: v :: va ->
-        (let p_1 = find_closest_it p_0 (f (v :: va)) in
-          (if Pervasives.(<) (dist_code c_0 c_1) (dist_code p_0 p_1)
-            then gen_closest_pair_it_rec f (c_0, c_1) (v :: va)
-            else gen_closest_pair_it_rec f (p_0, p_1) (v :: va)));;
-
-let rec gen_closest_pair_it
-  f x1 = match f, x1 with
-    f, p_0 :: p_1 :: ps ->
-      gen_closest_pair_it_rec f (p_0, find_closest_it p_0 (f (p_1 :: ps)))
-        (p_1 :: ps)
-    | uu, [] -> failwith "undefined"
-    | uu, [v] -> failwith "undefined";;
-
-let rec bf_closest_pair_it ps = gen_closest_pair_it (fun psa -> psa) ps;;
-
-let rec closest_pair_7_it
-  ps = gen_closest_pair_it (take (nat_of_integer (Z.of_int 7))) ps;;
-
-let rec filter_it_rec
+let rec filter_ita
   acc p x2 = match acc, p, x2 with acc, p, [] -> rev_it acc
     | acc, p, x :: xs ->
-        (if p x then filter_it_rec (x :: acc) p xs
-          else filter_it_rec acc p xs);;
+        (if p x then filter_ita (x :: acc) p xs else filter_ita acc p xs);;
 
-let rec filter_it p xs = filter_it_rec [] p xs;;
-
-let rec less_nat m n = Z.lt (integer_of_nat m) (integer_of_nat n);;
-
-let rec combine_code
-  (p_0_L, p_1_L) (p_0_R, p_1_R) l ys =
-    (let (c_0, c_1) =
-       (if Pervasives.(<) (dist_code p_0_L p_1_L) (dist_code p_0_R p_1_R)
-         then (p_0_L, p_1_L) else (p_0_R, p_1_R))
-       in
-     let ysa =
-       filter_it
-         (fun p -> Pervasives.(<=) (dist_code p (l, snd p)) (dist_code c_0 c_1))
-         ys
-       in
-      (if less_nat (length_it ysa) (nat_of_integer (Z.of_int 2)) then (c_0, c_1)
-        else (let (p_0, p_1) = closest_pair_7_it ysa in
-               (if Pervasives.(<) (dist_code p_0 p_1) (dist_code c_0 c_1)
-                 then (p_0, p_1) else (c_0, c_1)))));;
+let rec filter_it p xs = filter_ita [] p xs;;
 
 let rec less_eq_nat m n = Z.leq (integer_of_nat m) (integer_of_nat n);;
 
-let rec closest_pair_rec
+let rec find_closest_delta_code
+  p delta x2 = match p, delta, x2 with p, delta, [] -> failwith "undefined"
+    | p, delta, [c] -> (dist_code p c, c)
+    | p, delta, c_0 :: v :: va ->
+        (let delta_0 = dist_code p c_0 in
+          (if Pervasives.(<=) delta
+                (power power_real (Pervasives.( -. ) (snd c_0) (snd p))
+                  (nat_of_integer (Z.of_int 2)))
+            then (delta_0, c_0)
+            else (let (delta_1, c_1) =
+                    find_closest_delta_code p (min ord_real delta delta_0)
+                      (v :: va)
+                    in
+                   (if Pervasives.(<=) delta_0 delta_1 then (delta_0, c_0)
+                     else (delta_1, c_1)))));;
+
+let rec closest_pair_combine_code
+  x0 x1 = match x0, x1 with (delta, (c_0, c_1)), [] -> (delta, (c_0, c_1))
+    | (delta, (c_0, c_1)), [p] -> (delta, (c_0, c_1))
+    | (delta, (c_0, c_1)), p_0 :: v :: va ->
+        (let (deltaa, p_1) = find_closest_delta_code p_0 delta (v :: va) in
+          (if Pervasives.(<=) delta deltaa
+            then closest_pair_combine_code (delta, (c_0, c_1)) (v :: va)
+            else closest_pair_combine_code (deltaa, (p_0, p_1)) (v :: va)));;
+
+let rec combine_code
+  (delta_L, (p_0_L, p_1_L)) (delta_R, (p_0_R, p_1_R)) l ps =
+    (let (delta, (c_0, c_1)) =
+       (if Pervasives.(<) delta_L delta_R then (delta_L, (p_0_L, p_1_L))
+         else (delta_R, (p_0_R, p_1_R)))
+       in
+     let a =
+       filter_it
+         (fun p ->
+           Pervasives.(<=)
+             (power power_real (Pervasives.( -. ) (fst p) l)
+               (nat_of_integer (Z.of_int 2)))
+             delta)
+         ps
+       in
+      closest_pair_combine_code (delta, (c_0, c_1)) a);;
+
+let rec find_closest_code
+  p x1 = match p, x1 with p, [] -> failwith "undefined"
+    | p, [p_0] -> (dist_code p p_0, p_0)
+    | p, p_0 :: v :: va ->
+        (let (delta_1, p_1) = find_closest_code p (v :: va) in
+         let delta_0 = dist_code p p_0 in
+          (if Pervasives.(<) delta_0 delta_1 then (delta_0, p_0)
+            else (delta_1, p_1)));;
+
+let rec closest_pair_bf_code
+  = function [] -> failwith "undefined"
+    | [p_0] -> failwith "undefined"
+    | [p_0; p_1] -> (dist_code p_0 p_1, (p_0, p_1))
+    | p_0 :: v :: vb :: vc ->
+        (let (delta_c, (c_0, c_1)) = closest_pair_bf_code (v :: vb :: vc) in
+         let (delta_p, p_1) = find_closest_code p_0 (v :: vb :: vc) in
+          (if Pervasives.(<=) delta_c delta_p then (delta_c, (c_0, c_1))
+            else (delta_p, (p_0, p_1))));;
+
+let rec closest_pair_rec_code
   xs = (let n = length_it xs in
          (if less_eq_nat n (nat_of_integer (Z.of_int 3))
-           then (sortY xs, bf_closest_pair_it xs)
+           then (sortY xs, closest_pair_bf_code xs)
            else (let (xs_L, xs_R) =
                    split_at_it (divide_nat n (nat_of_integer (Z.of_int 2))) xs
                    in
                  let l = fst (hd xs_R) in
-                 let (ys_L, (c_0_L, c_1_L)) = closest_pair_rec xs_L in
-                 let (ys_R, (c_0_R, c_1_R)) = closest_pair_rec xs_R in
+                 let (ys_L, p_L) = closest_pair_rec_code xs_L in
+                 let (ys_R, p_R) = closest_pair_rec_code xs_R in
                  let ys = merge_it linorder_real snd ys_L ys_R in
-                  (ys, combine_code (c_0_L, c_1_L) (c_0_R, c_1_R) l ys))));;
+                  (ys, combine_code p_L p_R l ys))));;
 
-let rec closest_pair ps = (let (_, c) = closest_pair_rec (sortX ps) in c);;
+let rec closest_pair_code
+  = function [] -> failwith "undefined"
+    | [uu] -> failwith "undefined"
+    | v :: vb :: vc ->
+        (let a = closest_pair_rec_code (sortX (v :: vb :: vc)) in
+         let (_, aa) = a in
+         let (_, ab) = aa in
+         let (ac, b) = ab in
+          (ac, b));;
