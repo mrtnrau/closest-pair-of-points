@@ -180,7 +180,7 @@ lemma find_closest_code_dist_eq:
   by (induction p ps rule: find_closest_code.induct)
      (auto simp: Let_def split: prod.splits if_splits)
 
-lemma find_closest_eq_code:
+lemma find_closest_code_eq:
   "0 < length ps \<Longrightarrow> (\<delta>, c) = find_closest p ps \<Longrightarrow> (\<delta>', c') = find_closest_code p ps \<Longrightarrow> c = c'"
 proof (induction p ps arbitrary: \<delta> c \<delta>' c' rule: find_closest.induct)
   case (3 p p\<^sub>0 p\<^sub>2 ps)
@@ -235,7 +235,7 @@ proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_b
     using "4.prems"(2) defs by (auto split: prod.splits if_splits)
 qed auto
 
-lemma closest_pair_bf_eq_code:
+lemma closest_pair_bf_code_eq:
   assumes "1 < length ps" 
   assumes "(\<delta>, c\<^sub>0, c\<^sub>1) = closest_pair_bf ps" "(\<delta>', c\<^sub>0', c\<^sub>1') = closest_pair_bf_code ps"
   shows "c\<^sub>0 = c\<^sub>0' \<and> c\<^sub>1 = c\<^sub>1'"
@@ -253,7 +253,7 @@ proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 \<delta>' c\<^sub>0'
   have A: "c\<^sub>0 = c\<^sub>0' \<and> c\<^sub>1 = c\<^sub>1'"
     using "4.IH" defs by simp
   moreover have B: "p\<^sub>1 = p\<^sub>1'"
-    using find_closest_eq_code defs by blast
+    using find_closest_code_eq defs by blast
   moreover have "\<delta>\<^sub>c = dist c\<^sub>0 c\<^sub>1" "\<delta>\<^sub>c' = dist_code c\<^sub>0' c\<^sub>1'"
     using defs closest_pair_bf_dist_eq[of ?ps] closest_pair_bf_code_dist_eq[of ?ps] by simp_all
   moreover have "\<delta>\<^sub>p = dist p\<^sub>0 p\<^sub>1" "\<delta>\<^sub>p' = dist_code p\<^sub>0 p\<^sub>1'"
@@ -306,7 +306,7 @@ qed simp_all
 
 declare find_closest_\<delta>.simps [simp add]
 
-lemma find_closest_\<delta>_eq_code:
+lemma find_closest_\<delta>_code_eq:
   assumes "0 < length ps" "\<delta> = dist p\<^sub>0 p\<^sub>1" "\<delta>' = dist_code p\<^sub>0 p\<^sub>1"
   assumes "(\<delta>\<^sub>c, c) = find_closest_\<delta> p \<delta> ps" "(\<delta>\<^sub>c', c') = find_closest_\<delta>_code p \<delta>' ps"
   shows "c = c'"
@@ -409,7 +409,7 @@ proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<del
   hence A: "\<delta>\<^sub>p = dist p\<^sub>0 p\<^sub>1" "\<delta>\<^sub>p' = dist_code p\<^sub>0 p\<^sub>1'"
     using find_closest_\<delta>_dist_eq find_closest_\<delta>_code_dist_eq by blast+
   have B: "p\<^sub>1 = p\<^sub>1'"
-    using "3.prems"(1,2) \<delta>\<^sub>p_def find_closest_\<delta>_eq_code by blast
+    using "3.prems"(1,2) \<delta>\<^sub>p_def find_closest_\<delta>_code_eq by blast
   show ?case
   proof (cases "\<delta> \<le> \<delta>\<^sub>p")
     case True
@@ -670,7 +670,7 @@ proof (induction xs arbitrary: ys \<delta> c\<^sub>0 c\<^sub>1 ys' \<delta>' c\<
     moreover have "(\<delta>', c\<^sub>0', c\<^sub>1') = closest_pair_bf_code xs"
       using "1.prems"(3) closest_pair_rec_code.simps by (simp add: True)
     ultimately show ?thesis
-      using "1.prems"(1) closest_pair_bf_eq_code by simp
+      using "1.prems"(1) closest_pair_bf_code_eq by simp
   next
     case False
 

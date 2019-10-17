@@ -317,7 +317,7 @@ lemma t_length:
   by (induction xs) auto
 
 definition length_cost :: "nat \<Rightarrow> real" where
-  "length_cost n = real n"
+  "length_cost n = n"
 
 lemma length_cost_nonneg[simp]:
   "0 \<le> length_cost n"
@@ -339,7 +339,7 @@ lemma t_filter:
   by (induction xs) auto
 
 definition filter_cost :: "nat \<Rightarrow> real" where
-  "filter_cost n = real n"
+  "filter_cost n = n"
 
 lemma t_filter_conv_filter_cost:
   "t_filter P xs = filter_cost (length xs)"
@@ -361,7 +361,7 @@ lemma t_split_at:
   by (induction xs arbitrary: n) (auto split: nat.split)
 
 definition split_at_cost :: "nat \<Rightarrow> real" where
-  "split_at_cost n = real n"
+  "split_at_cost n = n"
 
 lemma split_at_cost_nonneg[simp]:
   "0 \<le> split_at_cost n"
@@ -392,7 +392,7 @@ lemma t_merge:
   unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
 
 definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = real n"
+  "merge_cost n = n"
 
 lemma merge_cost_nonneg[simp]:
   "0 \<le> merge_cost n"
@@ -532,7 +532,7 @@ proof -
   have "\<And>xs. t_msort f xs \<le> (msort_cost o length) xs"
     unfolding comp_def using t_msort_conv_msort_cost by blast
   thus ?thesis
-    by (metis (no_types, lifting) bigo_measure_trans bigthetaD1 msort_cost of_nat_0_le_iff)
+    using bigo_measure_trans[of "t_msort f" msort_cost] by (simp add: bigthetaD1 msort_cost)
 qed
 
 corollary t_sortX_bigo:
@@ -557,17 +557,10 @@ fun t_find_closest :: "point \<Rightarrow> point list \<Rightarrow> nat" where
     )
   )"
 
-definition find_closest_cost :: "nat \<Rightarrow> real" where
-  "find_closest_cost n = real n"
-
 lemma t_find_closest:
   "t_find_closest p ps = length ps"
   apply (induction p ps rule: t_find_closest.induct)
   apply (auto) by (metis prod_cases3)
-
-lemma t_find_closest_conv_find_closest_cost:
-  "t_find_closest p ps = find_closest_cost (length ps)"
-  unfolding find_closest_cost_def using t_find_closest by auto
 
 
 subsection "closest_pair_bf"
@@ -597,7 +590,7 @@ proof (induction rule: t_closest_pair_bf.induct)
 qed auto
 
 definition closest_pair_bf_cost :: "nat \<Rightarrow> real" where
-  "closest_pair_bf_cost n = real n * real n"
+  "closest_pair_bf_cost n = n * n"
 
 lemma closest_pair_bf_cost_nonneg[simp]:
   "0 \<le> closest_pair_bf_cost n"
@@ -751,6 +744,10 @@ fun t_combine :: "(real * point * point) \<Rightarrow> (real * point * point) \<
 
 definition combine_cost :: "nat \<Rightarrow> real" where
   "combine_cost n = 10 * n"
+
+lemma combine_cost_nonneg[simp]:
+  "0 \<le> combine_cost n"
+  unfolding combine_cost_def by simp
 
 lemma filter_Un:
   "set xs = A \<union> B \<Longrightarrow> set (filter P xs) = { x \<in> A. P x } \<union> { x \<in> B. P x }"
@@ -1001,32 +998,28 @@ theorem closest_pair_rec_cost:
   by (master_theorem)
      (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
-(* TODO *)
-
-definition valid' :: "point list \<Rightarrow> point list" where
-  "valid' ps = (
+definition is_valid' :: "point list \<Rightarrow> point list" where
+  "is_valid' ps = (
     if 1 < length ps \<and> distinct ps \<and> sortedX ps then
       ps
     else
       []
   )"
 
-lemma AUX:
+lemma t_closest_pair_rec_Nil:
   "t_closest_pair_rec [] \<le> (closest_pair_rec_cost o length) ps"
-  apply (induction "length ps" arbitrary: ps rule: closest_pair_rec_cost.induct)
-  apply (auto simp: t_closest_pair_rec.simps)
-  apply (smt closest_pair_bf_cost_nonneg eval_length(1) length_cost_nonneg msort_cost.simps(1) sortY_cost_def sortY_cost_nonneg t_sortY_conv_sortY_cost)
-  by (smt closest_pair_rec_cost_nonneg combine_cost_def eval_length(1) length_cost_def merge_cost_def msort_cost.simps(1) of_nat_0_le_iff sortY_cost_def split_at_cost_def t_sortY_conv_sortY_cost)
-  
+  by (induction "length ps" arbitrary: ps rule: closest_pair_rec_cost.induct)
+     (auto simp: t_closest_pair_rec.simps t_sortY_def)
+ 
 theorem t_closest_pair_rec_bigo:
-  "(t_closest_pair_rec o valid') \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  "(t_closest_pair_rec o is_valid') \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>ps. (t_closest_pair_rec o valid') ps \<le> (closest_pair_rec_cost o length) ps"
-    unfolding comp_def valid'_def
-    using AUX t_closest_pair_rec_conv_closest_pair_rec_cost by auto
+  have "\<And>ps. (t_closest_pair_rec o is_valid') ps \<le> (closest_pair_rec_cost o length) ps"
+    unfolding comp_def is_valid'_def
+    using t_closest_pair_rec_Nil t_closest_pair_rec_conv_closest_pair_rec_cost by auto
   thus ?thesis
-    using bigo_measure_trans
-    by (metis (no_types, lifting) bigthetaD1 closest_pair_rec_cost of_nat_0_le_iff)
+    using bigo_measure_trans[of "(t_closest_pair_rec o is_valid')" closest_pair_rec_cost]
+    by (simp add: bigthetaD1 closest_pair_rec_cost)
 qed
 
 
@@ -1035,8 +1028,8 @@ subsection "closest_pair"
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
   "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
 
-definition valid :: "point list \<Rightarrow> point list" where
-  "valid ps = (
+definition is_valid :: "point list \<Rightarrow> point list" where
+  "is_valid ps = (
     if 1 < length ps \<and> distinct ps then
       ps
     else
@@ -1046,21 +1039,7 @@ definition valid :: "point list \<Rightarrow> point list" where
 definition closest_pair_cost :: "nat \<Rightarrow> real" where
   "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
 
-lemma AUX'':
-  "t_sortX [] \<le> (sortX_cost o length) xs"
-  unfolding t_sortX_def by simp
-
-lemma AUX'''[simp]:
-  "sortX [] = []"
-  unfolding sortX_def by simp
-
-lemma AUX':
-  "t_closest_pair [] \<le> (closest_pair_cost o length) ps"
-  unfolding t_closest_pair_def closest_pair_cost_def using AUX AUX''
-  unfolding comp_def
-  by (smt AUX''' approximation_preproc_nat(3) comp_def sortX_cost_def)
-
-lemma closest_pair_const_nonneg[simp]:
+lemma closest_pair_cost_nonneg[simp]:
   "0 \<le> closest_pair_cost n"
   unfolding closest_pair_cost_def by simp
 
@@ -1069,7 +1048,13 @@ lemma t_closest_pair_conv_closest_pair_cost:
   shows "t_closest_pair ps \<le> closest_pair_cost (length ps)"
   unfolding t_closest_pair_def closest_pair_cost_def using assms sortX of_nat_add
   using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost
-  by (smt One_nat_def valid'_def)
+  by (smt One_nat_def)
+
+lemma t_closest_pair_Nil:
+  "t_closest_pair [] \<le> (closest_pair_cost o length) ps"
+  unfolding t_closest_pair_def closest_pair_cost_def apply (simp add: sortX_def t_sortX_def)
+  using t_closest_pair_rec_Nil[of ps] sortX_cost_nonneg[of "length ps"] unfolding comp_def
+  by linarith
 
 theorem closest_pair_cost:
   "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
@@ -1077,13 +1062,14 @@ theorem closest_pair_cost:
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
 theorem t_closest_pair_bigo:
-  "(t_closest_pair o valid) \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  "(t_closest_pair o is_valid) \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>ps. (t_closest_pair o valid) ps \<le> (closest_pair_cost o length) ps"
-    unfolding comp_def valid_def
-    using t_closest_pair_conv_closest_pair_cost AUX' by auto
+  have "\<And>ps. (t_closest_pair o is_valid) ps \<le> (closest_pair_cost o length) ps"
+    unfolding comp_def is_valid_def
+    using t_closest_pair_conv_closest_pair_cost t_closest_pair_Nil by auto
   thus ?thesis
-    by (metis (no_types, lifting) bigo_measure_trans closest_pair_cost of_nat_0_le_iff)
+    using bigo_measure_trans[of "(t_closest_pair o is_valid)" closest_pair_cost]
+    by (simp add: closest_pair_cost)
 qed
 
 end

@@ -385,10 +385,6 @@ lemma find_closest_\<delta>_set:
   by (induction p \<delta> cs arbitrary: \<delta>\<^sub>c c rule: find_closest_\<delta>.induct)
      (auto simp: Let_def split: if_splits prod.splits)
 
-corollary find_closest_\<delta>_ne:
-  "0 < length cs \<Longrightarrow> p \<notin> set cs \<Longrightarrow> (\<delta>\<^sub>c, c) = find_closest_\<delta> p \<delta> cs \<Longrightarrow> p \<noteq> c"
-  using find_closest_\<delta>_set by blast
-
 lemma find_closest_\<delta>_dist_eq:
   "0 < length cs \<Longrightarrow> (\<delta>\<^sub>c, c) = find_closest_\<delta> p \<delta> cs \<Longrightarrow> \<delta>\<^sub>c = dist p c"
 proof (induction p \<delta> cs arbitrary: \<delta>\<^sub>c c rule: find_closest_\<delta>.induct)
@@ -536,7 +532,7 @@ proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^s
   obtain \<delta>' p\<^sub>1 where \<delta>'_def: "(\<delta>', p\<^sub>1) = find_closest_\<delta> p\<^sub>0 \<delta> (p\<^sub>2 # ps)"
     by (metis surj_pair)
   hence A: "p\<^sub>0 \<noteq> p\<^sub>1"
-    using "3.prems"(1,2) by (meson distinct.simps(2) find_closest_\<delta>_ne length_greater_0_conv list.discI)
+    using "3.prems"(1,2) by (meson distinct.simps(2) find_closest_\<delta>_set length_greater_0_conv list.discI)
   show ?case
   proof (cases "\<delta> \<le> \<delta>'")
     case True
@@ -1277,10 +1273,8 @@ theorem closest_pair_c0_c1:
 theorem closest_pair_dist:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
-  using assms closest_pair_simps
-  using sortX closest_pair_rec_dist[of "sortX ps"]
-  using closest_pair_rec_c0_c1[of "sortX ps"]
-  using closest_pair_rec_dist_eq[of "sortX ps"]
+  using assms closest_pair_simps sortX closest_pair_rec_dist[of "sortX ps"]
+        closest_pair_rec_c0_c1[of "sortX ps"] closest_pair_rec_dist_eq[of "sortX ps"]
   by (auto split: prod.splits)
 
 end
