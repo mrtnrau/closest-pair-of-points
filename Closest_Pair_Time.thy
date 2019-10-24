@@ -277,30 +277,34 @@ section "Landau Auxiliary"
 
 text \<open>
   The following lemma expresses a procedure for deriving complexity properties of
-  the form @{prop"t \<in> O[m going_to at_top](f o m)"} where
+  the form @{prop"t \<in> O[m going_to at_top within A](f o m)"} where
     \<^item> \<open>t\<close> is a (timing) function on same data domain (e.g. lists),
     \<^item> \<open>m\<close> is a measure function on that data domain (e.g. length),
-    \<^item> \<open>t'\<close> is a function on @{typ nat}.
+    \<^item> \<open>t'\<close> is a function on @{typ nat},
+    \<^item> \<open>A\<close> is the set of valid inputs for the data domain.
   One needs to show that
-    \<^item> \<open>t\<close> is bounded by @{term "t' o m"}
+    \<^item> \<open>t\<close> is bounded by @{term "t' o m"} for valid inputs
     \<^item> @{prop"t' \<in> O(f)"}
-  to conclude the overall property @{prop"t \<in> O[m going_to at_top](f o m)"}.
+  to conclude the overall property @{prop"t \<in> O[m going_to at_top within A](f o m)"}.
 \<close>
 
 lemma bigo_measure_trans:
   fixes t :: "'a \<Rightarrow> real" and t' :: "nat \<Rightarrow> real" and m :: "'a \<Rightarrow> nat" and f ::"nat \<Rightarrow> real"
-  assumes "\<And>x. t x \<le> (t' o m) x"
+  assumes "\<And>x. x \<in> A \<Longrightarrow> t x \<le> (t' o m) x"
       and "t' \<in> O(f)"
-      and "\<And>x. 0 \<le> t x"
-  shows "t \<in> O[m going_to at_top](f o m)"
+      and "\<And>x. x \<in> A \<Longrightarrow> 0 \<le> t x"
+  shows "t \<in> O[m going_to at_top within A](f o m)"
 proof -
-  have 0: "\<forall>x. 0 \<le> (t' o m) x" by (meson assms(1,3) order_trans)
-  have 1: "t \<in> O[m going_to at_top](t' o m)"
-    apply(rule bigoI[where c=1]) using assms 0 by auto
+  have 0: "\<And>x. x \<in> A \<Longrightarrow> 0 \<le> (t' o m) x" by (meson assms(1,3) order_trans)
+  have 1: "t \<in> O[m going_to at_top within A](t' o m)"
+    apply(rule bigoI[where c=1]) using assms 0
+    by (simp add: eventually_inf_principal going_to_within_def)
   have 2: "t' o m \<in> O[m going_to at_top](f o m)"
     unfolding o_def going_to_def
     by(rule landau_o.big.filtercomap[OF assms(2)])
-  show ?thesis by(rule landau_o.big_trans[OF 1 2])
+  have 3: "t' o m \<in> O[m going_to at_top within A](f o m)"
+    using landau_o.big.filter_mono[OF _2] going_to_mono[OF _subset_UNIV] by blast
+  show ?thesis by(rule landau_o.big_trans[OF 1 3])
 qed
 
 
@@ -529,10 +533,10 @@ corollary sortY_cost:
 theorem t_msort_bigo:
   "t_msort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>xs. t_msort f xs \<le> (msort_cost o length) xs"
+  have 0: "\<And>xs. t_msort f xs \<le> (msort_cost o length) xs"
     unfolding comp_def using t_msort_conv_msort_cost by blast
-  thus ?thesis
-    using bigo_measure_trans[of "t_msort f" msort_cost] by (simp add: bigthetaD1 msort_cost)
+  show ?thesis
+    using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_cost)
 qed
 
 corollary t_sortX_bigo:
@@ -998,28 +1002,17 @@ theorem closest_pair_rec_cost:
   by (master_theorem)
      (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
 
-definition is_valid' :: "point list \<Rightarrow> point list" where
-  "is_valid' ps = (
-    if 1 < length ps \<and> distinct ps \<and> sortedX ps then
-      ps
-    else
-      []
-  )"
-
-lemma t_closest_pair_rec_Nil:
-  "t_closest_pair_rec [] \<le> (closest_pair_rec_cost o length) ps"
-  by (induction "length ps" arbitrary: ps rule: closest_pair_rec_cost.induct)
-     (auto simp: t_closest_pair_rec.simps t_sortY_def)
+definition valid' :: "point list \<Rightarrow> bool" where
+  "valid' ps \<longleftrightarrow> 1 < length ps \<and> distinct ps \<and> sortedX ps"
  
 theorem t_closest_pair_rec_bigo:
-  "(t_closest_pair_rec o is_valid') \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair_rec \<in> O[length going_to at_top within { ps. valid' ps }]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>ps. (t_closest_pair_rec o is_valid') ps \<le> (closest_pair_rec_cost o length) ps"
-    unfolding comp_def is_valid'_def
-    using t_closest_pair_rec_Nil t_closest_pair_rec_conv_closest_pair_rec_cost by auto
-  thus ?thesis
-    using bigo_measure_trans[of "(t_closest_pair_rec o is_valid')" closest_pair_rec_cost]
-    by (simp add: bigthetaD1 closest_pair_rec_cost)
+  have 0: "\<And>ps. ps \<in> { ps. valid' ps} \<Longrightarrow> t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
+    unfolding comp_def valid'_def
+    using t_closest_pair_rec_conv_closest_pair_rec_cost by auto
+  show ?thesis
+    using bigo_measure_trans[OF 0] bigthetaD1[OF closest_pair_rec_cost] of_nat_0_le_iff by blast
 qed
 
 
@@ -1028,20 +1021,11 @@ subsection "closest_pair"
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
   "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
 
-definition is_valid :: "point list \<Rightarrow> point list" where
-  "is_valid ps = (
-    if 1 < length ps \<and> distinct ps then
-      ps
-    else
-      []
-  )"
+definition valid :: "point list \<Rightarrow> bool" where
+  "valid ps \<longleftrightarrow> 1 < length ps \<and> distinct ps"
 
 definition closest_pair_cost :: "nat \<Rightarrow> real" where
   "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
-
-lemma closest_pair_cost_nonneg[simp]:
-  "0 \<le> closest_pair_cost n"
-  unfolding closest_pair_cost_def by simp
 
 lemma t_closest_pair_conv_closest_pair_cost:
   assumes "1 < length ps" "distinct ps"
@@ -1050,26 +1034,18 @@ lemma t_closest_pair_conv_closest_pair_cost:
   using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost
   by (smt One_nat_def)
 
-lemma t_closest_pair_Nil:
-  "t_closest_pair [] \<le> (closest_pair_cost o length) ps"
-  unfolding t_closest_pair_def closest_pair_cost_def apply (simp add: sortX_def t_sortX_def)
-  using t_closest_pair_rec_Nil[of ps] sortX_cost_nonneg[of "length ps"] unfolding comp_def
-  by linarith
-
 theorem closest_pair_cost:
   "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
   unfolding closest_pair_cost_def
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
 theorem t_closest_pair_bigo:
-  "(t_closest_pair o is_valid) \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair \<in> O[length going_to at_top within { ps. valid ps }]((\<lambda>n. n * ln n) o length)"
 proof -
-  have "\<And>ps. (t_closest_pair o is_valid) ps \<le> (closest_pair_cost o length) ps"
-    unfolding comp_def is_valid_def
-    using t_closest_pair_conv_closest_pair_cost t_closest_pair_Nil by auto
-  thus ?thesis
-    using bigo_measure_trans[of "(t_closest_pair o is_valid)" closest_pair_cost]
-    by (simp add: closest_pair_cost)
+  have 0: "\<And>ps. ps \<in> { ps. valid ps } \<Longrightarrow> t_closest_pair ps \<le> (closest_pair_cost o length) ps"
+    unfolding comp_def valid_def using t_closest_pair_conv_closest_pair_cost by auto
+  show ?thesis
+    using bigo_measure_trans[OF 0] closest_pair_cost by fastforce
 qed
 
 end
