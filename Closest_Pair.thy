@@ -1386,4 +1386,5 @@ theorem closest_pair_dist:
   using assms sortX closest_pair_rec_dist[of "sortX ps"] unfolding closest_pair_def
   by (auto split: prod.splits)
 
+
 end
