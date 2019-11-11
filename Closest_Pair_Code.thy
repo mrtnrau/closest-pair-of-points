@@ -135,7 +135,7 @@ lemma dist_point:
   shows "dist p\<^sub>0 p\<^sub>1 = sqrt ((fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2)"
   by (auto simp: dist_prod_def dist_real_def) 
 
-fun dist_code :: "point \<Rightarrow> point \<Rightarrow> real" where
+fun dist_code :: "point \<Rightarrow> point \<Rightarrow> nat" where
   "dist_code p\<^sub>0 p\<^sub>1 = (fst p\<^sub>0 - fst p\<^sub>1)\<^sup>2 + (snd p\<^sub>0 - snd p\<^sub>1)\<^sup>2"
 
 lemma dist_eq_dist_code_lt:
