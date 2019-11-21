@@ -147,13 +147,13 @@ lemma dist_eq_dist_code_le:
   shows "dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>2 p\<^sub>3 \<longleftrightarrow> dist_code p\<^sub>0 p\<^sub>1 \<le> dist_code p\<^sub>2 p\<^sub>3"
   using dist_eq_sqrt_dist_code real_sqrt_le_iff by presburger
 
-lemma dist_eq_dist_code_abs_1:
+lemma dist_eq_dist_code_abs_lt:
   fixes p\<^sub>0 :: point
-  shows "\<bar>c\<bar> \<le> dist p\<^sub>0 p\<^sub>1 \<longleftrightarrow> c\<^sup>2 \<le> dist_code p\<^sub>0 p\<^sub>1"
+  shows "\<bar>c\<bar> < dist p\<^sub>0 p\<^sub>1 \<longleftrightarrow> c\<^sup>2 < dist_code p\<^sub>0 p\<^sub>1"
   using dist_eq_sqrt_dist_code
-  by (metis of_int_le_of_int_power_cancel_iff real_sqrt_abs real_sqrt_le_iff)
+  by (metis of_int_less_of_int_power_cancel_iff real_sqrt_abs real_sqrt_less_iff)
 
-lemma dist_eq_dist_code_abs_2:
+lemma dist_eq_dist_code_abs_le:
   fixes p\<^sub>0 :: point
   shows "dist p\<^sub>0 p\<^sub>1 \<le> \<bar>c\<bar> \<longleftrightarrow> dist_code p\<^sub>0 p\<^sub>1 \<le> c\<^sup>2"
   using dist_eq_sqrt_dist_code
@@ -333,7 +333,7 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
   proof cases
     assume *: "\<delta> \<le> snd p\<^sub>0 - snd p"
     hence "\<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
-      using "3.prems"(2,3) dist_eq_dist_code_abs_2 by fastforce
+      using "3.prems"(2,3) dist_eq_dist_code_abs_le by fastforce
     thus ?thesis
       using * "3.prems"(5,6) by simp
   next
@@ -341,7 +341,7 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
     moreover have "0 \<le> snd p\<^sub>0 - snd p"
       using "3.prems"(4) sortedY_def by simp
     ultimately have A: "\<not> \<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
-      using "3.prems"(2,3) dist_eq_dist_code_abs_2 by (smt of_int_nonneg)
+      using "3.prems"(2,3) dist_eq_dist_code_abs_le by (smt of_int_nonneg)
     have "min \<delta> \<delta>\<^sub>0 = \<delta> \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>'" "min \<delta> \<delta>\<^sub>0 = \<delta>\<^sub>0 \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>\<^sub>0'"
       using "3.prems"(2,3) defs(1,2) dist_eq_dist_code_le by smt+
     moreover have "sortedY (p # p\<^sub>2 # ps)"
@@ -472,7 +472,7 @@ subsection "combine"
 fun combine_code :: "(int * point * point) \<Rightarrow> (int * point * point) \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> (int * point * point)" where
   "combine_code (\<delta>\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (\<delta>\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = (
     let (\<delta>, c\<^sub>0, c\<^sub>1) = if \<delta>\<^sub>L < \<delta>\<^sub>R then (\<delta>\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (\<delta>\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let ps' = filter (\<lambda>p. (fst p - l)\<^sup>2 \<le> \<delta>) ps in
+    let ps' = filter (\<lambda>p. (fst p - l)\<^sup>2 < \<delta>) ps in
     closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) ps'
   )"
 
@@ -495,8 +495,8 @@ proof -
     "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = (if \<delta>\<^sub>L' < \<delta>\<^sub>R' then (\<delta>\<^sub>L', p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (\<delta>\<^sub>R', p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     by metis
   define ps' ps'' where ps'_def:
-    "ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i) ps"
-    "ps'' = filter (\<lambda>p. (fst p - l)\<^sup>2 \<le> \<Delta>\<^sub>i') ps"
+    "ps' = filter (\<lambda>p. dist p (l, snd p) < dist C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i) ps"
+    "ps'' = filter (\<lambda>p. (fst p - l)\<^sup>2 < \<Delta>\<^sub>i') ps"
   obtain C\<^sub>0 C\<^sub>1 \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>_def:
     "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) ps'"
     "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') ps''"
@@ -504,8 +504,8 @@ proof -
   note defs = \<Delta>\<^sub>i_def ps'_def \<Delta>_def
   have *: "C\<^sub>0\<^sub>i = C\<^sub>0\<^sub>i'" "C\<^sub>1\<^sub>i = C\<^sub>1\<^sub>i'" "\<Delta>\<^sub>i' = dist_code C\<^sub>0\<^sub>i' C\<^sub>1\<^sub>i'"
     using \<Delta>\<^sub>i_def assms(1,2,3,4) dist_eq_dist_code_lt by (auto split: if_splits)
-  hence "\<And>p. \<bar>fst p - l\<bar> \<le> dist C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i \<longleftrightarrow> (fst p - l)\<^sup>2 \<le> \<Delta>\<^sub>i'"
-    using dist_eq_dist_code_abs_1 by (metis (mono_tags) of_int_abs)
+  hence "\<And>p. \<bar>fst p - l\<bar> < dist C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i \<longleftrightarrow> (fst p - l)\<^sup>2 < \<Delta>\<^sub>i'"
+    using dist_eq_dist_code_abs_lt by (metis (mono_tags) of_int_abs)
   hence "ps' = ps''"
     using ps'_def dist_fst_abs by auto
   moreover have "sortedY ps'"

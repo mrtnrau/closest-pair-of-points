@@ -219,7 +219,7 @@ subsection "Final Lemma"
 lemma max_points_is_7:
   fixes \<delta> :: real and p :: point and ps :: "point list"
   assumes "distinct (p # ps)" "sortedY (p # ps)" "0 \<le> \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
-  assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
+  assumes "\<forall>p' \<in> set (p # ps). l - \<delta> < fst p' \<and> fst p' < l + \<delta>"
   assumes "\<forall>p' \<in> ps\<^sub>L. fst p' \<le> l" "\<forall>p' \<in> ps\<^sub>R. l \<le> fst p'"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
   shows "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<le> 7"
@@ -263,7 +263,7 @@ proof -
       by simp
     hence "snd p \<le> snd q" "snd q \<le> snd p + \<delta>"
       using assms(2) PS_def sortedY_def * by (auto split: if_splits)
-    moreover have "l - \<delta> \<le> fst q" "fst q \<le> l + \<delta>"
+    moreover have "l - \<delta> < fst q" "fst q < l + \<delta>"
       using CPS assms(5) PS_def by blast+
     ultimately have "q \<in> R"
       using R_def mem_cbox_2D[of "l - \<delta>" "fst q" "l + \<delta>" "snd p" "snd q" "snd p + \<delta>"]
@@ -666,7 +666,7 @@ qed auto
 lemma t_find_closest_\<delta>:
   fixes \<delta> :: real and p :: point and ps :: "point list" and l :: int
   assumes "distinct (p # ps)" "sortedY (p # ps)" "0 \<le> \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
-  assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
+  assumes "\<forall>p' \<in> set (p # ps). l - \<delta> < fst p' \<and> fst p' < l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
   shows "t_find_closest_\<delta> p \<delta> ps \<le> 8"
@@ -689,7 +689,7 @@ fun t_closest_pair_combine :: "(point * point) \<Rightarrow> point list \<Righta
 
 lemma t_closest_pair_combine:
   assumes "distinct ps" "sortedY ps" "\<delta> = dist c\<^sub>0 c\<^sub>1" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
-  assumes "\<forall>p \<in> set ps. l - \<Delta> \<le> fst p \<and> fst p \<le> l + \<Delta>"
+  assumes "\<forall>p \<in> set ps. l - \<Delta> < fst p \<and> fst p < l + \<Delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<Delta> ps\<^sub>L" "min_dist \<Delta> ps\<^sub>R" "\<delta> \<le> \<Delta>"
   shows "t_closest_pair_combine (c\<^sub>0, c\<^sub>1) ps \<le> 9 * length ps"
@@ -711,7 +711,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^sub>0 c\<^s
     using "3.prems"(1,2) sortedY_def by simp_all
   have C: "set ?ps = PS\<^sub>L \<union> PS\<^sub>R"
     using defs "3.prems"(1,4) by auto
-  have D: "\<forall>p \<in> set ?ps. l - \<Delta> \<le> fst p \<and> fst p \<le> l + \<Delta>"
+  have D: "\<forall>p \<in> set ?ps. l - \<Delta> < fst p \<and> fst p < l + \<Delta>"
     using "3.prems"(5) by simp
   have E: "\<forall>p \<in> PS\<^sub>L. fst p \<le> l" "\<forall>p \<in> PS\<^sub>R. l \<le> fst p" 
     using defs "3.prems"(6,7) by simp_all
@@ -747,8 +747,8 @@ subsection "combine"
 fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> nat" where
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ps in
-    t_filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ps + t_closest_pair_combine (c\<^sub>0, c\<^sub>1) ps'
+    let ps' = filter (\<lambda>p. dist p (l, snd p) < dist c\<^sub>0 c\<^sub>1) ps in
+    t_filter (\<lambda>p. dist p (l, snd p) < dist c\<^sub>0 c\<^sub>1) ps + t_closest_pair_combine (c\<^sub>0, c\<^sub>1) ps'
   )"
 
 definition combine_cost :: "nat \<Rightarrow> real" where
@@ -772,7 +772,7 @@ lemma t_combine:
 proof -
   obtain c\<^sub>0 c\<^sub>1 where c_def:
     "(c\<^sub>0, c\<^sub>1) = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))" by metis
-  let ?P = "(\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1)"
+  let ?P = "(\<lambda>p. dist p (l, snd p) < dist c\<^sub>0 c\<^sub>1)"
   define ps' where ps'_def: "ps' = filter ?P ps"
   define ps\<^sub>L' where ps\<^sub>L'_def: "ps\<^sub>L' = { p \<in> ps\<^sub>L. ?P p }" 
   define ps\<^sub>R' where ps\<^sub>R'_def: "ps\<^sub>R' = { p \<in> ps\<^sub>R. ?P p }"
@@ -789,7 +789,7 @@ proof -
     by simp
   moreover have "set ps' = ps\<^sub>L' \<union> ps\<^sub>R'"
     using assms(3) defs(2,3,4) filter_Un by auto
-  moreover have "\<forall>p \<in> set ps'. l - dist c\<^sub>0 c\<^sub>1 \<le> fst p \<and> fst p \<le> l + dist c\<^sub>0 c\<^sub>1"
+  moreover have "\<forall>p \<in> set ps'. l - dist c\<^sub>0 c\<^sub>1 < fst p \<and> fst p < l + dist c\<^sub>0 c\<^sub>1"
     using ps'_def dist_transform by force
   moreover have "\<forall>p \<in> ps\<^sub>L'. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R'. l \<le> fst p"
     using assms(4,5) ps\<^sub>L'_def ps\<^sub>R'_def by blast+
@@ -1003,8 +1003,7 @@ theorem closest_pair_rec_cost:
      (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
  
 theorem t_closest_pair_rec_bigo:
-  "t_closest_pair_rec \<in> O[length going_to at_top within { ps.
-     1 < length ps \<and> distinct ps \<and> sortedX ps }]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair_rec \<in> O[length going_to at_top within { ps. 1 < length ps \<and> distinct ps \<and> sortedX ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. 1 < length ps \<and> distinct ps \<and> sortedX ps } \<Longrightarrow>
            t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
@@ -1035,8 +1034,7 @@ theorem closest_pair_cost:
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
 theorem t_closest_pair_bigo:
-  "t_closest_pair \<in> O[length going_to at_top within { ps.
-     1 < length ps \<and> distinct ps }]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair \<in> O[length going_to at_top within { ps. 1 < length ps \<and> distinct ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. 1 < length ps \<and> distinct ps } \<Longrightarrow>
            t_closest_pair ps \<le> (closest_pair_cost o length) ps"

@@ -47,6 +47,10 @@ text\<open>
 
 @{thm bigo_measure_trans}
 
+\section{Test}
+
+Here is some text.
+
 \section{The Core}
 
 The main function:

@@ -578,7 +578,7 @@ subsection "Combine Phase"
 fun combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> (point * point)" where
   "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = (
     let (c\<^sub>0, c\<^sub>1) = if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
-    let ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist c\<^sub>0 c\<^sub>1) ps in
+    let ps' = filter (\<lambda>p. dist p (l, snd p) < dist c\<^sub>0 c\<^sub>1) ps in
     closest_pair_combine (c\<^sub>0, c\<^sub>1) ps'
   )"
 
@@ -588,7 +588,7 @@ lemma combine_set:
 proof -
   obtain C\<^sub>0' C\<^sub>1' where C'_def: "(C\<^sub>0', C\<^sub>1') = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     by metis
-  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist C\<^sub>0' C\<^sub>1') ps"
+  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) < dist C\<^sub>0' C\<^sub>1') ps"
   obtain C\<^sub>0 C\<^sub>1 where C_def: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (C\<^sub>0', C\<^sub>1') ps'"
     using prod.collapse by blast
   note defs = C'_def ps'_def C_def
@@ -609,7 +609,7 @@ lemma combine_c0_ne_c1:
 proof -
   obtain C\<^sub>0' C\<^sub>1' where C'_def: "(C\<^sub>0', C\<^sub>1') = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     by metis
-  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist C\<^sub>0' C\<^sub>1') ps"
+  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) < dist C\<^sub>0' C\<^sub>1') ps"
   obtain C\<^sub>0 C\<^sub>1 where C_def: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (C\<^sub>0', C\<^sub>1') ps'"
     using prod.collapse by blast
   note defs = C'_def ps'_def C_def
@@ -625,7 +625,7 @@ lemma set_band_filter_aux:
   fixes \<delta> :: real and ps :: "point list"
   assumes "p\<^sub>0 \<in> ps\<^sub>L" "p\<^sub>1 \<in> ps\<^sub>R" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
-  assumes "ps' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ps"
+  assumes "ps' = filter (\<lambda>p. l - \<delta> < fst p \<and> fst p < l + \<delta>) ps"
   shows "p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
 proof (rule ccontr)
   assume "\<not> (p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps')"
@@ -636,41 +636,41 @@ proof (rule ccontr)
   thus False
   proof cases
     case A
-    hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0" "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+    hence "fst p\<^sub>0 \<le> l - \<delta> \<or> l + \<delta> \<le> fst p\<^sub>0" "fst p\<^sub>1 \<le> l - \<delta> \<or> l + \<delta> \<le> fst p\<^sub>1"
       using assms(1,2,5,8) by auto
-    hence "fst p\<^sub>0 < l - \<delta>" "l + \<delta> < fst p\<^sub>1"
+    hence "fst p\<^sub>0 \<le> l - \<delta>" "l + \<delta> \<le> fst p\<^sub>1"
       using assms(1,2,6,7) by force+
-    hence "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+    hence "\<delta> \<le> dist (fst p\<^sub>0) (fst p\<^sub>1)"
       using dist_real_def by simp
-    hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+    hence "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
       using dist_fst_le[of p\<^sub>0 p\<^sub>1] by (auto split: prod.splits)
     then show ?thesis
       using assms(4) by fastforce
   next
     case B
-    hence "fst p\<^sub>1 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>1"
+    hence "fst p\<^sub>1 \<le> l - \<delta> \<or> l + \<delta> \<le> fst p\<^sub>1"
       using assms(2,5,8) by auto
-    hence "l + \<delta> < fst p\<^sub>1"
+    hence "l + \<delta> \<le> fst p\<^sub>1"
       using assms(2,7) by auto
     moreover have "fst p\<^sub>0 \<le> l"
       using assms(1,6) by simp
-    ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+    ultimately have "\<delta> \<le> dist (fst p\<^sub>0) (fst p\<^sub>1)"
       using dist_real_def by simp
-    hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+    hence "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
       using dist_fst_le[of p\<^sub>0 p\<^sub>1] less_le_trans by (auto split: prod.splits)
     thus ?thesis
       using assms(4) by simp
   next
     case C
-    hence "fst p\<^sub>0 < l - \<delta> \<or> l + \<delta> < fst p\<^sub>0"
+    hence "fst p\<^sub>0 \<le> l - \<delta> \<or> l + \<delta> \<le> fst p\<^sub>0"
       using assms(1,2,5,8) by auto
-    hence "fst p\<^sub>0 < l - \<delta>"
+    hence "fst p\<^sub>0 \<le> l - \<delta>"
       using assms(1,6) by auto
     moreover have "l \<le> fst p\<^sub>1"
       using assms(2,7) by simp
-    ultimately have "\<delta> < dist (fst p\<^sub>0) (fst p\<^sub>1)"
+    ultimately have "\<delta> \<le> dist (fst p\<^sub>0) (fst p\<^sub>1)"
       using dist_real_def by simp
-    hence "\<delta> < dist p\<^sub>0 p\<^sub>1"
+    hence "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
       using dist_fst_le[of p\<^sub>0 p\<^sub>1] less_le_trans by (auto split: prod.splits)
     thus ?thesis
       using assms(4) by simp
@@ -682,7 +682,7 @@ lemma set_band_filter:
   assumes "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
-  assumes "ps' = filter (\<lambda>p. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>) ps"
+  assumes "ps' = filter (\<lambda>p. l - \<delta> < fst p \<and> fst p < l + \<delta>) ps"
   shows "p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
 proof -
   have "p\<^sub>0 \<notin> ps\<^sub>L \<or> p\<^sub>1 \<notin> ps\<^sub>L" "p\<^sub>0 \<notin> ps\<^sub>R \<or> p\<^sub>1 \<notin> ps\<^sub>R"
@@ -705,7 +705,7 @@ qed
 
 lemma dist_transform:
   fixes p :: point and \<delta> :: real and l :: int
-  shows "dist p (l, snd p) \<le> \<delta> \<longleftrightarrow> l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
+  shows "dist p (l, snd p) < \<delta> \<longleftrightarrow> l - \<delta> < fst p \<and> fst p < l + \<delta>"
 proof -
   have "dist p (l, snd p) = sqrt ((real_of_int (fst p) - l)\<^sup>2)"
     by (auto simp add: dist_prod_def dist_real_def prod.case_eq_if)
@@ -723,13 +723,13 @@ lemma combine_dist:
 proof -
   obtain C\<^sub>0' C\<^sub>1' where C'_def: "(C\<^sub>0', C\<^sub>1') = (if dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L < dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R then (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R))"
     by metis
-  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) \<le> dist C\<^sub>0' C\<^sub>1') ps"
+  define ps' where ps'_def: "ps' = filter (\<lambda>p. dist p (l, snd p) < dist C\<^sub>0' C\<^sub>1') ps"
   obtain C\<^sub>0 C\<^sub>1 where C_def: "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (C\<^sub>0', C\<^sub>1') ps'"
     using prod.collapse by blast
   note defs = C'_def ps'_def C_def
   have EQ: "C\<^sub>0 = c\<^sub>0" "C\<^sub>1 = c\<^sub>1"
     using defs assms(10) apply (auto split: if_splits prod.splits) by (metis Pair_inject)+
-  have ps': "ps' = filter (\<lambda>p. l - dist C\<^sub>0' C\<^sub>1' \<le> fst p \<and> fst p \<le> l + dist C\<^sub>0' C\<^sub>1') ps"
+  have ps': "ps' = filter (\<lambda>p. l - dist C\<^sub>0' C\<^sub>1' < fst p \<and> fst p < l + dist C\<^sub>0' C\<^sub>1') ps"
     using ps'_def dist_transform by simp
   have ps\<^sub>L: "min_dist (dist C\<^sub>0' C\<^sub>1') ps\<^sub>L"
     using assms(6,8) C'_def min_dist_def apply (auto split: if_splits) by force+
