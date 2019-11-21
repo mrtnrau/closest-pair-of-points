@@ -11,6 +11,6 @@ by (induction n) simp_all
 
 lemma long: "(True \<and> True \<and> True \<and> True \<and> True \<and> True \<and> True \<and> True) \<and>
   (True \<and> True \<and> True \<and> True \<and> True \<and> True \<and> True \<and> True)"
-by blast
+  by blast
 
 end

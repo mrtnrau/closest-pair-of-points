@@ -34,14 +34,18 @@
 
 \begin{document}
 
-\title{Title}
-\author{Author}
+\title{Verification of a Closest Pair of Points Algorithm}
+\author{Martin Rau}
 \institute{Technische Universit\"at M\"unchen}
 \date{}
 \maketitle
 
 \begin{abstract}
-Abstract
+This paper presents a verified divide-and-conquer algorithm, solving one of the fundamental problems
+in \textit{Computational Geometry}, the \textit{Closest Pair of Points} problem.
+We use the interactive theorem prover \textit{Isabelle} to verify the functional correctness
+and the running time of $\mathit{O(n\ log\;n)}$ of the algorithm and generate executable code which
+is empirically competitive with handwritten imperative reference implementations.
 \end{abstract}
 
 
@@ -54,6 +58,10 @@ All proofs have been formalized in the theorem prover Isabelle/HOL \cite{LNCS228
 \section{Related Work}
 
 Cite related work.
+
+\section{Conclusion}
+
+We did it.
 
 \paragraph{Acknowledgement}
 XYZ helped.

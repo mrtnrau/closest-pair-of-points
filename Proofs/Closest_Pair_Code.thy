@@ -172,13 +172,13 @@ qed
 declare dist_code.simps [simp del]
 
 
-subsection "find_closest"
+subsection "find_closest_bf"
 
-fun find_closest_code :: "point \<Rightarrow> point list \<Rightarrow> (int * point)" where
-  "find_closest_code p [] = undefined"
-| "find_closest_code p [p\<^sub>0] = (dist_code p p\<^sub>0, p\<^sub>0)"
-| "find_closest_code p (p\<^sub>0 # ps) = (
-    let (\<delta>\<^sub>1, p\<^sub>1) = find_closest_code p ps in
+fun find_closest_bf_code :: "point \<Rightarrow> point list \<Rightarrow> (int * point)" where
+  "find_closest_bf_code p [] = undefined"
+| "find_closest_bf_code p [p\<^sub>0] = (dist_code p p\<^sub>0, p\<^sub>0)"
+| "find_closest_bf_code p (p\<^sub>0 # ps) = (
+    let (\<delta>\<^sub>1, p\<^sub>1) = find_closest_bf_code p ps in
     let \<delta>\<^sub>0 = dist_code p p\<^sub>0 in
     if \<delta>\<^sub>0 < \<delta>\<^sub>1 then
       (\<delta>\<^sub>0, p\<^sub>0)
@@ -186,31 +186,31 @@ fun find_closest_code :: "point \<Rightarrow> point list \<Rightarrow> (int * po
       (\<delta>\<^sub>1, p\<^sub>1)
   )"
 
-lemma find_closest_code_dist_eq:
-  "0 < length ps \<Longrightarrow> (\<delta>, c) = find_closest_code p ps \<Longrightarrow> \<delta> = dist_code p c"
-  by (induction p ps rule: find_closest_code.induct)
+lemma find_closest_bf_code_dist_eq:
+  "0 < length ps \<Longrightarrow> (\<delta>, c) = find_closest_bf_code p ps \<Longrightarrow> \<delta> = dist_code p c"
+  by (induction p ps rule: find_closest_bf_code.induct)
      (auto simp: Let_def split: prod.splits if_splits)
 
-lemma find_closest_code_eq:
-  "0 < length ps \<Longrightarrow> c = find_closest p ps \<Longrightarrow> (\<delta>', c') = find_closest_code p ps \<Longrightarrow> c = c'"
-proof (induction p ps arbitrary: c \<delta>' c' rule: find_closest.induct)
+lemma find_closest_bf_code_eq:
+  "0 < length ps \<Longrightarrow> c = find_closest_bf p ps \<Longrightarrow> (\<delta>', c') = find_closest_bf_code p ps \<Longrightarrow> c = c'"
+proof (induction p ps arbitrary: c \<delta>' c' rule: find_closest_bf.induct)
   case (3 p p\<^sub>0 p\<^sub>2 ps)
   define \<delta>\<^sub>0 \<delta>\<^sub>0' where \<delta>\<^sub>0_def: "\<delta>\<^sub>0 = dist p p\<^sub>0" "\<delta>\<^sub>0' = dist_code p p\<^sub>0"
-  obtain \<delta>\<^sub>1 p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1' where \<delta>\<^sub>1_def: "\<delta>\<^sub>1 = dist p p\<^sub>1" "p\<^sub>1 = find_closest p (p\<^sub>2 # ps)"
-    "(\<delta>\<^sub>1', p\<^sub>1') = find_closest_code p (p\<^sub>2 # ps)"
+  obtain \<delta>\<^sub>1 p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1' where \<delta>\<^sub>1_def: "\<delta>\<^sub>1 = dist p p\<^sub>1" "p\<^sub>1 = find_closest_bf p (p\<^sub>2 # ps)"
+    "(\<delta>\<^sub>1', p\<^sub>1') = find_closest_bf_code p (p\<^sub>2 # ps)"
     using prod.collapse by blast+
   note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
   have *: "p\<^sub>1 = p\<^sub>1'"
     using "3.IH" defs by simp
   hence "\<delta>\<^sub>0 < \<delta>\<^sub>1 \<longleftrightarrow> \<delta>\<^sub>0' < \<delta>\<^sub>1'"
-    using find_closest_code_dist_eq[of "p\<^sub>2 # ps" \<delta>\<^sub>1' p\<^sub>1' p]
+    using find_closest_bf_code_dist_eq[of "p\<^sub>2 # ps" \<delta>\<^sub>1' p\<^sub>1' p]
           dist_eq_dist_code_lt defs
     by simp
   thus ?case
     using "3.prems"(2,3) * defs by (auto split: prod.splits)
 qed auto
 
-declare find_closest_code.simps [simp del]
+declare find_closest_bf_code.simps [simp del]
 
 
 subsection "closest_pair_bf"
@@ -221,7 +221,7 @@ fun closest_pair_bf_code :: "point list \<Rightarrow> (int * point * point)" whe
 | "closest_pair_bf_code [p\<^sub>0, p\<^sub>1] = (dist_code p\<^sub>0 p\<^sub>1, p\<^sub>0, p\<^sub>1)"
 | "closest_pair_bf_code (p\<^sub>0 # ps) = (
     let (\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1) = closest_pair_bf_code ps in
-    let (\<delta>\<^sub>p, p\<^sub>1) = find_closest_code p\<^sub>0 ps in
+    let (\<delta>\<^sub>p, p\<^sub>1) = find_closest_bf_code p\<^sub>0 ps in
     if \<delta>\<^sub>c \<le> \<delta>\<^sub>p then
       (\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1)
     else
@@ -235,13 +235,13 @@ proof (induction ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 rule: closest_pair_b
   let ?ps = "p\<^sub>2 # p\<^sub>3 # ps"
   obtain \<delta>\<^sub>c c\<^sub>0 c\<^sub>1 where \<delta>\<^sub>c_def: "(\<delta>\<^sub>c, c\<^sub>0, c\<^sub>1) = closest_pair_bf_code ?ps"
     by (metis prod_cases3)
-  obtain \<delta>\<^sub>p p\<^sub>1 where \<delta>\<^sub>p_def: "(\<delta>\<^sub>p, p\<^sub>1) = find_closest_code p\<^sub>0 ?ps"
+  obtain \<delta>\<^sub>p p\<^sub>1 where \<delta>\<^sub>p_def: "(\<delta>\<^sub>p, p\<^sub>1) = find_closest_bf_code p\<^sub>0 ?ps"
     using prod.collapse by blast
   note defs = \<delta>\<^sub>c_def \<delta>\<^sub>p_def
   have "\<delta>\<^sub>c = dist_code c\<^sub>0 c\<^sub>1"
     using "4.IH" defs by simp
   moreover have "\<delta>\<^sub>p = dist_code p\<^sub>0 p\<^sub>1"
-    using find_closest_code_dist_eq defs by blast
+    using find_closest_bf_code_dist_eq defs by blast
   ultimately show ?case
     using "4.prems"(2) defs by (auto split: prod.splits if_splits)
 qed auto
@@ -257,18 +257,18 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 \<delta>' c\<^sub>0' c\<^sub>
   obtain c\<^sub>0 c\<^sub>1 \<delta>\<^sub>c' c\<^sub>0' c\<^sub>1' where \<delta>\<^sub>c_def: "(c\<^sub>0, c\<^sub>1) = closest_pair_bf ?ps"
     "(\<delta>\<^sub>c', c\<^sub>0', c\<^sub>1') = closest_pair_bf_code ?ps"
     by (metis prod_cases3)
-  obtain p\<^sub>1 \<delta>\<^sub>p' p\<^sub>1' where \<delta>\<^sub>p_def: "p\<^sub>1 = find_closest p\<^sub>0 ?ps"
-    "(\<delta>\<^sub>p', p\<^sub>1') = find_closest_code p\<^sub>0 ?ps"
+  obtain p\<^sub>1 \<delta>\<^sub>p' p\<^sub>1' where \<delta>\<^sub>p_def: "p\<^sub>1 = find_closest_bf p\<^sub>0 ?ps"
+    "(\<delta>\<^sub>p', p\<^sub>1') = find_closest_bf_code p\<^sub>0 ?ps"
     using prod.collapse by blast
   note defs = \<delta>\<^sub>c_def \<delta>\<^sub>p_def
   have A: "c\<^sub>0 = c\<^sub>0' \<and> c\<^sub>1 = c\<^sub>1'"
     using "4.IH" defs by simp
   moreover have B: "p\<^sub>1 = p\<^sub>1'"
-    using find_closest_code_eq defs by blast
+    using find_closest_bf_code_eq defs by blast
   moreover have "\<delta>\<^sub>c' = dist_code c\<^sub>0' c\<^sub>1'"
     using defs closest_pair_bf_code_dist_eq[of ?ps] by simp
   moreover have "\<delta>\<^sub>p' = dist_code p\<^sub>0 p\<^sub>1'"
-    using defs find_closest_code_dist_eq by blast
+    using defs find_closest_bf_code_dist_eq by blast
   ultimately have "dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p\<^sub>1 \<longleftrightarrow> \<delta>\<^sub>c' \<le> \<delta>\<^sub>p'"
     by (simp add: dist_eq_dist_code_le)
   thus ?case
@@ -276,26 +276,26 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 \<delta>' c\<^sub>0' c\<^sub>
 qed auto
 
 
-subsection "find_closest_\<delta>"
+subsection "find_closest"
 
-fun find_closest_\<delta>_code :: "point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> (int * point)" where
-  "find_closest_\<delta>_code _ _ [] = undefined"
-| "find_closest_\<delta>_code p _ [p\<^sub>0] = (dist_code p p\<^sub>0, p\<^sub>0)"
-| "find_closest_\<delta>_code p \<delta> (p\<^sub>0 # ps) = (
+fun find_closest_code :: "point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> (int * point)" where
+  "find_closest_code _ _ [] = undefined"
+| "find_closest_code p _ [p\<^sub>0] = (dist_code p p\<^sub>0, p\<^sub>0)"
+| "find_closest_code p \<delta> (p\<^sub>0 # ps) = (
     let \<delta>\<^sub>0 = dist_code p p\<^sub>0 in
     if \<delta> \<le> (snd p\<^sub>0 - snd p)\<^sup>2 then
       (\<delta>\<^sub>0, p\<^sub>0)
     else
-      let (\<delta>\<^sub>1, p\<^sub>1) = find_closest_\<delta>_code p (min \<delta> \<delta>\<^sub>0) ps in
+      let (\<delta>\<^sub>1, p\<^sub>1) = find_closest_code p (min \<delta> \<delta>\<^sub>0) ps in
       if \<delta>\<^sub>0 \<le> \<delta>\<^sub>1 then
         (\<delta>\<^sub>0, p\<^sub>0)
       else
         (\<delta>\<^sub>1, p\<^sub>1)
   )"
 
-lemma find_closest_\<delta>_code_dist_eq:
-  "0 < length ps \<Longrightarrow> (\<delta>\<^sub>c, c) = find_closest_\<delta>_code p \<delta> ps \<Longrightarrow> \<delta>\<^sub>c = dist_code p c"
-proof (induction p \<delta> ps arbitrary: \<delta>\<^sub>c c rule: find_closest_\<delta>_code.induct)
+lemma find_closest_code_dist_eq:
+  "0 < length ps \<Longrightarrow> (\<delta>\<^sub>c, c) = find_closest_code p \<delta> ps \<Longrightarrow> \<delta>\<^sub>c = dist_code p c"
+proof (induction p \<delta> ps arbitrary: \<delta>\<^sub>c c rule: find_closest_code.induct)
   case (3 p \<delta> p\<^sub>0 p\<^sub>2 ps)
   show ?case
   proof cases
@@ -305,7 +305,7 @@ proof (induction p \<delta> ps arbitrary: \<delta>\<^sub>c c rule: find_closest_
   next
     assume A: "\<not> \<delta> \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
     define \<delta>\<^sub>0 where \<delta>\<^sub>0_def: "\<delta>\<^sub>0 = dist_code p p\<^sub>0"
-    obtain \<delta>\<^sub>1 p\<^sub>1 where \<delta>\<^sub>1_def: "(\<delta>\<^sub>1, p\<^sub>1) = find_closest_\<delta>_code p (min \<delta> \<delta>\<^sub>0) (p\<^sub>2 # ps)"
+    obtain \<delta>\<^sub>1 p\<^sub>1 where \<delta>\<^sub>1_def: "(\<delta>\<^sub>1, p\<^sub>1) = find_closest_code p (min \<delta> \<delta>\<^sub>0) (p\<^sub>2 # ps)"
       by (metis surj_pair)
     note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
     have "\<delta>\<^sub>1 = dist_code p p\<^sub>1"
@@ -315,18 +315,18 @@ proof (induction p \<delta> ps arbitrary: \<delta>\<^sub>c c rule: find_closest_
   qed
 qed simp_all
 
-declare find_closest_\<delta>.simps [simp add]
+declare find_closest.simps [simp add]
 
-lemma find_closest_\<delta>_code_eq:
+lemma find_closest_code_eq:
   assumes "0 < length ps" "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1" "sortedY (p # ps)"
-  assumes "c = find_closest_\<delta> p \<delta> ps" "(\<delta>\<^sub>c', c') = find_closest_\<delta>_code p \<delta>' ps"
+  assumes "c = find_closest p \<delta> ps" "(\<delta>\<^sub>c', c') = find_closest_code p \<delta>' ps"
   shows "c = c'"
   using assms
-proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delta>\<^sub>c' c' rule: find_closest_\<delta>.induct)
+proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delta>\<^sub>c' c' rule: find_closest.induct)
   case (3 p \<delta> p\<^sub>0 p\<^sub>2 ps)
   define \<delta>\<^sub>0 \<delta>\<^sub>0' where \<delta>\<^sub>0_def: "\<delta>\<^sub>0 = dist p p\<^sub>0" "\<delta>\<^sub>0' = dist_code p p\<^sub>0"
-  obtain p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1' where \<delta>\<^sub>1_def: "p\<^sub>1 = find_closest_\<delta> p (min \<delta> \<delta>\<^sub>0) (p\<^sub>2 # ps)"
-    "(\<delta>\<^sub>1', p\<^sub>1') = find_closest_\<delta>_code p (min \<delta>' \<delta>\<^sub>0') (p\<^sub>2 # ps)"
+  obtain p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1' where \<delta>\<^sub>1_def: "p\<^sub>1 = find_closest p (min \<delta> \<delta>\<^sub>0) (p\<^sub>2 # ps)"
+    "(\<delta>\<^sub>1', p\<^sub>1') = find_closest_code p (min \<delta>' \<delta>\<^sub>0') (p\<^sub>2 # ps)"
     by (metis surj_pair)
   note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
   show ?case
@@ -349,7 +349,7 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
     ultimately have B: "p\<^sub>1 = p\<^sub>1'"
       using "3.IH" "3.prems"(2,3) * defs by (smt length_greater_0_conv list.discI)
     have "\<delta>\<^sub>1' = dist_code p p\<^sub>1'"
-      using find_closest_\<delta>_code_dist_eq defs by blast
+      using find_closest_code_dist_eq defs by blast
     hence "\<delta>\<^sub>0 \<le> dist p p\<^sub>1 \<longleftrightarrow> \<delta>\<^sub>0' \<le> \<delta>\<^sub>1'"
       using defs(1,2) dist_eq_dist_code_le by (simp add: B)
     thus ?thesis
@@ -358,33 +358,33 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
 qed auto
 
 
-subsection "closest_pair_combine"
+subsection "find_closest_pair"
 
-fun closest_pair_combine_code :: "(int * point * point) \<Rightarrow> point list \<Rightarrow> (int * point * point)" where
-  "closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) [] = (\<delta>, c\<^sub>0, c\<^sub>1)"
-| "closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) [p] = (\<delta>, c\<^sub>0, c\<^sub>1)"
-| "closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps) = (
-    let (\<delta>', p\<^sub>1) = find_closest_\<delta>_code p\<^sub>0 \<delta> ps in
+fun find_closest_pair_code :: "(int * point * point) \<Rightarrow> point list \<Rightarrow> (int * point * point)" where
+  "find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) [] = (\<delta>, c\<^sub>0, c\<^sub>1)"
+| "find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) [p] = (\<delta>, c\<^sub>0, c\<^sub>1)"
+| "find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) (p\<^sub>0 # ps) = (
+    let (\<delta>', p\<^sub>1) = find_closest_code p\<^sub>0 \<delta> ps in
     if \<delta> \<le> \<delta>' then
-      closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) ps
+      find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) ps
     else
-      closest_pair_combine_code (\<delta>', p\<^sub>0, p\<^sub>1) ps
+      find_closest_pair_code (\<delta>', p\<^sub>0, p\<^sub>1) ps
   )"
 
-lemma closest_pair_combine_code_dist_eq:
-  assumes "\<delta> = dist_code c\<^sub>0 c\<^sub>1" "(\<Delta>, C\<^sub>0, C\<^sub>1) = closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) ps"
+lemma find_closest_pair_code_dist_eq:
+  assumes "\<delta> = dist_code c\<^sub>0 c\<^sub>1" "(\<Delta>, C\<^sub>0, C\<^sub>1) = find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) ps"
   shows "\<Delta> = dist_code C\<^sub>0 C\<^sub>1"
   using assms
-proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 \<Delta> C\<^sub>0 C\<^sub>1 rule: closest_pair_combine_code.induct)
+proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^sub>0 c\<^sub>1 \<Delta> C\<^sub>0 C\<^sub>1 rule: find_closest_pair_code.induct)
   case (3 \<delta> c\<^sub>0 c\<^sub>1 p\<^sub>0 p\<^sub>2 ps)
-  obtain \<delta>' p\<^sub>1 where \<delta>'_def: "(\<delta>', p\<^sub>1) = find_closest_\<delta>_code p\<^sub>0 \<delta> (p\<^sub>2 # ps)"
+  obtain \<delta>' p\<^sub>1 where \<delta>'_def: "(\<delta>', p\<^sub>1) = find_closest_code p\<^sub>0 \<delta> (p\<^sub>2 # ps)"
     by (metis surj_pair)
   hence A: "\<delta>' = dist_code p\<^sub>0 p\<^sub>1"
-    using find_closest_\<delta>_code_dist_eq by blast
+    using find_closest_code_dist_eq by blast
   show ?case
   proof (cases "\<delta> \<le> \<delta>'")
     case True
-    obtain \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>'_def: "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
+    obtain \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>'_def: "(\<Delta>', C\<^sub>0', C\<^sub>1') = find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
       by (metis prod_cases4)
     note defs = \<delta>'_def \<Delta>'_def
     hence "\<Delta>' = dist_code C\<^sub>0' C\<^sub>1'"
@@ -395,7 +395,7 @@ proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^s
       by simp
   next
     case False
-    obtain \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>'_def: "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<delta>', p\<^sub>0, p\<^sub>1) (p\<^sub>2 # ps)"
+    obtain \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>'_def: "(\<Delta>', C\<^sub>0', C\<^sub>1') = find_closest_pair_code (\<delta>', p\<^sub>0, p\<^sub>1) (p\<^sub>2 # ps)"
       by (metis prod_cases4)
     note defs = \<delta>'_def \<Delta>'_def
     hence "\<Delta>' = dist_code C\<^sub>0' C\<^sub>1'"
@@ -407,31 +407,31 @@ proof (induction "(\<delta>, c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> c\<^s
   qed
 qed auto
 
-declare closest_pair_combine.simps [simp add]
+declare find_closest_pair.simps [simp add]
 
-lemma closest_pair_combine_code_eq:
+lemma find_closest_pair_code_eq:
   assumes "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1" "sortedY ps"
-  assumes "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (c\<^sub>0, c\<^sub>1) ps"
-  assumes "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<delta>', c\<^sub>0, c\<^sub>1) ps"
+  assumes "(C\<^sub>0, C\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"
+  assumes "(\<Delta>', C\<^sub>0', C\<^sub>1') = find_closest_pair_code (\<delta>', c\<^sub>0, c\<^sub>1) ps"
   shows "C\<^sub>0 = C\<^sub>0' \<and> C\<^sub>1 = C\<^sub>1'"
   using assms
-proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^sub>0 c\<^sub>1 C\<^sub>0 C\<^sub>1 \<Delta>' C\<^sub>0' C\<^sub>1' rule: closest_pair_combine.induct)
+proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^sub>0 c\<^sub>1 C\<^sub>0 C\<^sub>1 \<Delta>' C\<^sub>0' C\<^sub>1' rule: find_closest_pair.induct)
   case (3 c\<^sub>0 c\<^sub>1 p\<^sub>0 p\<^sub>2 ps)
-  obtain p\<^sub>1 \<delta>\<^sub>p' p\<^sub>1' where \<delta>\<^sub>p_def: "p\<^sub>1 = find_closest_\<delta> p\<^sub>0 \<delta> (p\<^sub>2 # ps)"
-    "(\<delta>\<^sub>p', p\<^sub>1') = find_closest_\<delta>_code p\<^sub>0 \<delta>' (p\<^sub>2 # ps)"
+  obtain p\<^sub>1 \<delta>\<^sub>p' p\<^sub>1' where \<delta>\<^sub>p_def: "p\<^sub>1 = find_closest p\<^sub>0 \<delta> (p\<^sub>2 # ps)"
+    "(\<delta>\<^sub>p', p\<^sub>1') = find_closest_code p\<^sub>0 \<delta>' (p\<^sub>2 # ps)"
     by (metis surj_pair)
   hence A: "\<delta>\<^sub>p' = dist_code p\<^sub>0 p\<^sub>1'"
-    using find_closest_\<delta>_code_dist_eq by blast
+    using find_closest_code_dist_eq by blast
   have B: "p\<^sub>1 = p\<^sub>1'"
-    using "3.prems"(1,2,3) \<delta>\<^sub>p_def find_closest_\<delta>_code_eq by blast
+    using "3.prems"(1,2,3) \<delta>\<^sub>p_def find_closest_code_eq by blast
   show ?case
   proof (cases "\<delta> \<le> dist p\<^sub>0 p\<^sub>1")
     case True
     hence C: "\<delta>' \<le> \<delta>\<^sub>p'"
       by (simp add: "3.prems"(1,2) A B dist_eq_dist_code_le)
     obtain C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i \<Delta>\<^sub>i' C\<^sub>0\<^sub>i' C\<^sub>1\<^sub>i' where \<Delta>\<^sub>i_def:
-      "(C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) = closest_pair_combine (c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
-      "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = closest_pair_combine_code (\<delta>', c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
+      "(C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) = find_closest_pair (c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
+      "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = find_closest_pair_code (\<delta>', c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
       by (metis prod_cases3)
     note defs = \<delta>\<^sub>p_def \<Delta>\<^sub>i_def
     have "sortedY (p\<^sub>2 # ps)"
@@ -449,8 +449,8 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^s
     hence C: "\<not> \<delta>' \<le> \<delta>\<^sub>p'"
       by (simp add: "3.prems"(1,2) A B dist_eq_dist_code_le)
     obtain C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i \<Delta>\<^sub>i' C\<^sub>0\<^sub>i' C\<^sub>1\<^sub>i' where \<Delta>\<^sub>i_def:
-      "(C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) = closest_pair_combine (p\<^sub>0, p\<^sub>1) (p\<^sub>2 # ps)"
-      "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = closest_pair_combine_code (\<delta>\<^sub>p', p\<^sub>0, p\<^sub>1') (p\<^sub>2 # ps)"
+      "(C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) = find_closest_pair (p\<^sub>0, p\<^sub>1) (p\<^sub>2 # ps)"
+      "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = find_closest_pair_code (\<delta>\<^sub>p', p\<^sub>0, p\<^sub>1') (p\<^sub>2 # ps)"
       by (metis prod_cases3)
     note defs = \<delta>\<^sub>p_def \<Delta>\<^sub>i_def
     have "sortedY (p\<^sub>2 # ps)"
@@ -473,14 +473,14 @@ fun combine_code :: "(int * point * point) \<Rightarrow> (int * point * point) \
   "combine_code (\<delta>\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (\<delta>\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = (
     let (\<delta>, c\<^sub>0, c\<^sub>1) = if \<delta>\<^sub>L < \<delta>\<^sub>R then (\<delta>\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) else (\<delta>\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) in
     let ps' = filter (\<lambda>p. (fst p - l)\<^sup>2 < \<delta>) ps in
-    closest_pair_combine_code (\<delta>, c\<^sub>0, c\<^sub>1) ps'
+    find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) ps'
   )"
 
 lemma combine_code_dist_eq:
   assumes "\<delta>\<^sub>L = dist_code p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "\<delta>\<^sub>R = dist_code p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R"
   assumes "(\<delta>, c\<^sub>0, c\<^sub>1) = combine_code (\<delta>\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (\<delta>\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
   shows "\<delta> = dist_code c\<^sub>0 c\<^sub>1"
-  using assms by (auto simp: closest_pair_combine_code_dist_eq split: if_splits)
+  using assms by (auto simp: find_closest_pair_code_dist_eq split: if_splits)
 
 declare combine.simps [simp add]
 
@@ -498,8 +498,8 @@ proof -
     "ps' = filter (\<lambda>p. dist p (l, snd p) < dist C\<^sub>0\<^sub>i C\<^sub>1\<^sub>i) ps"
     "ps'' = filter (\<lambda>p. (fst p - l)\<^sup>2 < \<Delta>\<^sub>i') ps"
   obtain C\<^sub>0 C\<^sub>1 \<Delta>' C\<^sub>0' C\<^sub>1' where \<Delta>_def:
-    "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) ps'"
-    "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') ps''"
+    "(C\<^sub>0, C\<^sub>1) = find_closest_pair (C\<^sub>0\<^sub>i, C\<^sub>1\<^sub>i) ps'"
+    "(\<Delta>', C\<^sub>0', C\<^sub>1') = find_closest_pair_code (\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') ps''"
     by (metis prod_cases3)
   note defs = \<Delta>\<^sub>i_def ps'_def \<Delta>_def
   have *: "C\<^sub>0\<^sub>i = C\<^sub>0\<^sub>i'" "C\<^sub>1\<^sub>i = C\<^sub>1\<^sub>i'" "\<Delta>\<^sub>i' = dist_code C\<^sub>0\<^sub>i' C\<^sub>1\<^sub>i'"
@@ -511,7 +511,7 @@ proof -
   moreover have "sortedY ps'"
     using assms(3) ps'_def sortedY_def sorted_wrt_filter by blast
   ultimately have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-    using * closest_pair_combine_code_eq \<Delta>_def by blast+
+    using * find_closest_pair_code_eq \<Delta>_def by blast+
   moreover have "C\<^sub>0 = c\<^sub>0" "C\<^sub>1 = c\<^sub>1"
     using assms(4) defs(1,3,5) apply (auto split: prod.splits) by (metis Pair_inject)+
   moreover have "C\<^sub>0' = c\<^sub>0'" "C\<^sub>1' = c\<^sub>1'"
