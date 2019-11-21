@@ -340,7 +340,7 @@ fun find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point list 
   "find_closest_\<delta> _ _ [] = undefined"
 | "find_closest_\<delta> _ _ [p] = p"
 | "find_closest_\<delta> p \<delta> (p\<^sub>0 # ps) = (
-    if \<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar> then
+    if \<delta> \<le> snd p\<^sub>0 - snd p then
       p\<^sub>0
     else
       let p\<^sub>1 = find_closest_\<delta> p (min \<delta> (dist p p\<^sub>0)) ps in
@@ -363,9 +363,9 @@ proof (induction p \<delta> ps rule: find_closest_\<delta>.induct)
   case (3 p \<delta> p\<^sub>0 p\<^sub>2 ps)
   let ?ps = "p\<^sub>0 # p\<^sub>2 # ps"
   define p\<^sub>1 where p\<^sub>1_def: "p\<^sub>1 = find_closest_\<delta> p (min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps)"
-  have A: "\<not> \<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar>"
+  have A: "\<not> \<delta> \<le> snd p\<^sub>0 - snd p"
   proof (rule ccontr)
-    assume B: "\<not> \<not> \<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar>"
+    assume B: "\<not> \<not> \<delta> \<le> snd p\<^sub>0 - snd p"
     have "\<forall>q \<in> set ?ps. snd p \<le> snd q"
       using sortedY_def "3.prems"(1) by simp
     moreover have "\<forall>q \<in> set ?ps. \<delta> \<le> snd q - snd p"

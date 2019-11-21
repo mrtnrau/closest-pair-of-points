@@ -318,7 +318,7 @@ qed simp_all
 declare find_closest_\<delta>.simps [simp add]
 
 lemma find_closest_\<delta>_code_eq:
-  assumes "0 < length ps" "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1"
+  assumes "0 < length ps" "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1" "sortedY (p # ps)"
   assumes "c = find_closest_\<delta> p \<delta> ps" "(\<delta>\<^sub>c', c') = find_closest_\<delta>_code p \<delta>' ps"
   shows "c = c'"
   using assms
@@ -331,25 +331,29 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
   note defs = \<delta>\<^sub>0_def \<delta>\<^sub>1_def
   show ?case
   proof cases
-    assume *: "\<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar>"
+    assume *: "\<delta> \<le> snd p\<^sub>0 - snd p"
     hence "\<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
       using "3.prems"(2,3) dist_eq_dist_code_abs_2 by fastforce
     thus ?thesis
-      using * "3.prems"(4,5) by simp
+      using * "3.prems"(5,6) by simp
   next
-    assume *: "\<not> \<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar>"
-    hence A: "\<not> \<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
-      using "3.prems"(2,3) dist_eq_dist_code_abs_2 by (metis (mono_tags) of_int_abs)
+    assume *: "\<not> \<delta> \<le> snd p\<^sub>0 - snd p"
+    moreover have "0 \<le> snd p\<^sub>0 - snd p"
+      using "3.prems"(4) sortedY_def by simp
+    ultimately have A: "\<not> \<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
+      using "3.prems"(2,3) dist_eq_dist_code_abs_2 by (smt of_int_nonneg)
     have "min \<delta> \<delta>\<^sub>0 = \<delta> \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>'" "min \<delta> \<delta>\<^sub>0 = \<delta>\<^sub>0 \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>\<^sub>0'"
       using "3.prems"(2,3) defs(1,2) dist_eq_dist_code_le by smt+
-    hence B: "p\<^sub>1 = p\<^sub>1'"
+    moreover have "sortedY (p # p\<^sub>2 # ps)"
+      using "3.prems"(4) sortedY_def by simp
+    ultimately have B: "p\<^sub>1 = p\<^sub>1'"
       using "3.IH" "3.prems"(2,3) * defs by (smt length_greater_0_conv list.discI)
     have "\<delta>\<^sub>1' = dist_code p p\<^sub>1'"
       using find_closest_\<delta>_code_dist_eq defs by blast
     hence "\<delta>\<^sub>0 \<le> dist p p\<^sub>1 \<longleftrightarrow> \<delta>\<^sub>0' \<le> \<delta>\<^sub>1'"
       using defs(1,2) dist_eq_dist_code_le by (simp add: B)
     thus ?thesis
-      using "3.prems"(4,5) * A B defs by (auto simp: Let_def split: prod.splits)
+      using "3.prems"(5,6) * A B defs by (auto simp: Let_def split: prod.splits)
   qed
 qed auto
 
@@ -406,7 +410,7 @@ qed auto
 declare closest_pair_combine.simps [simp add]
 
 lemma closest_pair_combine_code_eq:
-  assumes "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1"
+  assumes "\<delta> = dist c\<^sub>0 c\<^sub>1" "\<delta>' = dist_code c\<^sub>0 c\<^sub>1" "sortedY ps"
   assumes "(C\<^sub>0, C\<^sub>1) = closest_pair_combine (c\<^sub>0, c\<^sub>1) ps"
   assumes "(\<Delta>', C\<^sub>0', C\<^sub>1') = closest_pair_combine_code (\<delta>', c\<^sub>0, c\<^sub>1) ps"
   shows "C\<^sub>0 = C\<^sub>0' \<and> C\<^sub>1 = C\<^sub>1'"
@@ -419,7 +423,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^s
   hence A: "\<delta>\<^sub>p' = dist_code p\<^sub>0 p\<^sub>1'"
     using find_closest_\<delta>_code_dist_eq by blast
   have B: "p\<^sub>1 = p\<^sub>1'"
-    using "3.prems"(1,2) \<delta>\<^sub>p_def find_closest_\<delta>_code_eq by blast
+    using "3.prems"(1,2,3) \<delta>\<^sub>p_def find_closest_\<delta>_code_eq by blast
   show ?case
   proof (cases "\<delta> \<le> dist p\<^sub>0 p\<^sub>1")
     case True
@@ -430,12 +434,14 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^s
       "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = closest_pair_combine_code (\<delta>', c\<^sub>0, c\<^sub>1) (p\<^sub>2 # ps)"
       by (metis prod_cases3)
     note defs = \<delta>\<^sub>p_def \<Delta>\<^sub>i_def
+    have "sortedY (p\<^sub>2 # ps)"
+      using "3.prems"(3) sortedY_def by simp
     hence "C\<^sub>0\<^sub>i = C\<^sub>0\<^sub>i' \<and> C\<^sub>1\<^sub>i = C\<^sub>1\<^sub>i'"
-      using "3.hyps"(1) "3.prems"(1,2) True \<delta>\<^sub>p_def by blast
+      using "3.hyps"(1) "3.prems"(1,2) True defs by blast
     moreover have "C\<^sub>0 = C\<^sub>0\<^sub>i" "C\<^sub>1 = C\<^sub>1\<^sub>i"
-      using defs(1,3) True "3.prems"(1,3) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs(1,3) True "3.prems"(1,4) apply (auto split: prod.splits) by (metis Pair_inject)+
     moreover have "\<Delta>' = \<Delta>\<^sub>i'" "C\<^sub>0' = C\<^sub>0\<^sub>i'" "C\<^sub>1' = C\<^sub>1\<^sub>i'"
-      using defs(2,4) C "3.prems"(4) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs(2,4) C "3.prems"(5) apply (auto split: prod.splits) by (metis Pair_inject)+
     ultimately show ?thesis
       by simp
   next
@@ -447,12 +453,14 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: \<delta> \<delta>' c\<^s
       "(\<Delta>\<^sub>i', C\<^sub>0\<^sub>i', C\<^sub>1\<^sub>i') = closest_pair_combine_code (\<delta>\<^sub>p', p\<^sub>0, p\<^sub>1') (p\<^sub>2 # ps)"
       by (metis prod_cases3)
     note defs = \<delta>\<^sub>p_def \<Delta>\<^sub>i_def
+    have "sortedY (p\<^sub>2 # ps)"
+      using "3.prems"(3) sortedY_def by simp
     hence "C\<^sub>0\<^sub>i = C\<^sub>0\<^sub>i' \<and> C\<^sub>1\<^sub>i = C\<^sub>1\<^sub>i'"
-      using "3.prems"(1) "3.hyps"(2) A B False \<delta>\<^sub>p_def by blast
+      using "3.prems"(1) "3.hyps"(2) A B False defs by blast
     moreover have "C\<^sub>0 = C\<^sub>0\<^sub>i" "C\<^sub>1 = C\<^sub>1\<^sub>i"
-      using defs(1,3) False "3.prems"(1,3) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs(1,3) False "3.prems"(1,4) apply (auto split: prod.splits) by (metis Pair_inject)+
     moreover have "\<Delta>' = \<Delta>\<^sub>i'" "C\<^sub>0' = C\<^sub>0\<^sub>i'" "C\<^sub>1' = C\<^sub>1\<^sub>i'"
-      using defs(2,4) C "3.prems"(4) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs(2,4) C "3.prems"(5) apply (auto split: prod.splits) by (metis Pair_inject)+
     ultimately show ?thesis
       by simp
   qed
@@ -477,7 +485,7 @@ lemma combine_code_dist_eq:
 declare combine.simps [simp add]
 
 lemma combine_code_eq:
-  assumes "\<delta>\<^sub>L' = dist_code p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "\<delta>\<^sub>R' = dist_code p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R"
+  assumes "\<delta>\<^sub>L' = dist_code p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L" "\<delta>\<^sub>R' = dist_code p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R" "sortedY ps"
   assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
   assumes "(\<delta>', c\<^sub>0', c\<^sub>1') = combine_code (\<delta>\<^sub>L', p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (\<delta>\<^sub>R', p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
   shows "c\<^sub>0 = c\<^sub>0' \<and> c\<^sub>1 = c\<^sub>1'"
@@ -500,12 +508,14 @@ proof -
     using dist_eq_dist_code_abs_1 by (metis (mono_tags) of_int_abs)
   hence "ps' = ps''"
     using ps'_def dist_fst_abs by auto
-  hence "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
+  moreover have "sortedY ps'"
+    using assms(3) ps'_def sortedY_def sorted_wrt_filter by blast
+  ultimately have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
     using * closest_pair_combine_code_eq \<Delta>_def by blast+
   moreover have "C\<^sub>0 = c\<^sub>0" "C\<^sub>1 = c\<^sub>1"
-    using assms(3) defs(1,3,5) apply (auto split: prod.splits) by (metis Pair_inject)+
+    using assms(4) defs(1,3,5) apply (auto split: prod.splits) by (metis Pair_inject)+
   moreover have "C\<^sub>0' = c\<^sub>0'" "C\<^sub>1' = c\<^sub>1'"
-    using assms(4) defs(2,4,6) apply (auto split: prod.splits) by (metis prod.inject)+
+    using assms(5) defs(2,4,6) apply (auto split: prod.splits) by (metis prod.inject)+
   ultimately show ?thesis
     by blast
 qed
@@ -717,7 +727,11 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 ys' \<delta>' c\<^sub>0' c
     hence IHR: "C\<^sub>0\<^sub>R = C\<^sub>0\<^sub>R'" "C\<^sub>1\<^sub>R = C\<^sub>1\<^sub>R'"
       using "1.IH" defs by metis+
 
-    have "YS = YS'"
+    have "sortedY YS\<^sub>L" "sortedY YS\<^sub>R"
+      using closest_pair_rec_set_length_sortedY YSC\<^sub>0\<^sub>1\<^sub>L_def(1) YSC\<^sub>0\<^sub>1\<^sub>R_def(1) by blast+
+    hence "sortedY YS"
+      using sorted_merge sortedY_def YS_def by blast
+    moreover have "YS = YS'"
       using defs \<open>1 < length XS\<^sub>L\<close> \<open>1 < length XS\<^sub>R\<close> closest_pair_rec_ys_eq by blast
     moreover have "\<Delta>\<^sub>L' = dist_code C\<^sub>0\<^sub>L' C\<^sub>1\<^sub>L'" "\<Delta>\<^sub>R' = dist_code C\<^sub>0\<^sub>R' C\<^sub>1\<^sub>R'"
       using defs \<open>1 < length XS\<^sub>L\<close> \<open>1 < length XS\<^sub>R\<close> closest_pair_rec_code_dist_eq by blast+

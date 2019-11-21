@@ -222,7 +222,7 @@ lemma max_points_is_7:
   assumes "\<forall>p' \<in> set (p # ps). l - \<delta> \<le> fst p' \<and> fst p' \<le> l + \<delta>"
   assumes "\<forall>p' \<in> ps\<^sub>L. fst p' \<le> l" "\<forall>p' \<in> ps\<^sub>R. l \<le> fst p'"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
-  shows "length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) ps) \<le> 7"
+  shows "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<le> 7"
 proof -
   define PS where "PS = p # ps"
   define R where "R = cbox (l - \<delta>, snd p) (l + \<delta>, snd p + \<delta>)"
@@ -255,10 +255,10 @@ proof -
   have CRPS: "card RPS \<le> 8"
     using CLSQPS CRSQPS card_Un_le[of LSQPS RSQPS] \<open>RPS = LSQPS \<union> RSQPS\<close> by auto
 
-  have "set (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) PS) \<subseteq> RPS"
+  have "set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS) \<subseteq> RPS"
   proof standard
     fix q
-    assume *: "q \<in> set (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) PS)"
+    assume *: "q \<in> set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)"
     hence CPS: "q \<in> set PS"
       by simp
     hence "snd p \<le> snd q" "snd q \<le> snd p + \<delta>"
@@ -273,9 +273,9 @@ proof -
   qed
   moreover have "finite RPS"
     by (simp add: RPS_def)
-  ultimately have "card (set (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) PS)) \<le> 8"
-    using CRPS card_mono[of RPS "set (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) PS)"] by simp
-  hence "length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) PS) \<le> 8"
+  ultimately have "card (set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)) \<le> 8"
+    using CRPS card_mono[of RPS "set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)"] by simp
+  hence "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS) \<le> 8"
     using assms(1) PS_def by (simp add: distinct_card)
   thus ?thesis
     using PS_def assms(1,3) by simp
@@ -618,7 +618,7 @@ fun t_find_closest_\<delta> :: "point \<Rightarrow> real \<Rightarrow> point lis
   "t_find_closest_\<delta> _ _ [] = 0"
 | "t_find_closest_\<delta> _ _ [_] = 1"
 | "t_find_closest_\<delta> p \<delta> (p\<^sub>0 # ps) = 1 + (
-    if \<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar> then
+    if \<delta> \<le> snd p\<^sub>0 - snd p then
       0
     else
       let p\<^sub>1 = find_closest_\<delta> p (min \<delta> (dist p p\<^sub>0)) ps in
@@ -639,12 +639,12 @@ lemma length_filter_P_impl_Q:
   by (induction xs) auto
 
 lemma t_find_closest_cnt:
-  "t_find_closest_\<delta> p \<delta> ps \<le> 1 + length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) ps)"
+  "t_find_closest_\<delta> p \<delta> ps \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"
 proof (induction p \<delta> ps rule: t_find_closest_\<delta>.induct)
   case (3 p \<delta> p\<^sub>0 p\<^sub>2 ps)
   define p\<^sub>1 where p\<^sub>1_def: "p\<^sub>1 = find_closest_\<delta> p (min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps)"
   show ?case
-  proof (cases "\<delta> \<le> \<bar>snd p\<^sub>0 - snd p\<bar>")
+  proof (cases "\<delta> \<le> snd p\<^sub>0 - snd p")
     case True
     thus ?thesis
       by simp
@@ -652,11 +652,11 @@ proof (induction p \<delta> ps rule: t_find_closest_\<delta>.induct)
     case False
     hence "t_find_closest_\<delta> p \<delta> (p\<^sub>0 # p\<^sub>2 # ps) = 1 + t_find_closest_\<delta> p (min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps)"
       using p\<^sub>1_def by simp
-    also have "... \<le> 1 + 1 + length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps))"
+    also have "... \<le> 1 + 1 + length (filter (\<lambda>q. snd q - snd p \<le> min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps))"
       using False 3 p\<^sub>1_def by simp
-    also have "... \<le> 1 + 1 + length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) (p\<^sub>2 # ps))"
+    also have "... \<le> 1 + 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) (p\<^sub>2 # ps))"
       using length_filter_P_impl_Q by (smt add_left_mono)
-    also have "... \<le> 1 + length (filter (\<lambda>q. \<bar>snd q - snd p\<bar> \<le> \<delta>) (p\<^sub>0 # p\<^sub>2 # ps))"
+    also have "... \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) (p\<^sub>0 # p\<^sub>2 # ps))"
       using False by simp
     ultimately show ?thesis 
       by simp
@@ -1001,16 +1001,14 @@ theorem closest_pair_rec_cost:
   "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem)
      (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
-
-definition valid' :: "point list \<Rightarrow> bool" where
-  "valid' ps \<longleftrightarrow> 1 < length ps \<and> distinct ps \<and> sortedX ps"
  
 theorem t_closest_pair_rec_bigo:
-  "t_closest_pair_rec \<in> O[length going_to at_top within { ps. valid' ps }]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair_rec \<in> O[length going_to at_top within { ps.
+     1 < length ps \<and> distinct ps \<and> sortedX ps }]((\<lambda>n. n * ln n) o length)"
 proof -
-  have 0: "\<And>ps. ps \<in> { ps. valid' ps} \<Longrightarrow> t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
-    unfolding comp_def valid'_def
-    using t_closest_pair_rec_conv_closest_pair_rec_cost by auto
+  have 0: "\<And>ps. ps \<in> { ps. 1 < length ps \<and> distinct ps \<and> sortedX ps } \<Longrightarrow>
+           t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
+    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost by auto
   show ?thesis
     using bigo_measure_trans[OF 0] bigthetaD1[OF closest_pair_rec_cost] of_nat_0_le_iff by blast
 qed
@@ -1020,9 +1018,6 @@ subsection "closest_pair"
 
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
   "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
-
-definition valid :: "point list \<Rightarrow> bool" where
-  "valid ps \<longleftrightarrow> 1 < length ps \<and> distinct ps"
 
 definition closest_pair_cost :: "nat \<Rightarrow> real" where
   "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
@@ -1040,10 +1035,12 @@ theorem closest_pair_cost:
   using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
 
 theorem t_closest_pair_bigo:
-  "t_closest_pair \<in> O[length going_to at_top within { ps. valid ps }]((\<lambda>n. n * ln n) o length)"
+  "t_closest_pair \<in> O[length going_to at_top within { ps.
+     1 < length ps \<and> distinct ps }]((\<lambda>n. n * ln n) o length)"
 proof -
-  have 0: "\<And>ps. ps \<in> { ps. valid ps } \<Longrightarrow> t_closest_pair ps \<le> (closest_pair_cost o length) ps"
-    unfolding comp_def valid_def using t_closest_pair_conv_closest_pair_cost by auto
+  have 0: "\<And>ps. ps \<in> { ps. 1 < length ps \<and> distinct ps } \<Longrightarrow>
+           t_closest_pair ps \<le> (closest_pair_cost o length) ps"
+    unfolding comp_def using t_closest_pair_conv_closest_pair_cost by auto
   show ?thesis
     using bigo_measure_trans[OF 0] closest_pair_cost by fastforce
 qed
