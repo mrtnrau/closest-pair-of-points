@@ -1,0 +1,64 @@
+\documentclass{llncs}
+\pagestyle{plain} % turn on page numbers in llncs
+
+\usepackage{isabelle,isabellesym}
+\usepackage{latexsym}
+\usepackage{amssymb}
+
+% this should be the last package used
+\usepackage{pdfsetup}
+
+\newtheorem{thm}{Theorem}
+
+% no right margin in quote:
+\renewenvironment{quote}
+{\list{}{}%
+\item\relax}
+{\endlist}
+
+\newcommand{\noquotes}[1]{{\renewcommand{\isachardoublequote}{}\renewcommand{\isachardoublequoteopen}{}\renewcommand{\isachardoublequoteclose}{}#1}}
+
+\isabellestyle{it}
+
+\renewcommand{\isacharunderscore}{\_}
+\renewcommand{\isacharunderscorekeyword}{\_}
+\renewcommand{\isadigit}[1]{{\rm #1}}
+
+% for uniform font size
+\renewcommand{\isastyle}{\isastyleminor}
+
+\newcommand{\eqnum}{\refstepcounter{equation}\hfill(\theequation)}
+
+\hyphenation{Isa-belle}
+
+
+\begin{document}
+
+\title{Title}
+\author{Author}
+\institute{Technische Universit\"at M\"unchen}
+\date{}
+\maketitle
+
+\begin{abstract}
+Abstract
+\end{abstract}
+
+
+\section{Introduction}
+
+All proofs have been formalized in the theorem prover Isabelle/HOL \cite{LNCS2283,Concrete}.
+
+\input{Paper.tex}
+
+\section{Related Work}
+
+Cite related work.
+
+\paragraph{Acknowledgement}
+XYZ helped.
+
+\bibliographystyle{splncs04}
+\bibliography{root}
+
+\end{document}

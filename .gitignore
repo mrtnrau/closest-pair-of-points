@@ -4,3 +4,4 @@
 /ocaml/out*
 /ocaml/main.byte
 /ocaml/main.native
+/generated/*
