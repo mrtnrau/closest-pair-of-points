@@ -6,7 +6,6 @@ session Proofs = "HOL-Analysis" +
     (* Alternatively you can take a local copy of LaTeXsugar and modify it: *)
     "HOL-Library.LaTeXsugar"
     "HOL-Library.OptionalSugar"
-    "Proofs/Proofs"
     "Proofs/Closest_Pair"
     "Proofs/Closest_Pair_Time"
     "Proofs/Closest_Pair_Code"

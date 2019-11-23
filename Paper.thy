@@ -1,7 +1,6 @@
 (*<*)
 theory Paper
-imports
-  "Proofs.Proofs"
+  imports
   "Proofs.Closest_Pair"
   "Proofs.Closest_Pair_Code"
   "Proofs.Closest_Pair_Time"
@@ -94,12 +93,12 @@ translations
 
 text\<open>
 
-\section{Closest Pair Algorithm}
+\section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
 
 
 
 
-\section{Proving Functional Correctness}
+\section{Proving Functional Correctness} \label{section:proving_functional_correctness}
 
 \begin{quote}
 % @{term [source] "find_closest :: point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> point"}
@@ -125,7 +124,7 @@ text\<open>
 
 
 
-\section{Proving Running Time}
+\section{Proving Running Time} \label{section:proving_running_time}
 
 \begin{quote}
 @{thm [display] (concl) t_find_closest_simp}
@@ -142,28 +141,11 @@ text\<open>
 
 
 
-\section{Executable Code}
+\section{Executable Code} \label{section:executable_code}
 
 
 
 
-\section{Templates}
-
-\begin{quote}%quote is just one possible way to display function definitions
-@{const_typ f}\\
-@{thm f.simps} 
-\end{quote}
-
-\begin{lemma}
-This can be proved by induction: @{thm f0}
-\end{lemma}
-
-This is a long tautology:
-\begin{quote}
-@{thm [break,margin=60] long} %break causes automatic line breaks
-\end{quote}
-
-Of course you can also inline terms or formulas: @{term "f(f 0)"}. And types: @{typ "'a list"}
 \<close>
 (*<*)
 end
