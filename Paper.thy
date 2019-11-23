@@ -57,6 +57,36 @@ lemma closest_pair_simp:
   "ps = p # q # ps' \<Longrightarrow> closest_pair ps = (let (ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec (sortX ps) in (c\<^sub>0, c\<^sub>1))"
   by simp
 
+lemma t_find_closest_simp:
+  "ps \<noteq> [] \<Longrightarrow> ps \<noteq> [p] \<Longrightarrow> t_find_closest p \<delta> (p\<^sub>0 # ps) = 1 + (
+    if \<delta> \<le> snd p\<^sub>0 - snd p then
+      0
+    else
+      let p\<^sub>1 = find_closest p (min \<delta> (dist p p\<^sub>0)) ps in
+      t_find_closest p (min \<delta> (dist p p\<^sub>0)) ps + (
+      if dist p p\<^sub>0 \<le> dist p p\<^sub>1 then 0 else 0
+    )
+  )"
+  by (cases ps) auto
+
+lemma t_closest_pair_rec_simp:
+  "t_closest_pair_rec xs = 1 + (
+    let n = length xs in
+    t_length xs + (
+    if n \<le> 3 then
+      t_sortY xs + t_closest_pair_bf xs
+    else
+      let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
+      t_split_at (n div 2) xs + (
+      let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
+      t_closest_pair_rec xs\<^sub>L + (
+      let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
+      t_closest_pair_rec xs\<^sub>R + (
+      let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
+      t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys
+    ))))
+  )" by (auto simp: t_closest_pair_rec.simps)
+
 translations
   "p" <= "(case p of (x, y) \<Rightarrow> (u, v))"
 
@@ -96,6 +126,18 @@ text\<open>
 
 
 \section{Proving Running Time}
+
+\begin{quote}
+@{thm [display] (concl) t_find_closest_simp}
+\end{quote}
+
+\begin{quote}
+@{thm [display] (concl) t_closest_pair_rec_simp}
+\end{quote}
+
+\begin{quote}
+@{thm [display] closest_pair_rec_cost.simps}
+\end{quote}
 
 
 

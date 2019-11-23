@@ -829,7 +829,6 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       t_split_at (n div 2) xs + (
-      let l = fst (hd xs\<^sub>R) in
 
       let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
       t_closest_pair_rec xs\<^sub>L + (
@@ -837,7 +836,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
       t_closest_pair_rec xs\<^sub>R + (
 
       let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-      t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R l ys
+      t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys
     ))))
   )"
   by pat_completeness auto
