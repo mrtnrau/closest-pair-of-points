@@ -36,24 +36,42 @@
 \begin{document}
 
 \title{Verification of a Closest Pair of Points Algorithm}
-\author{Martin Rau}
+\author{Martin Rau and Tobias Nipkow}
 \institute{Technische Universit\"at M\"unchen}
 \date{}
 \maketitle
 
 \begin{abstract}
-This paper presents a verified divide-and-conquer algorithm, solving one of the fundamental problems
+We verify a divide-and-conquer algorithm, solving one of the fundamental problems
 in \textit{Computational Geometry}, the \textit{Closest Pair of Points} problem.
-We use the interactive theorem prover \textit{Isabelle/HOL} to verify functional correctness
-and the running time of $\mathcal{O}(n\ \mathit{log}\;n)$ of the algorithm and generate executable code 
-which is competitive with handwritten imperative reference implementations.
+Using the interactive theorem prover Isabelle/HOL, we prove functional correctness
+and the optimal running time of $\mathcal{O}(n \log n)$ of the algorithm. 
+Additionally we generate executable code which is empirically competitive with handwritten
+ reference implementations.
 \end{abstract}
+
+
+\section{TODO}
+
+\begin{itemize}
+\item Add link to AFP entry in introduction \\
+\item Local copy of LatexSugar \\
+\item Adjust set conversions \\
+\item Log formatting \\log \\
+\item General formatting \\
+\item Write Isabelle notation subsection in introduction \\
+\item Write running time section \\
+\item Write executable code section \\
+\item Write related work section \\
+\item Update benchmarks \\
+\item Write AFP entry \\
+\end{itemize}
 
 
 \section{Introduction}
 
 The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
-problems in computational geometry: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
+problems in \textit{Computational Geometry}: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
 find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
 the distance between $p_0$ and $p_1$ is smaller than or equal to the distance of any distinct pair 
 of points of $P$.
@@ -73,11 +91,12 @@ improve the running time even further to $\mathcal{O}(n)$.
 The main contributions of this paper are the verification of a functional implementation of a
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n\ \mathit{log}\;n)$. We use the interactive theorem 
-prover \textit{Isabelle/HOL} \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
+prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
 running time of the algorithm. Empirical testing also shows that our verified algorithm is 
-competitive with handwritten imperative reference implementations. The basis for our implementation 
+competitive with handwritten reference implementations. The basis for our implementation 
 is the algorithm presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}.
 
+This paper is structures as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
 high-level description. Section \ref{section:proving_functional_correctness} presents the algorithm
 implementation and the functional correctness proof. Section \ref{section:proving_running_time} introduces

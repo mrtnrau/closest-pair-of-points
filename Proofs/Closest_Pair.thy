@@ -221,8 +221,8 @@ lemma min_dist_update:
   shows "min_dist (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
   using assms apply (auto simp: dist_commute min_dist_def) by force+
 
-fun spec :: "(point * point) \<Rightarrow> point set \<Rightarrow> bool" where
-  "spec (p\<^sub>0, p\<^sub>1) P \<longleftrightarrow> p\<^sub>0 \<in> P \<and> p\<^sub>1 \<in> P \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> min_dist (dist p\<^sub>0 p\<^sub>1) P"
+fun cp :: "(point * point) \<Rightarrow> point set \<Rightarrow> bool" where
+  "cp (p\<^sub>0, p\<^sub>1) P \<longleftrightarrow> p\<^sub>0 \<in> P \<and> p\<^sub>1 \<in> P \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> min_dist (dist p\<^sub>0 p\<^sub>1) P"
 
 
 subsection "Closest Pair Brute Force Algorithm"

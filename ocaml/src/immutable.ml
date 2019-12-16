@@ -43,7 +43,7 @@ let rec find_closest_delta (p : point) (d : float) (ps : point list): float * po
   | [c] -> (dist p c, c)
   | c0 :: cs ->
     let d0 = dist p c0 in
-    if d <= abs_float (snd c0 -. snd p) then
+    if d <= Z.sub (snd c0) (snd p) then
       (d0, c0)
     else
       let (d1, c1) = find_closest_delta p (min d d0) cs in
@@ -63,10 +63,10 @@ let rec closest_pair_combine (d : float) (c0 : point) (c1 : point) (ps : point l
     else
       (closest_pair_combine[@tailcall]) d' p0 p1 ps
 
-let rec merge (f : point -> float) (ps : point list) (ps0 : point list) (ps1 : point list): point list =
+let rec merge (f : point -> Z.t) (ps : point list) (ps0 : point list) (ps1 : point list): point list =
   match (ps0, ps1) with
   | (p0 :: ps0, p1 :: ps1) ->
-    if f p0 <= f p1 then
+    if Z.leq (f p0) (f p1) then
       (merge[@tailcall]) f (p0 :: ps) ps0 (p1 :: ps1)
     else
       (merge[@tailcall]) f (p1 :: ps) (p0 :: ps0) ps1
@@ -74,7 +74,7 @@ let rec merge (f : point -> float) (ps : point list) (ps0 : point list) (ps1 : p
   | (p0 :: ps0, []) -> (merge[@tailcall]) f (p0 :: ps) ps0 []
   | ([], []) -> List.rev ps
 
-let merge (f : point -> float) (ps0 : point list) (ps1 : point list): point list =
+let merge (f : point -> Z.t) (ps0 : point list) (ps1 : point list): point list =
   merge f [] ps0 ps1
 
 let rec msort (f : point -> float) (ps : point list): point list =
@@ -98,7 +98,7 @@ let rec closest_pair_rec (psX : point list): point list * (float * point * point
     let psY = merge snd ysL ysR in
 
     let (d, c0, c1) = if dl < dr then (dl, lp0, lp1) else (dr, rp0, rp1) in
-    let ys = List.filter (fun p -> abs_float (fst p -. l) <= d) psY in
+    let ys = List.filter (fun p -> Z.leq (Z.abs (Z.sub (fst p) l)) (d) psY in
     (ys, closest_pair_combine d c0 c1 ys)
 
 let closest_pair (ps : point list): point * point =
