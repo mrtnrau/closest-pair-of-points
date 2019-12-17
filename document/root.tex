@@ -47,55 +47,10 @@ in \textit{Computational Geometry}, the \textit{Closest Pair of Points} problem.
 Using the interactive theorem prover Isabelle/HOL, we prove functional correctness
 and the optimal running time of $\mathcal{O}(n \log n)$ of the algorithm. 
 Additionally we generate executable code which is empirically competitive with handwritten
- reference implementations.
+reference implementations.
 \end{abstract}
 
-\section{Introduction}
-
-The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
-problems in \textit{Computational Geometry}: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
-find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
-the distance between $p_0$ and $p_1$ is smaller than or equal to the distance of any distinct pair 
-of points of $P$.
-
-Shamos and Hoey \cite{Closest-Point-Problems:1975} are one of the first to mention this problem and
-introduce an algorithm based on \textit{Voronoi} diagrams for the planar case, improving the running 
-time of the best known algorithms at the time from $\mathcal{O}(n^2)$ to
-$\mathcal{O}(n\ \mathit{log}\;n)$. They also prove that this running time is optimal for a
-deterministic computation model. One year later, in 1976, Bentley and Shamos
-\cite{Divide-And-Conquer-In-Multidimensional-Space:1976} publish a, also optimal, divide-and-conquer
-algorithm to solve the Closest Pair problem that can be non-trivially extended to work on
-spaces of arbitrary dimension. Since then the problem has been the focus of extensive research and
-a multitude of optimal algorithms have been published. Smid \cite{Handbook-Computational-Geometry:2000}
-provides a comprehensive overview over the available algorithms, including randomized approaches which
-improve the running time even further to $\mathcal{O}(n)$.
-
-The main contributions of this paper are the verification of a functional implementation of a
-divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
-with the optimal running time of $\mathcal{O}(n\ \mathit{log}\;n)$. We use the interactive theorem 
-prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
-running time of the algorithm. Empirical testing also shows that our verified algorithm is 
-competitive with handwritten reference implementations. The basis for our implementation 
-is the algorithm presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}.
-
-This paper is structures as follows:
-Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
-high-level description. Section \ref{section:proving_functional_correctness} presents the algorithm
-implementation and the functional correctness proof. Section \ref{section:proving_running_time} introduces
-the reader to our methodology of formalizing running time proofs in Isabelle/HOL and proceeds to prove 
-the running time of $\mathcal{O}(n\ \mathit{log}\;n)$. Section \ref{section:executable_code}
-describes final adjustments to obtain an executable version of the algorithm in target languages
-such as OCaml and SML and evaluates it against handwritten imperative and functional implementations. 
-Section \ref{section:conclusion} concludes with summarizing our results and listing related and future work.
-
 \input{Paper.tex}
-
-\section{Conclusion} \label{section:conclusion}
-
-We did it.
-
-\paragraph{Acknowledgement}
-XYZ helped.
 
 \bibliographystyle{splncs04}
 \bibliography{root}
