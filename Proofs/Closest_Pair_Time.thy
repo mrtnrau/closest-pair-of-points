@@ -638,7 +638,7 @@ lemma length_filter_P_impl_Q:
    "(\<And>x. P x \<Longrightarrow> Q x) \<Longrightarrow> length (filter P xs) \<le> length (filter Q xs)"
   by (induction xs) auto
 
-lemma t_find_closest_bf_cnt:
+lemma t_find_closest_cnt:
   "t_find_closest p \<delta> ps \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"
 proof (induction p \<delta> ps rule: t_find_closest.induct)
   case (3 p \<delta> p\<^sub>0 p\<^sub>2 ps)
@@ -663,14 +663,14 @@ proof (induction p \<delta> ps rule: t_find_closest.induct)
   qed
 qed auto
 
-lemma t_find_closest:
+corollary t_find_closest:
   fixes \<delta> :: real and p :: point and ps :: "point list" and l :: int
   assumes "distinct (p # ps)" "sortedY (p # ps)" "0 \<le> \<delta>" "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p' \<in> set (p # ps). l - \<delta> < fst p' \<and> fst p' < l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
   shows "t_find_closest p \<delta> ps \<le> 8"
-  using assms max_points_is_7[of p ps \<delta> ps\<^sub>L ps\<^sub>R l] t_find_closest_bf_cnt[of p \<delta> ps] by linarith
+  using assms max_points_is_7[of p ps \<delta> ps\<^sub>L ps\<^sub>R l] t_find_closest_cnt[of p \<delta> ps] by linarith
 
 
 subsection "find_closest_pair"
