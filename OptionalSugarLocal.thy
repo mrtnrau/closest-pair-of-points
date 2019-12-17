@@ -54,8 +54,8 @@ translations
     "_tuple_args x (_tuple_arg (_tuple y z))"
 
   "_bind (CONST Some p) e" <= "_bind p (CONST the e)"
-(*  "_bind (p # CONST DUMMY) e" <= "_bind p (CONST hd e)"
-  "_bind (CONST DUMMY # p) e" <= "_bind p (CONST tl e)" *)
+(*  "_bind (p # CONST DUMMY) e" <= "_bind p (CONST hd e)" *)
+(*  "_bind (CONST DUMMY # p) e" <= "_bind p (CONST tl e)" *)
 
 (* type constraints with spacing *)
 no_syntax (output)

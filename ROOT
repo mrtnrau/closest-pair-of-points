@@ -4,8 +4,8 @@ session Proofs = "HOL-Analysis" +
     "Akra_Bazzi"
   theories
     (* Alternatively you can take a local copy of LaTeXsugar and modify it: *)
-    "LaTeXsugarLocal"
-    "OptionalSugarLocal"
+    "HOL-Library.LaTeXsugar"
+    "HOL-Library.OptionalSugar"
     "Proofs/Closest_Pair"
     "Proofs/Closest_Pair_Time"
     "Proofs/Closest_Pair_Code"
