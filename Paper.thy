@@ -4,7 +4,7 @@ theory Paper
   "Proofs.Closest_Pair"
   "Proofs.Closest_Pair_Code"
   "Proofs.Closest_Pair_Time"
-  "OptionalSugarLocal"
+  "Proofs.OptionalSugarLocal"
 begin
 
 (* Alternative simps for display *)
