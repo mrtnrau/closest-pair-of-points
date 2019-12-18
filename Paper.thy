@@ -89,9 +89,6 @@ lemma t_closest_pair_rec_simp:
 
 (* Styling *)
 
-notation (latex)
-  Cons  ("_ #/ _" [66,65] 65)
-
 translations
   "p" <= "(case p of (x, y) \<Rightarrow> (u, v))"
 
@@ -100,12 +97,10 @@ translations
 text\<open>
 \section{Introduction}
 
-@{prop "set xs = set ys"}
-
 The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
-problems in \textit{Computational Geometry}: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
+problems in Computational Geometry: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
 find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
-the distance between $p_0$ and $p_1$ is smaller than or equal to the distance of any distinct pair 
+the distance between $p_0$ and $p_1$ is less than or equal to the distance of any distinct pair 
 of points of $P$.
 
 Shamos and Hoey \cite{Closest-Point-Problems:1975} are one of the first to mention this problem and
@@ -120,7 +115,7 @@ a multitude of optimal algorithms have been published. Smid \cite{Handbook-Compu
 provides a comprehensive overview over the available algorithms, including randomized approaches which
 improve the running time even further to $\mathcal{O}(n)$.
 
-The main contributions of this paper are the verification of a functional implementation of a
+The main contribution of this paper is the verification of two related functional implementations of a
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive theorem 
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
@@ -139,23 +134,22 @@ describes final adjustments to obtain an executable version of the algorithm in 
 such as OCaml and SML and evaluates it against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes with summarizing our results and listing related and future work.
 
+\subsection{Related Verification Work}
+
+Computational geometry is a vast area but only a few algorithms and theorems seem to have been
+verified formally. We are aware of a number of verifications of convex hull algorithms
+\cite{DBLP:conf/tphol/PichardieB01,DBLP:conf/adg/MeikleF04,DBLP:journals/comgeo/BrunDM12}
+(incl.\ and a similar algorithm for the intersection of zonotopes \cite{Immler:2015})
+and algorithms for triangulation \cite{DBLP:conf/itp/DufourdB10,DBLP:conf/ictac/Bertot18}.
+Geometric models based on maps and hypermaps
+\cite{DBLP:journals/tcs/PuitgD00,DBLP:journals/jar/Dufourd09} are frequently used.
+
+Work on theorem proving in geometry (see \cite{narboux:hal-01779452} for an overview)
+is also related but considers fixed geometric constructions rather than algorithms.
+
 \subsection{Isabelle/HOL and Notation}
 
 TODO
-
-\subsection{Related Work}
-
-Computational geometry is a vast area but only a fragment seems to have been verified formally.
-
-Convex hull algorithms \cite{DBLP:conf/tphol/PichardieB01,DBLP:conf/adg/MeikleF04,DBLP:journals/comgeo/BrunDM12}
-and a similar algorithm for the intersection of zonotopes \cite{Immler:2015}.
-
-Triangulation: \cite{DBLP:conf/itp/DufourdB10,DBLP:conf/ictac/Bertot18}
-
-Geometric modelling and verification based on maps and hypermaps
-\cite{DBLP:journals/tcs/PuitgD00,DBLP:journals/jar/Dufourd09}.
-
-Geometry proofs.
 
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
