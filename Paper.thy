@@ -4,8 +4,7 @@ theory Paper
   "Proofs.Closest_Pair"
   "Proofs.Closest_Pair_Code"
   "Proofs.Closest_Pair_Time"
-  "HOL-Library.LaTeXsugar"
-  "HOL-Library.OptionalSugar"
+  "OptionalSugarLocal"
 begin
 
 (* Alternative simps for display *)
@@ -101,6 +100,8 @@ translations
 text\<open>
 \section{Introduction}
 
+@{prop "set xs = set ys"}
+
 The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
 problems in \textit{Computational Geometry}: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
 find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
@@ -141,10 +142,21 @@ Section \ref{section:conclusion} concludes with summarizing our results and list
 \subsection{Isabelle/HOL and Notation}
 
 TODO
-\<close>
 
+\subsection{Related Work}
 
-text\<open>
+Computational geometry is a vast area but only a fragment seems to have been verified formally.
+
+Convex hull algorithms \cite{DBLP:conf/tphol/PichardieB01,DBLP:conf/adg/MeikleF04,DBLP:journals/comgeo/BrunDM12}
+and a similar algorithm for the intersection of zonotopes \cite{Immler:2015}.
+
+Triangulation: \cite{DBLP:conf/itp/DufourdB10,DBLP:conf/ictac/Bertot18}
+
+Geometric modelling and verification based on maps and hypermaps
+\cite{DBLP:journals/tcs/PuitgD00,DBLP:journals/jar/Dufourd09}.
+
+Geometry proofs.
+
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
 
@@ -182,7 +194,7 @@ This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$ as il
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.5\textwidth]{./../../img/Combine.png}
-  \caption[]{If the red point has a closest neighbor within a distance of $\delta$ or less
+  \caption[]{If the red point has a closest neighbor within a distance of $\le\delta$
              in the marked $2\delta$ wide vertical strip, then this neighbor must be located in
              the grey $2\delta$ sized square.} \label{fig:Combine}
 \end{figure}
@@ -202,11 +214,10 @@ In particular, we need to obtain $P_L$ and $P_R$ and the sorted list $\mathit{ys
 In Section \ref{section:proving_functional_correctness} we refine the algorithm, using \textit{Presorting} and an integrated
 version of \textit{Mergesort}, to achieve the crucial linear time of the divide step and the complete combine step. 
 We refer the reader to Section \ref{section:proving_running_time} for a formal proof of the running time.
-\<close>
 
 
-text\<open>
-\section{Proving Functional Correctness} \label{section:proving_functional_correctness}
+\section{Proving Functional Correctness}
+\label{section:proving_functional_correctness}
 
 We present the implementation of the divide-and-conquer algorithm and the corresponding correctness proofs
 using a bottom-up approach, starting with the combine step. But first we need to introduce some definitional
@@ -233,10 +244,7 @@ $p_1 \in P$ holds and the points $p_0$ and $p_1$ are distinct.
 In the following we focus on proving the sparsity property of our implementation. The additional
 set membership and distinctness properties of a closest pair can be proven relatively straightforward
 by adhering to a similar proof structure.
-\<close>
 
-
-text\<open>
 \subsection{Combine step}
 
 The essence of the combine step deals with the following scenario: We are given an initial pair of points
@@ -287,9 +295,7 @@ the following lemma, capturing the desired sparsity property of our implementati
 
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
-\<close>
 
-text\<open>
 We wrap up the combine step by limiting our search for the closest pair to only the points contained within the mentioned
 $2\delta$ wide vertical strip and choosing as argument for the initial pair of points of \textit{find\_closest\_pair}
 the closest pair of the two recursive invocations of our divide-and-conquer algorithm with the smaller distance $\delta$.
@@ -317,10 +323,7 @@ of points $(p_0,\;p_1)$ such that our given list of points $\mathit{ps}$ is $\ma
 
 One can show that $(p_0,\;p_1)$ is also the \textit{closest pair} of $\mathit{ps}$ if $(p_{0L},\;p_{1L})$
 and $(p_{0R},\;p_{1R})$ are the closest pairs of $\mathit{ps_L}$ and $\mathit{ps_R}$, respectively.
-\<close>
 
-
-text\<open>
 \subsection{Divide \& Conquer Algorithm}
 
 In Section \ref{section:closest_pair_algorithm} we glossed over some implementation detail which
@@ -380,10 +383,8 @@ we arrive at the following two theorems, proving the desired sparsity property o
 
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = closest_pair ps \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
 \end{theorem}
-\<close>
 
 
-text\<open>
 \section{Proving Running Time} \label{section:proving_running_time}
 
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
@@ -424,9 +425,6 @@ that @{term R} contains a maximum of @{text 8} points and @{const find_closest} 
              shown on the vertical line @{term l} are pairs of coincident points.} \label{fig:Constant}
 \end{figure}
 
-\<close>
-
-text\<open>
 \subsection{Running Time Verification in Isabelle}
 
 To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function @{text f}
@@ -493,23 +491,14 @@ that are effectively within @{term R}. The function @{term "count f"} is an abbr
 \begin{lemma}
 @{thm [display] t_closest_pair_bigo}
 \end{lemma}
-\<close>
 
-
-text\<open>
 \section{Alternative Implementations \& Related Work} \label{section:alt_impl}
-\<close>
 
-
-text\<open>
 \section{Executable Code} \label{section:executable_code}
-\<close>
 
-
-text\<open>
 \section{Conclusion} \label{section:conclusion}
 
-\paragraph{Acknowledgement}
+\paragraph{Acknowledgements}
 \<close>
 
 (*<*)

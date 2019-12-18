@@ -49,10 +49,6 @@ notation (latex output)
 
 (* LISTS *)
 
-(* Cons *)
-notation (latex)
-  Cons  ("_ #/ _" [66,65] 65)
-
 (* length *)
 notation (latex output)
   length  ("|_|")
