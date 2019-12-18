@@ -137,6 +137,10 @@ the running time of $\mathcal{O}(n \log n)$. Section \ref{section:executable_cod
 describes final adjustments to obtain an executable version of the algorithm in target languages
 such as OCaml and SML and evaluates it against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes with summarizing our results and listing related and future work.
+
+\subsection{Isabelle/HOL and Notation}
+
+TODO
 \<close>
 
 
@@ -233,6 +237,8 @@ by adhering to a similar proof structure.
 
 
 text\<open>
+\subsection{Combine step}
+
 The essence of the combine step deals with the following scenario: We are given an initial pair of points
 with a distance of $\delta$ and and a list $\mathit{ys}$ of points, sorted ascendingly by $y$-coordinate, 
 which are contained in the $2\delta$-wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
@@ -315,6 +321,8 @@ and $(p_{0R},\;p_{1R})$ are the closest pairs of $\mathit{ps_L}$ and $\mathit{ps
 
 
 text\<open>
+\subsection{Divide \& Conquer Algorithm}
+
 In Section \ref{section:closest_pair_algorithm} we glossed over some implementation detail which
 is necessary to achieve to optimal running time of $\mathcal{O}(n \log n)$. In particular
 we need to partition the given list of points $\mathit{ps}$\footnote{Our implementation deals with
@@ -379,56 +387,68 @@ text\<open>
 \section{Proving Running Time} \label{section:proving_running_time}
 
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
-described by the recurrence relation $T(n) = T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor) + \mathcal{O}(n)$,
-where $n$ is the length of the given list of points. We can in principle determine the solution, 
-$\mathcal{O}(n\ \mathit{log}\;n)$, for this relation using the `master theorem' \cite{Introduction-to-Algorithms:2009}.
+described by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
+where @{term n} is the length of the given list of points. In principle, we can determine the solution, 
+$\mathcal{O}(n \log n)$, for this relation using the `master theorem' \cite{Introduction-to-Algorithms:2009}.
+The claim implies an at most linear overhead at each level of recursion. Splitting of the list @{term xs},
+merging @{term ys\<^sub>L} and @{term ys\<^sub>R} and the filtering operation of the combine step obviously run in
+linear time. But it is non-trivial that the function @{const find_closest_pair} also exhibits a linear
+time complexity. The function is applied to an argument list of, in the worst case, length @{term n}, iterates
+once through the list and calls @{const find_closest} for each element. Consequently our proof obligation
+is the constant running time of @{const find_closest}.
 
-The claim implies an at most linear overhead at each level of recursion. Splitting of the list $\mathit{xs}$, 
-merging $\mathit{ys_L}$ and $\mathit{ys_R}$ and the filtering operation of the combine step obviously run in
-linear time. But it is non-trivial that \textit{find\_closest\_pair} also exhibits a linear time complexity.
-Since the function is applied to an argument list of, in the worst case, size $n$, iterates
-once through this list and calls \textit{find\_closest} for each element, we need to prove that \textit{find\_closest} runs
-in constant time.
+\subsection{Informal Proof}
 
-The informal proof, slightly adjusted to our implementation, from Cormen et al. \cite{Introduction-to-Algorithms:2009}
-goes as follows: Let $\mathit{ys}$ denote a list of distinct points, sorted in ascending order by
-$y$-coordinate. All points of $\mathit{ys}$ are contained within a vertical $2\delta$ wide strip located
-symmetrically around a vertical dividing line $l$. Let $\mathit{ps_L}\ (\mathit{ps_R})$ denote the subset of
-points of $\mathit{ys}$ to the left (right) of or on the line $l$ with $\mathit{set\ ys} = \mathit{ps_L} \cup \mathit{ps_R}$. 
-Assume both subsets are $\delta$-sparse. Let $p = (x,\;y)$ be an arbitrary point of $\mathit{ys}$.
-Now construct a $2\delta$ sized square $S$ (Figure \ref{fig:Constant}) defined by its left lower
-point $(l - \delta,\;y - \delta)$ and right upper point $(l + \delta,\;y + \delta)$ with $p$ at its center.
-We claim that $S$ contains a constant number of points. Take a closer look at the upper left
-sub-square of side length $\delta$. The $\delta$-sparse property of $\mathit{ps_L}$ implies that there can
-be at most $4$ points within the sub-square. A similar argument holds for the other three sub-squares.
-And consequently, as Figure \ref{fig:Constant} illustrates,
-$S$ contains in the worst case $16$ points, if we count the coincident points on the line $l$.
-Since \textit{find\_closest} considers for each point $p$ only the upper $\delta \times 2\delta$ rectangle of $S$ and
-terminates as soon as it encounters the first point outside of $S$, we can conclude that it runs in
-constant time.
+We sketch the informal proof from Cormen et al. \cite{Introduction-to-Algorithms:2009}, slightly adjusted
+to our functional implementation. We can assume for each invocation of @{term "find_closest p \<delta> ps"}
+the list @{text "p # ps"} to be sorted ascendingly by @{term y}-coordinate. The function then terminates, in the
+worst case, as soon as it encounters the first point of @{term ps} with a vertical distance to @{term p}
+that exceeds @{term \<delta>} since for every recursive call @{term "find_closest p \<delta>' ps'"} we know @{term "\<delta>' \<le> \<delta>"}.
+We additionally assume that all points of @{text "p # ps"} are contained within the @{text "2\<delta>"} wide
+vertical strip centered around the vertical dividing line @{term l}. Subsequently the running time of
+@{const find_closest} is bounded by the number of points within the @{text "2\<delta> \<times> \<delta>"} rectangle @{term R}
+defined by its left lower corner @{term "(l - \<delta>, snd p)"} and right upper corner @{term "(l + \<delta>, snd p + \<delta>)"}.
+But there can be at most @{text 8} points in @{term R}, as illustrated in Figure \ref{fig:Constant}.
+Consider the number of points in the left half of @{term R}, a square @{term S} of side length @{term \<delta>}.
+From the conquer step of the algorithm we know that @{term S} is @{term \<delta>}-sparse, or every distinct pair
+of points is at least @{term \<delta>} far apart, since @{term S} is a subset of all points which lie to the left 
+of or on the line @{term l}. Thus we can fit at most @{text 4} points into @{term S}. The same argument
+holds for the right half of @{term R}. If we count the coincident points on @{term l}, we conclude
+that @{term R} contains a maximum of @{text 8} points and @{const find_closest} runs in constant time.
 
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.5\textwidth]{./../../img/Constant_Short.png}
-  \caption[]{The $2\delta \times \delta$ rectangle $R$, highlighted in grey, contains a maximum of $8$ points, if
-             all points of $\mathit{ps_L}$ and $\mathit{ps_R}$ are respectively $\delta$-sparse and the points
-             shown on the vertical line $l$ are pairs of coincident points.} \label{fig:Constant}
+  \caption[]{The @{text "2\<delta> \<times> \<delta>"} rectangle @{term R}, highlighted in grey, contains a maximum of @{text 8} points, if
+             all points of @{term ps\<^sub>L} and @{term ps\<^sub>R} are respectively @{term \<delta>}-sparse and the points
+             shown on the vertical line @{term l} are pairs of coincident points.} \label{fig:Constant}
 \end{figure}
 
-To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function $f$
-we define a function $\mathit{t\_f}$ that takes the same arguments as $f$ but computes the number of function
-calls the computation of $f$ needs, the `time'. Function $\mathit{t\_f}$ follows the same recursion
-structure as $f$ and can be seen as an abstract interpretation of $f$. For simplicity of presentation
-we define $f$ and $\mathit{t\_f}$ directly rather than deriving them from a monadic function that computes
-both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
-with the size of the input.
+\<close>
 
-We focus on the function \textit{find\_closest}. In the step from \textit{find\_closest} to \textit{t\_find\_closest}
-we simplify matters a bit: we count only the res
+text\<open>
+\subsection{Running Time Verification in Isabelle}
+
+To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function @{text f}
+we define a function @{text "t_f"} that takes the same arguments as @{text f} but computes the number of function
+calls the computation of @{text f} needs, the `time'. Function @{text "t_f"} follows the same recursion
+structure as @{text f} and can be seen as an abstract interpretation of @{text f}. For simplicity of presentation
+we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
+both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
+with the size of the input and ignore other small additive constants. This also includes setting the time
+to execute @{const dist} computations to @{text 0}. Note that it might be of interest to define a similar
+approach to count the number of @{const dist} computations of the algorithm and proof that an implementation
+minimizes this number. Since we chose not to minimize the number of @{const dist} computations,
+except for the final executable code in Section \ref{section:executable_code} we omit such an analysis.
+
+To illustrate our approach we show the timing function for @{const find_closest} as an example.
 
 \begin{quote}
 @{thm [display] (concl) t_find_closest_simp}
 \end{quote}
+
+We can then prove an upper bound for @{term "t_find_closest p \<delta> ps"} dependent on the number of points
+that are effectively within @{term R}. The function @{term "count f"} is an abbreviation for @{term "(length \<circ> filter f)"}. 
 
 \begin{lemma}
 @{thm [display] t_find_closest_cnt}
