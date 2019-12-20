@@ -115,7 +115,7 @@ a multitude of optimal algorithms have been published. Smid \cite{Handbook-Compu
 provides a comprehensive overview over the available algorithms, including randomized approaches which
 improve the running time even further to $\mathcal{O}(n)$.
 
-The main contribution of this paper is the verification of two related functional implementations of a
+The main contribution of this paper is the first verification of two related functional implementations of a
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive theorem 
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
@@ -125,16 +125,15 @@ competitive with handwritten reference implementations. Our formalizations are a
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
-high-level description. Section \ref{section:proving_functional_correctness} presents the first implementation
-implementation and functional correctness proof. Section \ref{section:proving_running_time} introduces
-the reader to our methodology of formalizing running time proofs in Isabelle/HOL and proceeds to prove 
+high-level description that covers both implementations. Section \ref{section:proving_functional_correctness} presents the first
+implementation and functional correctness proof. Section \ref{section:proving_running_time} proves
 the running time of $\mathcal{O}(n \log n)$ of the implementation of the previous section.
 Section \ref{section:alt_impl} describes our second implementation and illustrates how the proofs of
 Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted
 to this implementation. We then shortly give an overview over further implementation and proof approaches.
 Section \ref{section:executable_code} describes final adjustments to obtain executable versions of the algorithms in target languages
 such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
-Section \ref{section:conclusion} concludes with summarizing our results.
+Section \ref{section:conclusion} concludes.
 
 \subsection{Related Verification Work}
 
@@ -178,7 +177,7 @@ $(p_{R0},\,p_{R1})$ or a pair of points $p_0 \in P_L$ and $p_1 \in P_R$
 with a distance strictly less than $\delta$. If the former is the case we have already found our closest pair.
 
 Now we assume the latter and have reached the most interesting part of divide-and-conquer algorithms,
-the \textit{combine} step. It is straightforward to see that both points of the closest pair 
+the \textit{combine} step. It is not hard to see that both points of the closest pair 
 must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ now denote a 
 list of points, sorted in ascending order by $y$-coordinate, of all points $p \in P$ 
 that are also contained within this $2\delta$ wide strip. We can find our closest pair by iterating over
@@ -188,11 +187,12 @@ and we might think our only option is to again check all $n \choose 2$ point com
 This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$ as illustrated in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
-  \centering
-  \includegraphics[width=0.5\textwidth]{./../../img/Combine.png}
-  \caption[]{If the red point has a closest neighbor within a distance of $\le\delta$
+\centering
+\includegraphics[width=0.5\textwidth]{./../../img/Combine.png}
+\caption[]{The \textit{combine} step If the red point has a closest neighbor within a distance of $\le\delta$
              in the marked $2\delta$ wide vertical strip, then this neighbor must be located in
-             the grey $2\delta$ sized square.} \label{fig:Combine}
+             the grey $2\delta$ sized square.}
+\label{fig:Combine}
 \end{figure}
 %
 If $p_0$ is one of the points of the closest pair, then the distance to its closest
@@ -205,23 +205,21 @@ the combine step that runs in linear time and ultimately lets us achieve the fam
 relation of $T(n) = T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor) + \mathcal{O}(n)$, 
 which results in the optimal running time of $\mathcal{O}(n \log n)$.
 
-We glossed over some necessary implementation detail to achieve this theoretical time complexity.
-In particular, we need to obtain $P_L$ and $P_R$ and the sorted list $\mathit{ys}$ in linear time. 
-In Section \ref{section:proving_functional_correctness} we refine the algorithm, using \textit{Presorting} and an integrated
-version of \textit{Mergesort}, to achieve the crucial linear time of the divide step and the complete combine step. 
-We refer the reader to Section \ref{section:proving_running_time} for a formal proof of the running time.
+We glossed over some implementation details to achieve this theoretical time complexity.
+In Section \ref{section:proving_functional_correctness} we refine the algorithm and
+in Section \ref{section:proving_running_time} we prove the $\mathcal{O}(n \log n)$ running time.
 
 
-\section{Proving Functional Correctness}
+\section{Implementation and Functional Correctness Proof}
 \label{section:proving_functional_correctness}
 
 We present the implementation of the divide-and-conquer algorithm and the corresponding correctness proofs
 using a bottom-up approach, starting with the combine step. But first we need to introduce some definitional
-prelimnaries of two-dimensional geometry and formalize the closest pair problem.
+preliminaries of two-dimensional geometry and formalize the closest pair problem.
 
-A point in the two-dimensional Euclidean plane is represented as a pair of arbitrary-precision integers
-\footnote{We choose this representation over a pair of real numbers due to numerical reasons during code export.
-In Section \ref{section:executable_code} we elaborate on this further.}.
+A point in the two-dimensional Euclidean plane is represented as a pair of (arbitrary-precision) integers
+\footnote{We choose this representation over a pair of real numbers because we cannot generate code
+for mathematical reals. See Section \ref{section:executable_code}.}.
 The library \textit{HOL-Analysis} provides a generic distance function applicable to our point definition.
 For our purposes the definition of this \textit{dist} function corresponds to the familiar Euclidean distance measure.
 
@@ -248,7 +246,7 @@ with a distance of $\delta$ and and a list $\mathit{ys}$ of points, sorted ascen
 which are contained in the $2\delta$-wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
 efficiently compute a pair of points with a distance $\delta'\ (\delta' \le \delta)$ such that $\mathit{ys}$ is $\delta'$-sparse.
 The recursive function \textit{find\_closest\_pair} achieves this by iterating over $\mathit{ys}$, computing
-for each point its closest neighbor by delegating to the recursive function \textit{find\_closest}, which
+for each point its closest neighbor by calling the recursive function \textit{find\_closest}, which
 considers only the points within the $2\delta$ sized square of Figure \ref{fig:Combine}, and updating the
 current pair of points accordingly. We omit the implementation of the trivial base cases.
 
@@ -273,10 +271,11 @@ $\mathit{ys}$ we already considered the pair $(q,\,p)$, if needed, and do not ha
 commutative property of our closest pair definition. Note also that $\delta$ is updated, if possible, 
 during the computation and consequently the search space for each point is limited to a $2\delta \times \delta'$
 rectangle with $\delta' \le \delta$.
-Lastly we intentionally do not minimize the number of distance computations. One could easily do so by annotating the returned
-closest neighbor of \textit{find\_closest} with its distance to $p$ and memoizing relevant distance 
-computations of both functions through let bindings. At this point, we refrain from doing so because it does not change 
-the overall theoretical running time of the algorithm and simplifies the proofs slightly.
+Lastly we intentionally do not minimize the number of distance computations.
+% One could easily do so by annotating the returned
+%closest neighbor of \textit{find\_closest} with its distance to $p$ and memoizing relevant distance 
+%computations of both functions through let bindings. At this point, we refrain from doing so because it does not change 
+%the overall theoretical running time of the algorithm and simplifies the proofs slightly.
 In Section \ref{section:executable_code} we make this optimization for the final executable code.
 
 We then prove by induction on the computation of the respective function
@@ -295,15 +294,13 @@ the following lemma, capturing the desired sparsity property of our implementati
 We wrap up the combine step by limiting our search for the closest pair to only the points contained within the mentioned
 $2\delta$ wide vertical strip and choosing as argument for the initial pair of points of \textit{find\_closest\_pair}
 the closest pair of the two recursive invocations of our divide-and-conquer algorithm with the smaller distance $\delta$.
-
 \begin{quote}
 @{term [source, break] "combine :: point \<times> point \<Rightarrow> point \<times> point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> point \<times> point"}
 
 @{thm [break] combine_simp}
 \end{quote}
-
-Using Lemma \ref{lemma:find_closest_pair_dist} we prove that \textit{combine} computes indeed a pair
-of points $(p_0,\;p_1)$ such that our given list of points $\mathit{ps}$ is $\mathit{(dist}\ p_0\ p_1)$-sparse.
+Using Lemma \ref{lemma:find_closest_pair_dist} we prove that @{const combine} computes indeed a pair
+of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list of points \<open>ps\<close> is (@{term "dist p\<^sub>0 p\<^sub>1"})-sparse.
 
 \begin{lemma} \label{lemma:combine_dist}
 @{text [source, break] "distinct ps \<and> sortedY ps \<and> set ps = ps\<^sub>L \<union> ps\<^sub>R \<and>"}
@@ -375,7 +372,7 @@ we arrive at the following two theorems, proving the desired sparsity property o
 \end{theorem}
 
 \begin{theorem}
-@{text [source, break] "1 < length ps \<and> distinct ps"}
+@{text [source, break] "1 < length ps \<and> distinct ps \<and>"}
 
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = closest_pair ps \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
 \end{theorem}
