@@ -184,7 +184,7 @@ $\mathit{ys}$ and computing for each point its closest neighbor. Note that, in t
 contains all points of $P$, if the distribution of the points is dense horizontally and sparse vertically, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
 This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$ as illustrated in Figure \ref{fig:Combine}.
-
+%
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.5\textwidth]{./../../img/Combine.png}
@@ -192,7 +192,7 @@ This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$ as il
              in the marked $2\delta$ wide vertical strip, then this neighbor must be located in
              the grey $2\delta$ sized square.} \label{fig:Combine}
 \end{figure}
-
+%
 If $p_0$ is one of the points of the closest pair, then the distance to its closest
 neighbor is strictly less than $\delta$ and we only have to check all points $p_1 \in \mathit{set\ ys}$
 that are contained within the $2\delta$ wide horizontal strip centered around the $y$-coordinate of $p_0$.
