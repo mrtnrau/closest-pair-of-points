@@ -119,20 +119,22 @@ The main contribution of this paper is the verification of two related functiona
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive theorem 
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
-running time of the algorithm. Empirical testing also shows that our verified algorithm is 
-competitive with handwritten reference implementations. The basis for our implementation 
-is the algorithm presented by Cormen et al. \cite{Introduction-to-Algorithms:2009} and our
-formalization is available online (TODO LINK) in the Archive of Formal Proofs.
+running time of the algorithms. Empirical testing also shows that our verified algorithms are 
+competitive with handwritten reference implementations. Our formalizations are available online 
+(TODO LINK) in the Archive of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
-high-level description. Section \ref{section:proving_functional_correctness} presents the algorithm
-implementation and the functional correctness proof. Section \ref{section:proving_running_time} introduces
+high-level description. Section \ref{section:proving_functional_correctness} presents the first implementation
+implementation and functional correctness proof. Section \ref{section:proving_running_time} introduces
 the reader to our methodology of formalizing running time proofs in Isabelle/HOL and proceeds to prove 
-the running time of $\mathcal{O}(n \log n)$. Section \ref{section:executable_code}
-describes final adjustments to obtain an executable version of the algorithm in target languages
-such as OCaml and SML and evaluates it against handwritten imperative and functional implementations. 
-Section \ref{section:conclusion} concludes with summarizing our results and listing related and future work.
+the running time of $\mathcal{O}(n \log n)$ of the implementation of the previous section.
+Section \ref{section:alt_impl} describes our second implementation and illustrates how the proofs of
+Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted
+to this implementation. We then shortly give an overview over further implementation and proof approaches.
+Section \ref{section:executable_code} describes final adjustments to obtain executable versions of the algorithms in target languages
+such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
+Section \ref{section:conclusion} concludes with summarizing our results.
 
 \subsection{Related Verification Work}
 
@@ -446,6 +448,9 @@ that are effectively within @{term R}. The function @{term "count f"} is an abbr
 @{thm [display] t_find_closest_cnt}
 \end{lemma}
 
+
+\subsection{Formal Proof}
+
 \begin{lemma}
 @{thm [display] cbox_2D}
 \end{lemma}
@@ -486,7 +491,9 @@ that are effectively within @{term R}. The function @{term "count f"} is an abbr
 @{thm [display] t_closest_pair_bigo}
 \end{lemma}
 
-\section{Alternative Implementations \& Related Work} \label{section:alt_impl}
+\section{Alternative Implementations} \label{section:alt_impl}
+
+The basis for our implementation is the algorithm presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}.
 
 \section{Executable Code} \label{section:executable_code}
 
