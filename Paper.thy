@@ -102,7 +102,7 @@ with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
 running time of the algorithms. Empirical testing also shows that our verified algorithms are 
 competitive with handwritten reference implementations. Our formalizations are available online 
-(TODO LINK) in the Archive of Formal Proofs.
+\textcolor{red}{(TODO LINK)} in the Archive of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
@@ -144,35 +144,33 @@ Let $P$ denote a set of $n \ge 2$ points. If $n \le 3$ we solve the problem
 naively using the brute force approach of examining all $n \choose 2$ possible closest pair 
 combinations. Otherwise we apply the divide-and-conquer tactic.
 
-We \textit{divide} $P$ into two sets $P_L$ and $P_R$ along a vertical 
+We divide $P$ into two sets $P_L$ and $P_R$ along a vertical 
 line $l$ such that the sizes of $P_L$ and $P_R$ differ by at most $1$ and the
 $y$-coordinate of all points $p_L \in P_L\,(p_R \in P_R)$ is less
 (greater) than or equal to $l$.
 
-We then \textit{conquer} the left and right subproblems by applying the algorithm recursively, 
+We then conquer the left and right subproblems by applying the algorithm recursively, 
 obtaining $(p_{L0},\;p_{L1})$ and $(p_{R0},\;p_{R1})$, the closest pairs of $P_L$ and 
 $P_R$, respectively. Let $\delta_L$ and $\delta_R$ denote the distance of the left and right closest
-pairs and let $\delta = \mathit{min} \{\delta_L,\;\delta_R\}$. 
+pairs and let $\delta = \mathit{min}\;\{\delta_L,\;\delta_R\}$. 
 At this point the closest pair of $P$ is either $(p_{L0},\; p_{L1})$, 
 $(p_{R0},\,p_{R1})$ or a pair of points $p_0 \in P_L$ and $p_1 \in P_R$
 with a distance strictly less than $\delta$. If the former is the case we have already found our closest pair.
 
 Now we assume the latter and have reached the most interesting part of divide-and-conquer algorithms,
-the \textit{combine} step. It is not hard to see that both points of the closest pair 
+the combine step. It is not hard to see that both points of the closest pair 
 must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ now denote a 
 list of points, sorted in ascending order by $y$-coordinate, of all points $p \in P$ 
 that are also contained within this $2\delta$ wide strip. We can find our closest pair by iterating over
 $\mathit{ys}$ and computing for each point its closest neighbor. Note that, in the worst case, $\mathit{ys}$ 
-contains all points of $P$, if the distribution of the points is dense horizontally and sparse vertically, 
+contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
-This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$ as illustrated in Figure \ref{fig:Combine}.
+This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$, illustrated as the red point in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
 \centering
 \includegraphics[width=0.5\textwidth]{./../../img/Combine.png}
-\caption[]{The \textit{combine} step If the red point has a closest neighbor within a distance of $\le\delta$
-             in the marked $2\delta$ wide vertical strip, then this neighbor must be located in
-             the grey $2\delta$ sized square.}
+\caption[]{The combine step.}
 \label{fig:Combine}
 \end{figure}
 %
@@ -188,7 +186,7 @@ which results in the optimal running time of $\mathcal{O}(n \log n)$.
 
 We glossed over some implementation details to achieve this theoretical time complexity.
 In Section \ref{section:proving_functional_correctness} we refine the algorithm and
-in Section \ref{section:proving_running_time} we prove the $\mathcal{O}(n \log n)$ running time.
+in Section \ref{section:proving_running_time} we prove the optimal running time.
 
 
 \section{Implementation and Functional Correctness Proof}
@@ -213,14 +211,14 @@ $\delta$ is a lower bound for the distance of all distinct pairs of points of $P
 @{thm [display] min_dist_def[of \<delta> P]}
 \end{quote}
 
-A pair of points $(p_0,\;p_1)$ is then the \textit{closest pair} of $P$ iff additionally $p_0 \in P$,
-$p_1 \in P$ holds and the points $p_0$ and $p_1$ are distinct.
+A pair of points $(p_0,\;p_1)$ is then the \textit{closest pair} of $P$ iff additionally $p_0 \in P$ and
+$p_1 \in P$ hold, and the points $p_0$ and $p_1$ are distinct.
 
 In the following we focus on proving the sparsity property of our implementation. The additional
 set membership and distinctness properties of a closest pair can be proven relatively straightforward
 by adhering to a similar proof structure.
 
-\subsection{Combine step}
+\subsection{Combine Step}
 
 The essence of the combine step deals with the following scenario: We are given an initial pair of points
 with a distance of $\delta$ and and a list $\mathit{ys}$ of points, sorted ascendingly by $y$-coordinate, 
@@ -265,9 +263,9 @@ the following lemma, capturing the desired sparsity property of our implementati
 \begin{lemma} \label{lemma:find_closest_pair_dist}
 @{text [source, break] "sortedY ps \<and> distinct ps \<and>"}
 
-@{text [source, break] "(p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps \<and>"}
-
 @{text [source, break] "(\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ps \<and> p\<^sub>1 \<in> set ps \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1)"}
+
+@{text [source, break] "(p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps \<and>"}
 
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
@@ -275,11 +273,15 @@ the following lemma, capturing the desired sparsity property of our implementati
 We wrap up the combine step by limiting our search for the closest pair to only the points contained within the mentioned
 $2\delta$ wide vertical strip and choosing as argument for the initial pair of points of \textit{find\_closest\_pair}
 the closest pair of the two recursive invocations of our divide-and-conquer algorithm with the smaller distance $\delta$.
+
+\begin{adjustwidth}{-15pt}{0pt}
 \begin{quote}
 @{term [source, break] "combine :: point \<times> point \<Rightarrow> point \<times> point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> point \<times> point"}
 
 @{thm [break] combine_simp}
 \end{quote}
+\end{adjustwidth}
+
 Using Lemma \ref{lemma:find_closest_pair_dist} we prove that @{const combine} computes indeed a pair
 of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list of points \<open>ps\<close> is (@{term "dist p\<^sub>0 p\<^sub>1"})-sparse.
 
@@ -308,10 +310,10 @@ along a vertical line $l$ into two lists of nearly equal length during the divid
 a list $\mathit{ys}$ of the same points, sorted ascendingly by $y$-coordinate, for the combine
 step in linear time at each level of recursion.
 
-Concerning the partitioning of the list we can \textit{presort} $\mathit{ps}$ by $x$-coordinate, obtaining $\mathit{xs}$, 
-split $\mathit{xs}$ at $\mathit{length\ xs\ div\ 2}$ into two
+Concerning the partitioning of the list we can \textit{presort} $\mathit{ps}$ by $x$-coordinate, 
+obtaining the list $\mathit{xs}$, split $\mathit{xs}$ at $\mathit{length\ xs\ div\ 2}$ into two
 still sorted lists $\mathit{xs_L}$ and $\mathit{xs_R}$ and choose $l$ as either the $x$-coordinate of
-the last element of $\mathit{xs_L}$ of the $x$-coordinate of the first element of $\mathit{xs_R}$.
+the last element of $\mathit{xs_L}$ or the $x$-coordinate of the first element of $\mathit{xs_R}$.
 
 For this presorting step we use an implementation of \textit{mergesort} which sorts a list of points
 depending on a given projection function, \textit{fst} for `by $x$-coordinate' and \textit{snd} for 
@@ -344,7 +346,7 @@ following implementation:
 
 Using Lemma \ref{lemma:combine_dist}, the functional correctness proofs of our mergesort implementation
 and several auxiliary lemmas proving that \textit{closest\_pair\_rec} also sorts the points by $y$-coordinate,
-we arrive at the following two theorems, proving the desired sparsity property of the algorithm.
+we arrive at the final correctness proof of the desired sparsity property of the algorithm.
 
 \begin{theorem}
 @{text [source, break] "1 < length xs \<and> distinct xs \<and> sortedX xs \<and>"}
@@ -352,14 +354,14 @@ we arrive at the following two theorems, proving the desired sparsity property o
 @{text [source, break] "(ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
 \end{theorem}
 
-\begin{theorem}
+\begin{corollary}
 @{text [source, break] "1 < length ps \<and> distinct ps \<and>"}
 
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = closest_pair ps \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
-\end{theorem}
+\end{corollary}
 
 
-\section{Proving Running Time} \label{section:proving_running_time}
+\section{Time Complexity Proof} \label{section:proving_running_time}
 
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
 described by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
