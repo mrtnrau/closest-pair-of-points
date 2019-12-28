@@ -5,9 +5,9 @@ session Proofs = "HOL-Analysis" +
   theories
     (* Alternatively you can take a local copy of LaTeXsugar and modify it: *)
     "OptionalSugarLocal"
+    "Proofs/Common"
     "Proofs/Closest_Pair"
-    "Proofs/Closest_Pair_Time"
-    "Proofs/Closest_Pair_Code"
+    "Proofs/Closest_Pair_Alternative"
 
 session Paper = Proofs +
   options [document = pdf, show_question_marks = false, names_short = true,

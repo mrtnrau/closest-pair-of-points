@@ -1,9 +1,8 @@
 (*<*)
 theory Paper
   imports
+  "Proofs.Common"
   "Proofs.Closest_Pair"
-  "Proofs.Closest_Pair_Code"
-  "Proofs.Closest_Pair_Time"
   "Proofs.OptionalSugarLocal"
 begin
 
@@ -68,24 +67,6 @@ lemma t_find_closest_simp:
     )
   )"
   by (cases ps) auto
-
-lemma t_closest_pair_rec_simp:
-  "t_closest_pair_rec xs = 1 + (
-    let n = length xs in
-    t_length xs + (
-    if n \<le> 3 then
-      t_sortY xs + t_closest_pair_bf xs
-    else
-      let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
-      t_split_at (n div 2) xs + (
-      let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
-      t_closest_pair_rec xs\<^sub>L + (
-      let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
-      t_closest_pair_rec xs\<^sub>R + (
-      let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-      t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys
-    ))))
-  )" by (auto simp: t_closest_pair_rec.simps)
 
 (* Styling *)
 
@@ -453,7 +434,7 @@ that are effectively within @{term R}. The function @{term "count f"} is an abbr
 \end{lemma}
 
 \begin{lemma}
-@{thm [display] max_points_is_7}
+@{thm [display] core_argument}
 \end{lemma}
 
 \begin{lemma}
