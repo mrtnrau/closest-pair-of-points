@@ -131,7 +131,7 @@ is also related but considers fixed geometric constructions rather than algorith
 
 \subsection{Isabelle/HOL and Notation}
 
-TODO
+\textcolor{red}{TODO}
 
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
@@ -363,18 +363,95 @@ we arrive at the final correctness proof of the desired sparsity property of the
 
 \section{Time Complexity Proof} \label{section:proving_running_time}
 
-In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
-described by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
-where @{term n} is the length of the given list of points. In principle, we can determine the solution, 
-$\mathcal{O}(n \log n)$, for this relation using the `master theorem' \cite{Introduction-to-Algorithms:2009}.
-The claim implies an at most linear overhead at each level of recursion. Splitting of the list @{term xs},
-merging @{term ys\<^sub>L} and @{term ys\<^sub>R} and the filtering operation of the combine step obviously run in
-linear time. But it is non-trivial that the function @{const find_closest_pair} also exhibits a linear
-time complexity. The function is applied to an argument list of, in the worst case, length @{term n}, iterates
-once through the list and calls @{const find_closest} for each element. Consequently our proof obligation
-is the constant running time of @{const find_closest}.
+To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function @{text f}
+we define a function @{text "t_f"} that takes the same arguments as @{text f} but computes the number of function
+calls the computation of @{text f} needs, the `time'. Function @{text "t_f"} follows the same recursion
+structure as @{text f} and can be seen as an abstract interpretation of @{text f}. For simplicity of presentation
+we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
+both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
+with the size of the input and ignore other small additive constants. Due to reasons of space we only show
+one example of such a `timing' functon, @{const t_find_closest}, which will be crucial to our time
+complexity proof. 
 
-\subsection{Informal Proof}
+\begin{quote}
+@{term [source, break] "t_find_closest :: point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat"} \vskip 0pt
+@{text "t_find_closest _ _ [] = 0"} \vskip 0pt
+@{text "t_find_closest _ _ [_] = 1"} \vskip 0pt
+@{text "t_find_closest p \<delta> (p\<^sub>0 # ps) = 1 +"} \vskip 0pt
+@{text "(\<^latex>\<open>\\textsf{\<close>if\<^latex>\<open>}\<close> \<delta> \<le> snd p\<^sub>0 - snd p \<^latex>\<open>\\textsf{\<close>then\<^latex>\<open>}\<close> 0"} \vskip 0pt
+\ @{text "\<^latex>\<open>\\textsf{\<close>else\<^latex>\<open>}\<close> \<^latex>\<open>\\textsf{\<close>let\<^latex>\<open>}\<close> p\<^sub>1 = find_closest p (min \<delta> (dist p p\<^sub>0)) ps"} \vskip 0pt
+\ \qquad@{text "\<^latex>\<open>\\textsf{\<close>in\<^latex>\<open>}\<close> t_find_closest p (min \<delta> (dist p p\<^sub>0)) ps +"} \vskip 0pt
+\ \quad\qquad@{text "(\<^latex>\<open>\\textsf{\<close>if\<^latex>\<open>}\<close> dist p p\<^sub>0 \<le> dist p p\<^sub>1 \<^latex>\<open>\\textsf{\<close>then\<^latex>\<open>}\<close> 0 \<^latex>\<open>\\textsf{\<close>else\<^latex>\<open>}\<close> 0))"}
+\end{quote}
+
+We set the time to execute @{const dist} computations to @{text 0} since it is a combination
+of cheap operations that do not scale with the size of the input. For the base cases of recursive functions
+we fix the needed time to be equivalent to the remaining size of the input. This choice is arbitrary and has no
+impact on the overall running time analysis but leads in general to `cleaner' arithmetic bounds. 
+Note that it might be of interest to define a similar abstract interpretation to count the number of 
+@{const dist} computations of the algorithm and compare different implementation approaches with 
+regard to this number. Since we choose not to minimize the number of @{const dist} computations,
+except for the final executable code in Section \ref{section:executable_code}, we omit such an analysis.
+
+\paragraph{}
+
+In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
+captured by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
+where @{term n} is the length of the given list of points. This claim implies an at most linear overhead
+at each level of recursion. Splitting of the list @{term xs}, merging @{term ys\<^sub>L} and @{term ys\<^sub>R} and
+the filtering operation of the combine step obviously run in linear time. But it is non-trivial that the 
+function @{const find_closest_pair}, central to the combine step, also exhibits a linear
+time complexity. It is applied to an argument list of, in the worst case, length @{term n}, iterates
+once through the list and calls @{const find_closest} for each element. Consequently our proof obligation
+is the constant running time of @{const find_closest} or, considering our timing function, that there exists
+some constant @{term c} such that @{term "t_find_closest p \<delta> ps \<le> c"} holds in the context of the combine step.
+
+\paragraph{}
+
+Looking at the definition of @{const find_closest} we see that the function 
+terminates as soon as it encounters the first point within the given list of points @{term ps} that does not 
+fulfill the predicate (@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}) or if @{term ps} is a list of length @{text "\<le>1"}. 
+The corresponding timing function, @{const t_find_closest} computes the number of recursive function calls,
+which is, in this case, synonymous with the number of examined points. For our time complexity proof it
+suffices to prove a slightly weaker bound on the result of @{const t_find_closest}. It is in essence bounded by
+the number of points of @{term ps} which fulfill the predicate (@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}), proved
+by induction on the computation of @{const t_find_closest}. The function @{term "count f"} is an abbreviation 
+for @{term "(length \<circ> filter f)"}. 
+
+\begin{lemma}
+@{text [source, break] "t_find_closest p \<delta> ps \<le> 1 + count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"}
+\end{lemma}
+
+Therefore we need to prove that the size of @{text "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"} does not depend
+on the length of @{term ps}. Looking back at Figure \ref{fig:Combine}, the point @{term p} representing the
+highlighted red point, we can assume that the list @{term "p # ps"} is distinct and sorted ascendingly by
+@{term y}-coordinate. From the pre-computing effort of the combine step we know that its points are contained 
+within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term ps\<^sub>L}
+and @{term ps\<^sub>R} consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
+Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
+that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, leading to the following lemma:
+
+\begin{lemma}
+@{text [source, break] "distinct (p # ps) \<and> sortedY (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
+@{text [source, break] "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>q \<in> ps\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> ps\<^sub>L \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>q \<in> ps\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> ps\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> count (\<lambda>q. snd q − snd p \<le> \<delta>) ps \<le> 7"}
+\end{lemma}
+\begin{proof}
+
+\textcolor{red}{TODO}
+
+\end{proof}
+
+
+
+
+
+
+
+\paragraph{}
 
 We sketch the informal proof from Cormen et al. \cite{Introduction-to-Algorithms:2009}, slightly adjusted
 to our functional implementation. We can assume for each invocation of @{term "find_closest p \<delta> ps"}
@@ -401,42 +478,11 @@ that @{term R} contains a maximum of @{text 8} points and @{const find_closest} 
              shown on the vertical line @{term l} are pairs of coincident points.} \label{fig:Constant}
 \end{figure}
 
-\subsection{Running Time Verification in Isabelle}
-
-To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function @{text f}
-we define a function @{text "t_f"} that takes the same arguments as @{text f} but computes the number of function
-calls the computation of @{text f} needs, the `time'. Function @{text "t_f"} follows the same recursion
-structure as @{text f} and can be seen as an abstract interpretation of @{text f}. For simplicity of presentation
-we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
-both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
-with the size of the input and ignore other small additive constants. This also includes setting the time
-to execute @{const dist} computations to @{text 0}. Note that it might be of interest to define a similar
-approach to count the number of @{const dist} computations of the algorithm and proof that an implementation
-minimizes this number. Since we chose not to minimize the number of @{const dist} computations,
-except for the final executable code in Section \ref{section:executable_code} we omit such an analysis.
-
-To illustrate our approach we show the timing function for @{const find_closest} as an example.
-
-\begin{quote}
-@{thm [display] (concl) t_find_closest_simp}
-\end{quote}
-
-We can then prove an upper bound for @{term "t_find_closest p \<delta> ps"} dependent on the number of points
-that are effectively within @{term R}. The function @{term "count f"} is an abbreviation for @{term "(length \<circ> filter f)"}. 
-
-\begin{lemma}
-@{thm [display] t_find_closest_cnt}
-\end{lemma}
-
-
-\subsection{Formal Proof}
+ In principle, we can determine the solution, 
+$\mathcal{O}(n \log n)$, for this relation using the `master theorem' \cite{Introduction-to-Algorithms:2009}.
 
 \begin{lemma}
 @{thm [display] cbox_2D}
-\end{lemma}
-
-\begin{lemma}
-@{thm [display] core_argument}
 \end{lemma}
 
 \begin{lemma}
