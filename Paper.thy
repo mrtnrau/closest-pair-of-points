@@ -523,6 +523,15 @@ The basis for our implementation is the algorithm presented by Cormen et al. \ci
 
 \section{Executable Code} \label{section:executable_code}
 
+%
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=1.0\textwidth]{./../../benchmark/Benchmarks.png}
+\caption[]{Implementation Benchmarks.} 
+\label{fig:benchmarks_lin_log_lin}
+\end{figure}
+%
+
 \section{Conclusion} \label{section:conclusion}
 
 \paragraph{Acknowledgements}

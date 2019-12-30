@@ -49,6 +49,26 @@ let ord_integer = ({less_eq = Z.leq; less = Z.lt} : Z.t ord);;
 
 type nat = Nat of Z.t;;
 
+let rec integer_of_nat (Nat x) = x;;
+
+let rec max _A a b = (if less_eq _A a b then b else a);;
+
+let rec minus_nat
+  m n = Nat (max ord_integer Z.zero
+              (Z.sub (integer_of_nat m) (integer_of_nat n)));;
+
+let rec equal_nat m n = Z.equal (integer_of_nat m) (integer_of_nat n);;
+
+let zero_nat : nat = Nat Z.zero;;
+
+let one_nat : nat = Nat (Z.of_int 1);;
+
+let rec take
+  n x1 = match n, x1 with n, [] -> []
+    | n, x :: xs ->
+        (if equal_nat n zero_nat then []
+          else x :: take (minus_nat n one_nat) xs);;
+
 let rec apsnd f (x, y) = (x, f y);;
 
 let rec divmod_integer
@@ -85,24 +105,10 @@ let rec fst (x1, x2) = x1;;
 
 let rec divide_integer k l = fst (divmod_integer k l);;
 
-let rec integer_of_nat (Nat x) = x;;
-
 let rec divide_nat
   m n = Nat (divide_integer (integer_of_nat m) (integer_of_nat n));;
 
-let rec max _A a b = (if less_eq _A a b then b else a);;
-
 let rec nat_of_integer k = Nat (max ord_integer Z.zero k);;
-
-let rec minus_nat
-  m n = Nat (max ord_integer Z.zero
-              (Z.sub (integer_of_nat m) (integer_of_nat n)));;
-
-let rec equal_nat m n = Z.equal (integer_of_nat m) (integer_of_nat n);;
-
-let zero_nat : nat = Nat Z.zero;;
-
-let one_nat : nat = Nat (Z.of_int 1);;
 
 let rec rev_ita acc x1 = match acc, x1 with acc, [] -> acc
                   | acc, x :: xs -> rev_ita (x :: acc) xs;;
@@ -177,48 +183,6 @@ let rec filter_ita
 
 let rec filter_it p xs = filter_ita [] p xs;;
 
-let rec min _A a b = (if less_eq _A a b then a else b);;
-
-let rec find_closest_code
-  uu uv x2 = match uu, uv, x2 with uu, uv, [] -> failwith "undefined"
-    | p, uw, [p_0] -> (dist_code p p_0, p_0)
-    | p, delta, p_0 :: v :: va ->
-        (let delta_0 = dist_code p p_0 in
-          (if less_eq_int delta
-                (power power_int (minus_int (snd p_0) (snd p))
-                  (nat_of_integer (Z.of_int 2)))
-            then (delta_0, p_0)
-            else (let (delta_1, p_1) =
-                    find_closest_code p (min ord_int delta delta_0) (v :: va) in
-                   (if less_eq_int delta_0 delta_1 then (delta_0, p_0)
-                     else (delta_1, p_1)))));;
-
-let rec find_closest_pair_code
-  x0 x1 = match x0, x1 with (delta, (c_0, c_1)), [] -> (delta, (c_0, c_1))
-    | (delta, (c_0, c_1)), [p] -> (delta, (c_0, c_1))
-    | (delta, (c_0, c_1)), p_0 :: v :: va ->
-        (let (deltaa, p_1) = find_closest_code p_0 delta (v :: va) in
-          (if less_eq_int delta deltaa
-            then find_closest_pair_code (delta, (c_0, c_1)) (v :: va)
-            else find_closest_pair_code (deltaa, (p_0, p_1)) (v :: va)));;
-
-let rec combine_code
-  (delta_L, (p_0_L, p_1_L)) (delta_R, (p_0_R, p_1_R)) l ps =
-    (let (delta, (c_0, c_1)) =
-       (if less_int delta_L delta_R then (delta_L, (p_0_L, p_1_L))
-         else (delta_R, (p_0_R, p_1_R)))
-       in
-     let a =
-       filter_it
-         (fun p ->
-           less_int
-             (power power_int (minus_int (fst p) l)
-               (nat_of_integer (Z.of_int 2)))
-             delta)
-         ps
-       in
-      find_closest_pair_code (delta, (c_0, c_1)) a);;
-
 let rec find_closest_bf_code
   p x1 = match p, x1 with p, [] -> failwith "undefined"
     | p, [p_0] -> (dist_code p p_0, p_0)
@@ -239,6 +203,35 @@ let rec closest_pair_bf_code
             else (delta_p, (p_0, p_1))));;
 
 let rec less_eq_nat m n = Z.leq (integer_of_nat m) (integer_of_nat n);;
+
+let rec find_closest_pair_code
+  x0 x1 = match x0, x1 with (delta, (c_0, c_1)), [] -> (delta, (c_0, c_1))
+    | (delta, (c_0, c_1)), [p] -> (delta, (c_0, c_1))
+    | (delta, (c_0, c_1)), p_0 :: v :: va ->
+        (let (deltaa, p_1) =
+           find_closest_bf_code p_0
+             (take (nat_of_integer (Z.of_int 7)) (v :: va))
+           in
+          (if less_eq_int delta deltaa
+            then find_closest_pair_code (delta, (c_0, c_1)) (v :: va)
+            else find_closest_pair_code (deltaa, (p_0, p_1)) (v :: va)));;
+
+let rec combine_code
+  (delta_L, (p_0_L, p_1_L)) (delta_R, (p_0_R, p_1_R)) l ps =
+    (let (delta, (c_0, c_1)) =
+       (if less_int delta_L delta_R then (delta_L, (p_0_L, p_1_L))
+         else (delta_R, (p_0_R, p_1_R)))
+       in
+     let a =
+       filter_it
+         (fun p ->
+           less_int
+             (power power_int (minus_int (fst p) l)
+               (nat_of_integer (Z.of_int 2)))
+             delta)
+         ps
+       in
+      find_closest_pair_code (delta, (c_0, c_1)) a);;
 
 let rec closest_pair_rec_code
   xs = (let n = length_it xs in
