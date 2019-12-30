@@ -26,14 +26,11 @@ isabelle jedit -d . <thy file name(s)>
 # ToDo
 
 ## Misc:
-* Local copies of LateXsugar and OptionalSugar result in ambiguous parse trees ???
-* General formatting (log, set conversions)
-* Quote indentation?
 
 ## Section: Introduction
 
 * Add subsecton describing used Isabelle notation (reference Braun paper)
-* Create AFP entry with both verified versions (extract common code!)
+* Create AFP entry with both verified versions
 * Add link to AFP entry
 
 ## Section: Closest Pair Algorithm
@@ -46,15 +43,9 @@ isabelle jedit -d . <thy file name(s)>
 
 ## Section: Proving Running Time
 
-* Refer back to Section 2 and the original time complexity claim
-* Explain how everything hinges on the constant running time of find_closest
-* State the informal proof using an additional figure which relies on human
-  geometrical intuition
-* Introduce the approach to verify running time in Isabelle (Braun paper)
-  using t_find_closest as an example and show t_find_closest_cnt lemma
 * Lead the reader through the Isabelle formalization of the core proof by Cormen et al.
     1. Isabelle basics cbox, cbox_2D lemma
-    2. Lemma max_points_is_7 as target lemma
+    2. Lemma core_argument as target lemma
         - max_points_square
         - pigeonhole
         - cbox_max_dist
@@ -87,8 +78,6 @@ isabelle jedit -d . <thy file name(s)>
 * Squared Euclidean distance
 * Show final find_closest_code
 * Combine_code excert with more efficient filter
-* Update ocaml code
-* Rerun benchmarks and generate Matlab figure
 * Present empirical test data as complement to theoretical running time
   and point out overhead to handwritten implementations
 
