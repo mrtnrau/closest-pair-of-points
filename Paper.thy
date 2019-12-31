@@ -261,12 +261,7 @@ We then prove by induction on the computation of the respective function
 the following lemma, capturing the desired sparsity property of our implementation of the combine step so far. 
 
 \begin{lemma} \label{lemma:find_closest_pair_dist}
-@{text [source, break] "sortedY ps \<and> distinct ps \<and>"}
-
-@{text [source, break] "(\<exists>p\<^sub>0 p\<^sub>1. p\<^sub>0 \<in> set ps \<and> p\<^sub>1 \<in> set ps \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < dist c\<^sub>0 c\<^sub>1)"}
-
-@{text [source, break] "(p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps \<and>"}
-
+@{text [source, break] "sortedY ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
@@ -274,6 +269,7 @@ We wrap up the combine step by limiting our search for the closest pair to only 
 $2\delta$ wide vertical strip and choosing as argument for the initial pair of points of \textit{find\_closest\_pair}
 the closest pair of the two recursive invocations of our divide-and-conquer algorithm with the smaller distance $\delta$.
 
+\vskip 10pt
 \begin{adjustwidth}{-15pt}{0pt}
 \begin{quote}
 @{term [source, break] "combine :: point \<times> point \<Rightarrow> point \<times> point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> point \<times> point"}
@@ -281,19 +277,16 @@ the closest pair of the two recursive invocations of our divide-and-conquer algo
 @{thm [break] combine_simp}
 \end{quote}
 \end{adjustwidth}
+\vskip 10pt
 
 Using Lemma \ref{lemma:find_closest_pair_dist} we prove that @{const combine} computes indeed a pair
 of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list of points \<open>ps\<close> is (@{term "dist p\<^sub>0 p\<^sub>1"})-sparse.
 
 \begin{lemma} \label{lemma:combine_dist}
-@{text [source, break] "distinct ps \<and> sortedY ps \<and> set ps = ps\<^sub>L \<union> ps\<^sub>R \<and>"}
-
-@{text [source, break] "(\<forall>p \<in> ps\<^sub>L. fst p \<le> l) \<and> min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L \<and> p\<^sub>0\<^sub>L \<noteq> p\<^sub>1\<^sub>L \<and>"}
-
-@{text [source, break] "(\<forall>p \<in> ps\<^sub>R. l \<le> fst p) \<and> min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R \<and> p\<^sub>0\<^sub>R \<noteq> p\<^sub>1\<^sub>R \<and>"}
-
-@{text [source, break] "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps "}
-
+@{text [source, break] "sortedY ps \<and> set ps = ps\<^sub>L \<union> ps\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> ps\<^sub>L. fst p \<le> l) \<and> min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> ps\<^sub>R. l \<le> fst p) \<and> min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
@@ -349,15 +342,13 @@ and several auxiliary lemmas proving that \textit{closest\_pair\_rec} also sorts
 we arrive at the final correctness proof of the desired sparsity property of the algorithm.
 
 \begin{theorem}
-@{text [source, break] "1 < length xs \<and> distinct xs \<and> sortedX xs \<and>"}
-
-@{text [source, break] "(ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
+@{text [source, break] "1 < length xs \<and> sortedX xs \<and> (ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
 \end{theorem}
 
 \begin{corollary}
-@{text [source, break] "1 < length ps \<and> distinct ps \<and>"}
-
-@{text [source, break] "(p\<^sub>0, p\<^sub>1) = closest_pair ps \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
+@{text [source, break] "1 < length ps \<and> p\<^sub>0, p\<^sub>1) = closest_pair ps"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
 \end{corollary}
 
 
@@ -370,7 +361,7 @@ structure as @{text f} and can be seen as an abstract interpretation of @{text f
 we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
 both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
 with the size of the input and ignore other small additive constants. Due to reasons of space we only show
-one example of such a `timing' functon, @{const t_find_closest}, which will be crucial to our time
+one example of such a `timing' functon, @{const t_find_closest}, which is crucial to our time
 complexity proof. 
 
 \begin{quote}
@@ -429,46 +420,21 @@ highlighted red point, we can assume that the list @{term "p # ps"} is distinct 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term ps\<^sub>L}
 and @{term ps\<^sub>R} consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
-that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, leading to the following lemma:
+that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma:
 
 \begin{lemma}
 @{text [source, break] "distinct (p # ps) \<and> sortedY (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
 @{text [source, break] "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> ps\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> ps\<^sub>L \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>q \<in> ps\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> ps\<^sub>R \<and>"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> count (\<lambda>q. snd q − snd p \<le> \<delta>) ps \<le> 7"}
+@{text [source, break] "(\<forall>q \<in> ps\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> ps\<^sub>R"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> count (\<lambda>q. snd q - snd p \<le> \<delta>) ps \<le> 7"}
 \end{lemma}
 \begin{proof}
 
 \textcolor{red}{TODO}
 
 \end{proof}
-
-
-
-
-
-
-
-\paragraph{}
-
-We sketch the informal proof from Cormen et al. \cite{Introduction-to-Algorithms:2009}, slightly adjusted
-to our functional implementation. We can assume for each invocation of @{term "find_closest p \<delta> ps"}
-the list @{text "p # ps"} to be sorted ascendingly by @{term y}-coordinate. The function then terminates, in the
-worst case, as soon as it encounters the first point of @{term ps} with a vertical distance to @{term p}
-that exceeds @{term \<delta>} since for every recursive call @{term "find_closest p \<delta>' ps'"} we know @{term "\<delta>' \<le> \<delta>"}.
-We additionally assume that all points of @{text "p # ps"} are contained within the @{text "2\<delta>"} wide
-vertical strip centered around the vertical dividing line @{term l}. Subsequently the running time of
-@{const find_closest} is bounded by the number of points within the @{text "2\<delta> \<times> \<delta>"} rectangle @{term R}
-defined by its left lower corner @{term "(l - \<delta>, snd p)"} and right upper corner @{term "(l + \<delta>, snd p + \<delta>)"}.
-But there can be at most @{text 8} points in @{term R}, as illustrated in Figure \ref{fig:Constant}.
-Consider the number of points in the left half of @{term R}, a square @{term S} of side length @{term \<delta>}.
-From the conquer step of the algorithm we know that @{term S} is @{term \<delta>}-sparse, or every distinct pair
-of points is at least @{term \<delta>} far apart, since @{term S} is a subset of all points which lie to the left 
-of or on the line @{term l}. Thus we can fit at most @{text 4} points into @{term S}. The same argument
-holds for the right half of @{term R}. If we count the coincident points on @{term l}, we conclude
-that @{term R} contains a maximum of @{text 8} points and @{const find_closest} runs in constant time.
 
 \begin{figure}[htpb]
   \centering
@@ -477,9 +443,6 @@ that @{term R} contains a maximum of @{text 8} points and @{const find_closest} 
              all points of @{term ps\<^sub>L} and @{term ps\<^sub>R} are respectively @{term \<delta>}-sparse and the points
              shown on the vertical line @{term l} are pairs of coincident points.} \label{fig:Constant}
 \end{figure}
-
- In principle, we can determine the solution, 
-$\mathcal{O}(n \log n)$, for this relation using the `master theorem' \cite{Introduction-to-Algorithms:2009}.
 
 \begin{lemma}
 @{thm [display] cbox_2D}
@@ -500,6 +463,11 @@ $\mathcal{O}(n \log n)$, for this relation using the `master theorem' \cite{Intr
 \begin{lemma}
 @{thm [display] bigo_measure_trans}
 \end{lemma}
+
+\paragraph{}
+
+In principle, we can determine the solution, $\mathcal{O}(n \log n)$, for this relation using the 
+`master theorem' \cite{Introduction-to-Algorithms:2009}.
 
 \begin{quote}
 @{thm [display] closest_pair_rec_cost.simps}
@@ -526,8 +494,8 @@ The basis for our implementation is the algorithm presented by Cormen et al. \ci
 %
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=1.0\textwidth]{./../../benchmark/Benchmarks.png}
-\caption[]{Implementation Benchmarks.} 
+\includegraphics[width=0.9\textwidth]{./../../benchmark/Benchmarks.png}
+\caption[]{Benchmarks.} 
 \label{fig:benchmarks_lin_log_lin}
 \end{figure}
 %
