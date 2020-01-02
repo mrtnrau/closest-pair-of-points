@@ -165,7 +165,7 @@ that are also contained within this $2\delta$ wide strip. We can find our closes
 $\mathit{ys}$ and computing for each point its closest neighbor. Note that, in the worst case, $\mathit{ys}$ 
 contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
-This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$, illustrated as the red point in Figure \ref{fig:Combine}.
+This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, illustrated as the red point in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
 \centering
@@ -174,9 +174,9 @@ This is not the case. Let $p_0$ denote an arbitrary point of $\mathit{ys}$, illu
 \label{fig:Combine}
 \end{figure}
 %
-If $p_0$ is one of the points of the closest pair, then the distance to its closest
-neighbor is strictly less than $\delta$ and we only have to check all points $p_1 \in \mathit{set\ ys}$
-that are contained within the $2\delta$ wide horizontal strip centered around the $y$-coordinate of $p_0$.
+If @{term p} is one of the points of the closest pair, then the distance to its closest
+neighbor is strictly less than $\delta$ and we only have to check all points $q \in \mathit{set\ ys}$
+that are contained within the $2\delta$ wide horizontal strip centered around the $y$-coordinate of @{term p}.
 
 In Section \ref{section:proving_running_time} we prove that, for each $p \in \mathit{set\ ys}$, it suffices to check 
 only a constant number of closest point candidates. This fact allows for an implementation of 
@@ -193,7 +193,8 @@ in Section \ref{section:proving_running_time} we prove the optimal running time.
 \label{section:proving_functional_correctness}
 
 We present the implementation of the divide-and-conquer algorithm and the corresponding correctness proofs
-using a bottom-up approach, starting with the combine step. But first we need to introduce some definitional
+using a bottom-up approach, starting with the combine step. The basis for both implementation and proof is the algorithm
+presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}. But first we need to introduce some definitional
 preliminaries of two-dimensional geometry and formalize the closest pair problem.
 
 A point in the two-dimensional Euclidean plane is represented as a pair of (arbitrary-precision) integers
@@ -384,87 +385,151 @@ Note that it might be of interest to define a similar abstract interpretation to
 regard to this number. Since we choose not to minimize the number of @{const dist} computations,
 except for the final executable code in Section \ref{section:executable_code}, we omit such an analysis.
 
-\paragraph{}
-
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
 captured by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
 where @{term n} is the length of the given list of points. This claim implies an at most linear overhead
 at each level of recursion. Splitting of the list @{term xs}, merging @{term ys\<^sub>L} and @{term ys\<^sub>R} and
-the filtering operation of the combine step obviously run in linear time. But it is non-trivial that the 
+the filtering operation of the combine step run in linear time. But it is non-trivial that the 
 function @{const find_closest_pair}, central to the combine step, also exhibits a linear
 time complexity. It is applied to an argument list of, in the worst case, length @{term n}, iterates
 once through the list and calls @{const find_closest} for each element. Consequently our proof obligation
 is the constant running time of @{const find_closest} or, considering our timing function, that there exists
 some constant @{term c} such that @{term "t_find_closest p \<delta> ps \<le> c"} holds in the context of the combine step.
 
-\paragraph{}
-
-Looking at the definition of @{const find_closest} we see that the function 
-terminates as soon as it encounters the first point within the given list of points @{term ps} that does not 
-fulfill the predicate (@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}) or if @{term ps} is a list of length @{text "\<le>1"}. 
-The corresponding timing function, @{const t_find_closest} computes the number of recursive function calls,
-which is, in this case, synonymous with the number of examined points. For our time complexity proof it
-suffices to prove a slightly weaker bound on the result of @{const t_find_closest}. It is in essence bounded by
-the number of points of @{term ps} which fulfill the predicate (@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}), proved
-by induction on the computation of @{const t_find_closest}. The function @{term "count f"} is an abbreviation 
-for @{term "(length \<circ> filter f)"}. 
+Looking at the definition of @{const find_closest} we see that the function terminates as soon as 
+it encounters the first point within the given list of points @{term ps} that does not fulfill the predicate 
+(@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}), the point @{term p} being an argument to @{const find_closest},
+or if @{term ps} is a list of length @{text "\<le>1"}. The corresponding timing function, @{const t_find_closest} 
+computes the number of recursive function calls, which is, in this case, synonymous with the number of examined points.
+For our time complexity proof it suffices to prove the following bound on the result of  @{const t_find_closest}.
+The proof is by induction on the computation of @{const t_find_closest}.
 
 \begin{lemma}
-@{text [source, break] "t_find_closest p \<delta> ps \<le> 1 + count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"}
+@{term [break] "t_find_closest p \<delta> ps \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"}
 \end{lemma}
 
-Therefore we need to prove that the size of @{text "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"} does not depend
+Therefore we need to prove that the size of @{term "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"} does not depend
 on the length of @{term ps}. Looking back at Figure \ref{fig:Combine}, the point @{term p} representing the
-highlighted red point, we can assume that the list @{term "p # ps"} is distinct and sorted ascendingly by
+highlighted red point, we can assume that the list (@{term "p # ps"}) is distinct and sorted ascendingly by
 @{term y}-coordinate. From the pre-computing effort of the combine step we know that its points are contained 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term ps\<^sub>L}
 and @{term ps\<^sub>R} consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
-that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma:
+that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma which implies
+@{term "t_find_closest p \<delta> ps \<le> 8"} and thus the constant running time of @{const find_closest}.
 
-\begin{lemma}
+\begin{lemma} \label{lemma:core_argument}
 @{text [source, break] "distinct (p # ps) \<and> sortedY (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
 @{text [source, break] "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> ps\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> ps\<^sub>L \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> ps\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> ps\<^sub>R"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> count (\<lambda>q. snd q - snd p \<le> \<delta>) ps \<le> 7"}
+@{text [source, break] "\<Longrightarrow>"} @{term [break] "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<le> 7"}
 \end{lemma}
-\begin{proof}
 
-\textcolor{red}{TODO}
+The library HOL-Analysis defines some basic geometric building blocks needed for the proof. A \textit{closed box}
+describes points contained within rectangular shapes in Euclidean space. For our purposes the planar definition is sufficient.
 
-\end{proof}
-
-\begin{figure}[htpb]
-  \centering
-  \includegraphics[width=0.5\textwidth]{./../../img/Constant_Short.png}
-  \caption[]{The @{text "2\<delta> \<times> \<delta>"} rectangle @{term R}, highlighted in grey, contains a maximum of @{text 8} points, if
-             all points of @{term ps\<^sub>L} and @{term ps\<^sub>R} are respectively @{term \<delta>}-sparse and the points
-             shown on the vertical line @{term l} are pairs of coincident points.} \label{fig:Constant}
-\end{figure}
-
-\begin{lemma}
+\begin{quote}
 @{thm [display] cbox_2D}
+\end{quote}
+
+We then introduce some useful abbreviations for the proof of Lemma \ref{lemma:core_argument}:
+
+\begin{itemize}
+\setlength{\itemsep}{1pt}
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+\item The rectangle \<open>R\<close> is the upper half of the highlighted square of Figure \ref{fig:Combine}: \\
+      @{term "R = cbox (l - \<delta>, snd p) (l + \<delta>, snd p + \<delta>)"}
+\item The set \<open>R\<^sub>p\<^sub>s\<close> consists of all points of (@{term "p # ps"}) that are encompassed by \<open>R\<close>: \\
+      @{term "R\<^sub>p\<^sub>s = R \<inter> set (p # ps)"}
+\item The squares \<open>S\<^sub>L\<close> and \<open>S\<^sub>R\<close> denote the left and right halves of \<open>R\<close>: \\
+      @{term "S\<^sub>L = cbox (l - \<delta>, snd p) (l, snd p + \<delta>)"} \\
+      @{term "S\<^sub>R = cbox (l, snd p) (l + \<delta>, snd p + \<delta>)"}
+\item The set \<open>S\<^sub>p\<^sub>s\<^sub>L\<close> (\<open>S\<^sub>p\<^sub>s\<^sub>R\<close>) denotes the intersection of \<open>ps\<^sub>L\<close> (\<open>ps\<^sub>R\<close>) with \<open>S\<^sub>L\<close> (\<open>S\<^sub>R\<close>): \\
+      @{term "S\<^sub>p\<^sub>s\<^sub>L = ps\<^sub>L \<inter> S\<^sub>L"} \\
+      @{term "S\<^sub>p\<^sub>s\<^sub>R = ps\<^sub>R \<inter> S\<^sub>R"}
+\end{itemize}
+
+Let additionally \<open>ps\<^sub>f\<close> abbreviate the term @{term "filter (\<lambda>q. snd q - snd p \<le> \<delta>) (p # ps)"}.
+First we prove @{term "length ps\<^sub>f \<le> card R\<^sub>p\<^sub>s"}: Let \<open>q\<close> denote an arbitrary point of \<open>ps\<^sub>f\<close>. We know
+@{term "snd p \<le> snd q"} because the list @{term "p # ps"} and therefore \<open>ps\<^sub>f\<close> is sorted ascendingly by \<open>y\<close>-coordinate and
+@{term "snd q \<le> snd p + \<delta>"} due to the filter predicate (@{term "\<lambda>q. snd q - snd p \<le> \<delta>"}). 
+Using the additional facts @{term "l - \<delta> \<le> fst q"} and @{term "fst q \<le> l + \<delta>"} derived from our assumptions
+and the definition of @{const cbox} we know @{term "q \<in> R\<^sub>p\<^sub>s"} and thus @{term "set ps\<^sub>f \<subseteq> R\<^sub>p\<^sub>s"}. 
+Since the list \<open>ps\<^sub>f\<close> maintains the distinctness property of @{term "p # ps"} we additionally have 
+@{term "length ps\<^sub>f = card (set ps\<^sub>f)"}. Our intermediate goal immediately follows because 
+@{term "card (set ps\<^sub>f) \<le> card R\<^sub>p\<^sub>s"} holds for the finite set \<open>R\<^sub>p\<^sub>s\<close>.
+
+But how many points can there be in \<open>R\<^sub>p\<^sub>s\<close>? Lets first try to determine an upper bound for the number of points of \<open>S\<^sub>p\<^sub>s\<^sub>L\<close>.
+All its points are contained within the square \<open>S\<^sub>L\<close> whose side length is \<open>\<delta>\<close>. Moreover, since \<open>ps\<^sub>L\<close> is \<open>\<delta>\<close>-sparse and 
+\<open>S\<^sub>p\<^sub>s\<^sub>L \<subseteq> ps\<^sub>L\<close>, \<open>S\<^sub>p\<^sub>s\<^sub>L\<close> is also \<open>\<delta>\<close>-sparse, or the distance between each distinct pair of points of \<open>S\<^sub>p\<^sub>s\<^sub>L\<close> is at least \<open>\<delta>\<close>.
+Therefore the cardinality of \<open>S\<^sub>p\<^sub>s\<^sub>L\<close> is bound by the number of points we can maximally fit into \<open>S\<^sub>L\<close>, maintaining
+a pairwise minimum distance of \<open>\<delta>\<close>. As Figure \ref{fig:core_argument} illustrates, we can arrange at most four points
+adhering to these restrictions, and consequently have @{term "card S\<^sub>p\<^sub>s\<^sub>L \<le> 4"}. An analogous argument holds for
+the number of points of \<open>S\<^sub>p\<^sub>s\<^sub>R\<close>. Furthermore we know @{term "R\<^sub>p\<^sub>s = S\<^sub>p\<^sub>s\<^sub>L \<union> S\<^sub>p\<^sub>s\<^sub>R"} due to our assumption
+@{term "set (p # ps) = ps\<^sub>L \<union> ps\<^sub>R"} and the fact @{term "R = S\<^sub>L \<union> S\<^sub>R"} and can conclude @{term "card R\<^sub>p\<^sub>s \<le> 8"}.
+Our original statement follows from @{term "length ps\<^sub>f \<le> card R\<^sub>p\<^sub>s"} and the fact that
+@{term "1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) = length ps\<^sub>f"}.
+
+%
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.3\textwidth]{./../../img/Core_Argument.png}
+\caption[]{Core Argument.}
+\label{fig:core_argument}
+\end{figure}
+%
+
+Note that the intermediate proof for the bound on @{term "card R\<^sub>p\<^sub>s"} relies on basic human geometric intuition. 
+Indeed Cormen et al. \cite{Introduction-to-Algorithms:2009} and most of the proofs in the literature do.
+But for a formal proof we have to be rigorous. First we show two auxiliary lemmas. The maximum distance
+between two points in a square \<open>S\<close> with side length \<open>\<delta>\<close> is less than or equal to $\sqrt{2}\delta$. 
+
+\begin{lemma} \label{lemma:max_dist_square}
+@{text [source, break] "p\<^sub>0 = (x, y) \<and> p\<^sub>1 = (x + \<delta>, y + \<delta>) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
+@{text [source, break] "(x\<^sub>0, y\<^sub>0) \<in> cbox p\<^sub>0 p\<^sub>1 \<and> (x\<^sub>1, y\<^sub>1) \<in> cbox p\<^sub>0 p\<^sub>1"} \vskip 0pt
+@{text [source ,break] "\<Longrightarrow> dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) \<le> sqrt 2 * \<delta>"}
 \end{lemma}
 
-\begin{lemma}
-@{thm [display] max_points_square}
+The proof is straightforward. Both points are contained within the square \<open>S\<close>, the difference between
+their \<open>x\<close> and \<open>y\<close> coordinates is bound by \<open>\<delta>\<close> and we finish the proof using the definition of the Euclidean
+distance. Next we show a variation of the \textit{pigeonhole} principle.
+
+\begin{lemma} \label{lemma:pigeonhole}
+@{text [source, break] "finite B \<and> A \<subseteq> \<Union>B \<and> "} @{term "card B < card A"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> \<exists>x \<in> A. \<exists>y \<in> A. \<exists>S \<in> B. x \<noteq> y \<and> x \<in> S \<and> y \<in> S"}
 \end{lemma}
 
-\begin{lemma}
-@{thm [display] pigeonhole}
-\end{lemma}
+The proof is by contradiction using the following chain of inequalities:
+$$\lvert B \rvert < \lvert A \cap \bigcup B \rvert \le \sum S \in B.\ \lvert A \cap S \rvert \le \lvert B \rvert$$
+The first inequality holds using our assumptions. The second inequality can be shown by induction over
+the cardinality of \<open>B\<close>. Let then \<open>x\<close> and \<open>y\<close> denote arbitrary elements of \<open>A\<close> and \<open>S\<close> be an arbitrary set of \<open>B\<close>.
+Suppose either @{term "x = y"}, @{term "x \<notin> S"}, or @{term "y \<notin> S"} then @{term "card (A \<inter> S) \<le> 1"}. The proof
+is again by contradiction: Suppose @{term "card (A \<inter> S) > 1"}, then there exists a distinct pair of elements
+which are both element of \<open>A\<close> and \<open>S\<close>. A contradiction to our previous assumption. Thus the third inequality
+is correct and we have shown @{term "card B < card B"}, a contradiction. Finally we replace human intuition 
+with formal proof.
 
 \begin{lemma}
-@{thm [display] cbox_max_dist}
+@{text [source, break] "\<forall>p \<in> P. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>) \<and> min dist \<delta> P \<and> 0 \<le> \<delta>"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow>"} @{term "card P \<le> 4"}
 \end{lemma}
 
-\begin{lemma}
-@{thm [display] bigo_measure_trans}
-\end{lemma}
+Let \<open>S\<close> denote the square with a side length of \<open>\<delta>\<close> and suppose, for the sake of contradiction, that @{term "card P > 4"}.
+Then \<open>S\<close> can be split into \<open>4\<close> congruent squares @{text "A, B, C, D"} along the common point
+@{text "(x + \<delta> / 2, y + \<delta> / 2)"}. Since all points of \<open>P\<close> are contained within \<open>S\<close> and @{term "S = \<Union>{A, B, C, D}"}
+we have @{term "P \<subseteq> \<Union>{A, B, C, D}"}. Using Lemma \ref{lemma:pigeonhole} and our assumption  @{term "card P > 4"} 
+we can then obtain a square @{term "E \<in> {A, B, C, D}"} and a pair of distinct points @{term "p\<^sub>0 \<in> E"} and @{term "p\<^sub>1 \<in> E"}.
+Lemma \ref{lemma:max_dist_square} and the fact that all four sub-squares have the same side length @{text "\<delta> / 2"}
+shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to $\sqrt{2} / 2 * \delta$ and consequently
+strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because @{term "p\<^sub>0 \<in> P"},
+@{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction.  
 
 \paragraph{}
+
+\textcolor{red}{TODO}
 
 In principle, we can determine the solution, $\mathcal{O}(n \log n)$, for this relation using the 
 `master theorem' \cite{Introduction-to-Algorithms:2009}.
@@ -478,6 +543,10 @@ In principle, we can determine the solution, $\mathcal{O}(n \log n)$, for this r
 \end{lemma}
 
 \begin{lemma}
+@{thm [display] bigo_measure_trans}
+\end{lemma}
+
+\begin{lemma}
 @{thm [display] t_closest_pair_rec_bigo}
 \end{lemma}
 
@@ -487,16 +556,14 @@ In principle, we can determine the solution, $\mathcal{O}(n \log n)$, for this r
 
 \section{Alternative Implementations} \label{section:alt_impl}
 
-The basis for our implementation is the algorithm presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}.
-
 \section{Executable Code} \label{section:executable_code}
 
 %
 \begin{figure}[htpb]
 \centering
 \includegraphics[width=0.9\textwidth]{./../../benchmark/Benchmarks.png}
-\caption[]{Benchmarks.} 
-\label{fig:benchmarks_lin_log_lin}
+\caption[]{Benchmark.} 
+\label{fig:benchmark}
 \end{figure}
 %
 
