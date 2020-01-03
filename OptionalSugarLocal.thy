@@ -30,6 +30,7 @@ translations
   "n" <= "CONST real_of_int n"
   "n" <= "CONST of_real n"
   "n" <= "CONST complex_of_real n"
+  "n" <= "CONST nat n"
 
 (* append *)
 syntax (latex output)

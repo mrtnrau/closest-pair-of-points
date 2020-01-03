@@ -653,14 +653,14 @@ proof -
   have CRPS: "card RPS \<le> 8"
     using CLSQPS CRSQPS card_Un_le[of LSQPS RSQPS] \<open>RPS = LSQPS \<union> RSQPS\<close> by auto
 
-  have "set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS) \<subseteq> RPS"
+  have "set (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<subseteq> RPS"
   proof standard
     fix q
-    assume *: "q \<in> set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)"
+    assume *: "q \<in> set (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"
     hence CPS: "q \<in> set PS"
-      by simp
+      using PS_def by auto
     hence "snd p \<le> snd q" "snd q \<le> snd p + \<delta>"
-      using assms(2) PS_def sortedY_def * by (auto split: if_splits)
+      using assms(2,3) PS_def sortedY_def * by (auto split: if_splits)
     moreover have "l - \<delta> < fst q" "fst q < l + \<delta>"
       using CPS assms(5) PS_def by blast+
     ultimately have "q \<in> R"
@@ -671,12 +671,14 @@ proof -
   qed
   moreover have "finite RPS"
     by (simp add: RPS_def)
-  ultimately have "card (set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)) \<le> 8"
-    using CRPS card_mono[of RPS "set (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS)"] by simp
-  hence "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) PS) \<le> 8"
-    using assms(1) PS_def by (simp add: distinct_card)
+  ultimately have "card (set (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)) \<le> 8"
+    using CRPS card_mono[of RPS "set (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"] by simp
+  moreover have "distinct (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"
+    using assms(1) by simp
+  ultimately have "length (p # filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<le> 8"
+    using assms(1) PS_def distinct_card by metis
   thus ?thesis
-    using PS_def assms(1,3) by simp
+    by simp
 qed
 
 subsection "Combine Step"
@@ -808,12 +810,12 @@ fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> in
     t_filter (\<lambda>p. dist p (l, snd p) < dist c\<^sub>0 c\<^sub>1) ps + t_find_closest_pair (c\<^sub>0, c\<^sub>1) ps'
   )"
 
-definition combine_cost :: "nat \<Rightarrow> real" where
-  "combine_cost n = 10 * n"
+definition combine_recurrence :: "nat \<Rightarrow> real" where
+  "combine_recurrence n = 10 * n"
 
-lemma combine_cost_nonneg[simp]:
-  "0 \<le> combine_cost n"
-  unfolding combine_cost_def by simp
+lemma combine_recurrence_nonneg[simp]:
+  "0 \<le> combine_recurrence n"
+  unfolding combine_recurrence_def by simp
 
 lemma t_combine:
   fixes ps :: "point list"
@@ -860,12 +862,12 @@ proof -
     using * by simp
 qed
 
-lemma t_combine_conv_combine_cost:
+lemma t_combine_conv_combine_recurrence:
   assumes "distinct ps" "sortedY ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L" "min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R"
-  shows "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps \<le> combine_cost (length ps)"
-  using assms unfolding combine_cost_def using t_combine by (meson of_nat_le_iff)
+  shows "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps \<le> combine_recurrence (length ps)"
+  using assms unfolding combine_recurrence_def using t_combine by (meson of_nat_le_iff)
 
 declare t_combine.simps [simp del]
 
@@ -920,21 +922,21 @@ lemma t_closest_pair_rec_simps_2:
 
 declare t_closest_pair_rec.simps [simp del]
 
-function closest_pair_rec_cost :: "nat \<Rightarrow> real" where
-  "n \<le> 3 \<Longrightarrow> closest_pair_rec_cost n = 1 + length_cost n + sortY_cost n + closest_pair_bf_cost n"
-| "3 < n \<Longrightarrow> closest_pair_rec_cost n = 1 + length_cost n + split_at_cost n + 
-    closest_pair_rec_cost (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_cost (nat \<lceil>real n / 2\<rceil>) +
-    merge_cost n + combine_cost n"
+function closest_pair_rec_recurrence :: "nat \<Rightarrow> real" where
+  "n \<le> 3 \<Longrightarrow> closest_pair_rec_recurrence n = 1 + length_recurrence n + sortY_recurrence n + closest_pair_bf_recurrence n"
+| "3 < n \<Longrightarrow> closest_pair_rec_recurrence n = 1 + length_recurrence n + split_at_recurrence n + 
+    closest_pair_rec_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_recurrence (nat \<lceil>real n / 2\<rceil>) +
+    merge_recurrence n + combine_recurrence n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
-lemma closest_pair_rec_cost_nonneg[simp]:
-  "0 \<le> closest_pair_rec_cost n"
-  by (induction n rule: closest_pair_rec_cost.induct) (auto simp add: combine_cost_def)
+lemma closest_pair_rec_recurrence_nonneg[simp]:
+  "0 \<le> closest_pair_rec_recurrence n"
+  by (induction n rule: closest_pair_rec_recurrence.induct) (auto simp add: combine_recurrence_def)
 
-lemma t_closest_pair_rec_conv_closest_pair_rec_cost:
+lemma t_closest_pair_rec_conv_closest_pair_rec_recurrence:
   assumes "distinct ps" "sortedX ps"
-  shows "t_closest_pair_rec ps \<le> closest_pair_rec_cost (length ps)"
+  shows "t_closest_pair_rec ps \<le> closest_pair_rec_recurrence (length ps)"
   using assms
 proof (induction ps rule: length_induct)
   case (1 ps)
@@ -945,12 +947,12 @@ proof (induction ps rule: length_induct)
     hence "t_closest_pair_rec ps = 
            1 + t_length ps + t_sortY ps + t_closest_pair_bf ps"
       using t_closest_pair_rec_simps_1 by simp
-    moreover have "closest_pair_rec_cost ?n = 
-                   1 + length_cost ?n + sortY_cost ?n + closest_pair_bf_cost ?n"
+    moreover have "closest_pair_rec_recurrence ?n = 
+                   1 + length_recurrence ?n + sortY_recurrence ?n + closest_pair_bf_recurrence ?n"
       using True by simp
     ultimately show ?thesis
-      using t_length_conv_length_cost t_sortY_conv_sortY_cost
-            t_closest_pair_bf_conv_closest_pair_bf_cost of_nat_add
+      using t_length_conv_length_recurrence t_sortY_conv_sortY_recurrence
+            t_closest_pair_bf_conv_closest_pair_bf_recurrence of_nat_add
       by (smt of_nat_1)
   next
     case False
@@ -978,9 +980,9 @@ proof (induction ps rule: length_induct)
       using False t_closest_pair_rec_simps_2 defs
       by (auto simp: Let_def split!: if_splits prod.splits)
 
-    have FR: "closest_pair_rec_cost (length ps) = 1 +
-              length_cost ?n + split_at_cost ?n + closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>) +
-              closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>) + merge_cost ?n + combine_cost ?n"
+    have FR: "closest_pair_rec_recurrence (length ps) = 1 +
+              length_recurrence ?n + split_at_recurrence ?n + closest_pair_rec_recurrence (nat \<lfloor>real ?n / 2\<rfloor>) +
+              closest_pair_rec_recurrence (nat \<lceil>real ?n / 2\<rceil>) + merge_recurrence ?n + combine_recurrence ?n"
       using False by simp
 
     have XSLR: "XS\<^sub>L = take (?n div 2) ps" "XS\<^sub>R = drop (?n div 2) ps"
@@ -998,18 +1000,18 @@ proof (induction ps rule: length_induct)
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>L" "sortedX XS\<^sub>L"
       using XSLR "1.prems"(1,2) sortedX_def sorted_wrt_take by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (length XS\<^sub>L)"
+    ultimately have "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_recurrence (length XS\<^sub>L)"
       using "1.IH" by simp
-    hence IHL: "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>)"
+    hence IHL: "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_rec_recurrence (nat \<lfloor>real ?n / 2\<rfloor>)"
       using * by simp
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length ps"
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>R" "sortedX XS\<^sub>R"
       using XSLR "1.prems"(1,2) sortedX_def sorted_wrt_drop by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (length XS\<^sub>R)"
+    ultimately have "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_recurrence (length XS\<^sub>R)"
       using "1.IH" by simp
-    hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
+    hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_rec_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
       using * by simp
 
     have "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec ps"
@@ -1030,64 +1032,64 @@ proof (induction ps rule: length_induct)
     moreover have "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
       using CP\<^sub>R_def \<open>1 < length XS\<^sub>R\<close> \<open>distinct XS\<^sub>R\<close> \<open>sortedX XS\<^sub>R\<close>
             closest_pair_rec_dist closest_pair_rec_set_length_sortedY by auto
-    ultimately have "TC \<le> combine_cost ?n"
-      using t_combine_conv_combine_cost TC_def by presburger
-    moreover have "t_length ps = length_cost ?n"
-      using t_length_conv_length_cost by blast
-    moreover have "TS \<le> split_at_cost ?n"
-      using t_split_at_conv_split_at_cost TS_def by blast
-    moreover have "TL \<le> closest_pair_rec_cost (nat \<lfloor>real ?n / 2\<rfloor>)"
+    ultimately have "TC \<le> combine_recurrence ?n"
+      using t_combine_conv_combine_recurrence TC_def by presburger
+    moreover have "t_length ps = length_recurrence ?n"
+      using t_length_conv_length_recurrence by blast
+    moreover have "TS \<le> split_at_recurrence ?n"
+      using t_split_at_conv_split_at_recurrence TS_def by blast
+    moreover have "TL \<le> closest_pair_rec_recurrence (nat \<lfloor>real ?n / 2\<rfloor>)"
       using IHL TL_def by blast
-    moreover have "TR \<le> closest_pair_rec_cost (nat \<lceil>real ?n / 2\<rceil>)"
+    moreover have "TR \<le> closest_pair_rec_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
       using IHR TR_def by blast
-    moreover have "TM \<le> merge_cost ?n"
-      using L t_merge_conv_merge_cost TM_def by auto
+    moreover have "TM \<le> merge_recurrence ?n"
+      using L t_merge_conv_merge_recurrence TM_def by auto
     ultimately show ?thesis
       using FL FR by linarith
   qed
 qed
 
-theorem closest_pair_rec_cost:
-  "closest_pair_rec_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
+theorem closest_pair_rec_recurrence:
+  "closest_pair_rec_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem)
-     (auto simp: length_cost_def split_at_cost_def merge_cost_def combine_cost_def)
+     (auto simp: length_recurrence_def split_at_recurrence_def merge_recurrence_def combine_recurrence_def)
  
 theorem t_closest_pair_rec_bigo:
   "t_closest_pair_rec \<in> O[length going_to at_top within { ps. distinct ps \<and> sortedX ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. distinct ps \<and> sortedX ps } \<Longrightarrow>
-           t_closest_pair_rec ps \<le> (closest_pair_rec_cost o length) ps"
-    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_cost by auto
+           t_closest_pair_rec ps \<le> (closest_pair_rec_recurrence o length) ps"
+    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_rec_recurrence by auto
   show ?thesis
-    using bigo_measure_trans[OF 0] bigthetaD1[OF closest_pair_rec_cost] of_nat_0_le_iff by blast
+    using bigo_measure_trans[OF 0] bigthetaD1[OF closest_pair_rec_recurrence] of_nat_0_le_iff by blast
 qed
 
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
   "t_closest_pair ps = t_sortX ps + t_closest_pair_rec (sortX ps)"
 
-definition closest_pair_cost :: "nat \<Rightarrow> real" where
-  "closest_pair_cost n = sortX_cost n + closest_pair_rec_cost n"
+definition closest_pair_recurrence :: "nat \<Rightarrow> real" where
+  "closest_pair_recurrence n = sortX_recurrence n + closest_pair_rec_recurrence n"
 
-lemma t_closest_pair_conv_closest_pair_cost:
+lemma t_closest_pair_conv_closest_pair_recurrence:
   assumes "distinct ps"
-  shows "t_closest_pair ps \<le> closest_pair_cost (length ps)"
-  unfolding t_closest_pair_def closest_pair_cost_def using assms sortX of_nat_add
-  using t_sortX_conv_sortX_cost t_closest_pair_rec_conv_closest_pair_rec_cost
+  shows "t_closest_pair ps \<le> closest_pair_recurrence (length ps)"
+  unfolding t_closest_pair_def closest_pair_recurrence_def using assms sortX of_nat_add
+  using t_sortX_conv_sortX_recurrence t_closest_pair_rec_conv_closest_pair_rec_recurrence
   by (smt One_nat_def)
 
-corollary closest_pair_cost:
-  "closest_pair_cost \<in> O(\<lambda>n. n * ln n)"
-  unfolding closest_pair_cost_def
-  using sortX_cost closest_pair_rec_cost sum_in_bigo(1) by blast
+corollary closest_pair_recurrence:
+  "closest_pair_recurrence \<in> O(\<lambda>n. n * ln n)"
+  unfolding closest_pair_recurrence_def
+  using sortX_recurrence closest_pair_rec_recurrence sum_in_bigo(1) by blast
 
 corollary t_closest_pair_bigo:
   "t_closest_pair \<in> O[length going_to at_top within { ps. distinct ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. distinct ps } \<Longrightarrow>
-           t_closest_pair ps \<le> (closest_pair_cost o length) ps"
-    unfolding comp_def using t_closest_pair_conv_closest_pair_cost by auto
+           t_closest_pair ps \<le> (closest_pair_recurrence o length) ps"
+    unfolding comp_def using t_closest_pair_conv_closest_pair_recurrence by auto
   show ?thesis
-    using bigo_measure_trans[OF 0] closest_pair_cost by fastforce
+    using bigo_measure_trans[OF 0] closest_pair_recurrence by fastforce
 qed
 
 

@@ -131,16 +131,16 @@ lemma t_length:
   "t_length xs = length xs"
   by (induction xs) auto
 
-definition length_cost :: "nat \<Rightarrow> real" where
-  "length_cost n = n"
+definition length_recurrence :: "nat \<Rightarrow> real" where
+  "length_recurrence n = n"
 
-lemma length_cost_nonneg[simp]:
-  "0 \<le> length_cost n"
-  unfolding length_cost_def by simp
+lemma length_recurrence_nonneg[simp]:
+  "0 \<le> length_recurrence n"
+  unfolding length_recurrence_def by simp
 
-lemma t_length_conv_length_cost:
-  "t_length xs = length_cost (length xs)"
-  unfolding length_cost_def using t_length by auto
+lemma t_length_conv_length_recurrence:
+  "t_length xs = length_recurrence (length xs)"
+  unfolding length_recurrence_def using t_length by auto
 
 fun length_it' :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "length_it' acc [] = acc"
@@ -188,12 +188,12 @@ lemma t_take:
   "t_take n xs = min (n+1) (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
-definition take_cost :: "nat \<Rightarrow> real" where
-  "take_cost n = real n"
+definition take_recurrence :: "nat \<Rightarrow> real" where
+  "take_recurrence n = real n"
 
-lemma t_take_conv_take_cost:
-  "t_take n xs \<le> take_cost (length xs)"
-  unfolding take_cost_def by (auto simp: min_def t_take)
+lemma t_take_conv_take_recurrence:
+  "t_take n xs \<le> take_recurrence (length xs)"
+  unfolding take_recurrence_def by (auto simp: min_def t_take)
 
 declare t_take.simps [simp del]
 
@@ -207,12 +207,12 @@ lemma t_filter:
   "t_filter P xs = length xs"
   by (induction xs) auto
 
-definition filter_cost :: "nat \<Rightarrow> real" where
-  "filter_cost n = n"
+definition filter_recurrence :: "nat \<Rightarrow> real" where
+  "filter_recurrence n = n"
 
-lemma t_filter_conv_filter_cost:
-  "t_filter P xs = filter_cost (length xs)"
-  unfolding filter_cost_def using t_filter by auto
+lemma t_filter_conv_filter_recurrence:
+  "t_filter P xs = filter_recurrence (length xs)"
+  unfolding filter_recurrence_def using t_filter by auto
 
 fun filter_it' :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "filter_it' acc P [] = rev acc"
@@ -264,16 +264,16 @@ lemma t_split_at:
   "t_split_at n xs \<le> length xs"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
-definition split_at_cost :: "nat \<Rightarrow> real" where
-  "split_at_cost n = n"
+definition split_at_recurrence :: "nat \<Rightarrow> real" where
+  "split_at_recurrence n = n"
 
-lemma split_at_cost_nonneg[simp]:
-  "0 \<le> split_at_cost n"
-  unfolding split_at_cost_def by simp
+lemma split_at_recurrence_nonneg[simp]:
+  "0 \<le> split_at_recurrence n"
+  unfolding split_at_recurrence_def by simp
 
-lemma t_split_at_conv_split_at_cost:
-  "t_split_at n xs \<le> split_at_cost (length xs)"
-  unfolding split_at_cost_def by (auto simp: min_def t_split_at)
+lemma t_split_at_conv_split_at_recurrence:
+  "t_split_at n xs \<le> split_at_recurrence (length xs)"
+  unfolding split_at_recurrence_def by (auto simp: min_def t_split_at)
 
 fun split_at_it' :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
   "split_at_it' acc n [] = (rev acc, [])"
@@ -441,16 +441,16 @@ lemma t_merge:
   "t_merge f (xs, ys) \<le> length xs + length ys"
   unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
 
-definition merge_cost :: "nat \<Rightarrow> real" where
-  "merge_cost n = n"
+definition merge_recurrence :: "nat \<Rightarrow> real" where
+  "merge_recurrence n = n"
 
-lemma merge_cost_nonneg[simp]:
-  "0 \<le> merge_cost n"
-  unfolding merge_cost_def by simp
+lemma merge_recurrence_nonneg[simp]:
+  "0 \<le> merge_recurrence n"
+  unfolding merge_recurrence_def by simp
 
-lemma t_merge_conv_merge_cost:
-  "t_merge f (xs, ys) \<le> merge_cost (length xs + length ys)"
-  unfolding merge_cost_def by (metis of_nat_mono t_merge)
+lemma t_merge_conv_merge_recurrence:
+  "t_merge f (xs, ys) \<le> merge_recurrence (length xs + length ys)"
+  unfolding merge_recurrence_def by (metis of_nat_mono t_merge)
 
 function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_msort f [] = 0"
@@ -473,40 +473,40 @@ definition t_sortX :: "point list \<Rightarrow> nat" where
 definition t_sortY :: "point list \<Rightarrow> nat" where
   "t_sortY ps = t_msort (\<lambda>p. snd p) ps"
 
-function msort_cost :: "nat \<Rightarrow> real" where
-  "msort_cost 0 = 0"
-| "msort_cost 1 = 1"
-| "2 \<le> n \<Longrightarrow> msort_cost n = 1 + length_cost n + split_at_cost n + 
-    msort_cost (nat \<lfloor>real n / 2\<rfloor>) + msort_cost (nat \<lceil>real n / 2\<rceil>) + merge_cost n"
+function msort_recurrence :: "nat \<Rightarrow> real" where
+  "msort_recurrence 0 = 0"
+| "msort_recurrence 1 = 1"
+| "2 \<le> n \<Longrightarrow> msort_recurrence n = 1 + length_recurrence n + split_at_recurrence n + 
+    msort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + msort_recurrence (nat \<lceil>real n / 2\<rceil>) + merge_recurrence n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
-definition sortX_cost :: "nat \<Rightarrow> real" where
-  "sortX_cost = msort_cost"
+definition sortX_recurrence :: "nat \<Rightarrow> real" where
+  "sortX_recurrence = msort_recurrence"
 
-definition sortY_cost :: "nat \<Rightarrow> real" where
-  "sortY_cost = msort_cost"
+definition sortY_recurrence :: "nat \<Rightarrow> real" where
+  "sortY_recurrence = msort_recurrence"
 
 declare t_length.simps t_split_at.simps[simp del]
 
-lemma msort_cost_nonneg[simp]:
-  "0 \<le> msort_cost n"
-  by (induction n rule: msort_cost.induct) (auto simp del: One_nat_def)
+lemma msort_recurrence_nonneg[simp]:
+  "0 \<le> msort_recurrence n"
+  by (induction n rule: msort_recurrence.induct) (auto simp del: One_nat_def)
 
-corollary sortX_cost_nonneg[simp]:
-  "0 \<le> sortX_cost n"
-  unfolding sortX_cost_def by simp
+corollary sortX_recurrence_nonneg[simp]:
+  "0 \<le> sortX_recurrence n"
+  unfolding sortX_recurrence_def by simp
 
-corollary sortY_cost_nonneg[simp]:
-  "0 \<le> sortY_cost n"
-  unfolding sortY_cost_def by simp
+corollary sortY_recurrence_nonneg[simp]:
+  "0 \<le> sortY_recurrence n"
+  unfolding sortY_recurrence_def by simp
 
-lemma t_msort_conv_msort_cost:
-  "t_msort f xs \<le> msort_cost (length xs)"
+lemma t_msort_conv_msort_recurrence:
+  "t_msort f xs \<le> msort_recurrence (length xs)"
 proof (induction f xs rule: t_msort.induct)
   case (2 f x)
   thus ?case
-    using msort_cost.simps(2) by auto
+    using msort_recurrence.simps(2) by auto
 next
   case (3 f x y xs')
 
@@ -517,78 +517,78 @@ next
   note defs = XS_def N_def LR_def
 
   let ?LHS = "1 + t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
-  let ?RHS = "1 + length_cost N + split_at_cost N + msort_cost (nat \<lfloor>real N / 2\<rfloor>) +
-              msort_cost (nat \<lceil>real N / 2\<rceil>) + merge_cost N"
+  let ?RHS = "1 + length_recurrence N + split_at_recurrence N + msort_recurrence (nat \<lfloor>real N / 2\<rfloor>) +
+              msort_recurrence (nat \<lceil>real N / 2\<rceil>) + merge_recurrence N"
 
-  have IHL: "t_msort f L \<le> msort_cost (length L)"
+  have IHL: "t_msort f L \<le> msort_recurrence (length L)"
     using defs "3.IH"(1) prod.collapse by blast
-  have IHR: "t_msort f R \<le> msort_cost (length R)"
+  have IHR: "t_msort f R \<le> msort_recurrence (length R)"
     using defs "3.IH"(2) prod.collapse by blast
 
   have *: "length L = N div 2" "length R = N - N div 2"
     using defs by (auto simp: split_at_take_drop_conv)
   hence "(nat \<lfloor>real N / 2\<rfloor>) = length L" "(nat \<lceil>real N / 2\<rceil>) = length R"
     by linarith+
-  hence IH: "t_msort f L \<le> msort_cost (nat \<lfloor>real N / 2\<rfloor>)"
-            "t_msort f R \<le> msort_cost (nat \<lceil>real N / 2\<rceil>)"
+  hence IH: "t_msort f L \<le> msort_recurrence (nat \<lfloor>real N / 2\<rfloor>)"
+            "t_msort f R \<le> msort_recurrence (nat \<lceil>real N / 2\<rceil>)"
     using IHL IHR by simp_all
 
   have "N = length L + length R"
     using * by linarith
-  hence "t_merge f (L, R) \<le> merge_cost N"
-    using t_merge_conv_merge_cost by metis
-  moreover have "t_length XS = length_cost N"
-    using t_length_conv_length_cost defs by blast
-  moreover have "t_split_at (N div 2) XS \<le> split_at_cost N"
-    using t_split_at_conv_split_at_cost defs by blast
+  hence "t_merge f (L, R) \<le> merge_recurrence N"
+    using t_merge_conv_merge_recurrence by metis
+  moreover have "t_length XS = length_recurrence N"
+    using t_length_conv_length_recurrence defs by blast
+  moreover have "t_split_at (N div 2) XS \<le> split_at_recurrence N"
+    using t_split_at_conv_split_at_recurrence defs by blast
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
   moreover have "t_msort f XS = ?LHS"
     using defs by (auto simp: Let_def split: prod.split)
-  moreover have "msort_cost N = ?RHS"
+  moreover have "msort_recurrence N = ?RHS"
     by (simp add: defs)
-  ultimately have "t_msort f XS \<le> msort_cost N"
+  ultimately have "t_msort f XS \<le> msort_recurrence N"
     by presburger 
   thus ?case
     using XS_def N_def by blast
 qed auto
 
-corollary t_sortX_conv_sortX_cost:
-  "t_sortX xs \<le> sortX_cost (length xs)"
-  unfolding t_sortX_def sortX_cost_def using t_msort_conv_msort_cost by blast
+corollary t_sortX_conv_sortX_recurrence:
+  "t_sortX xs \<le> sortX_recurrence (length xs)"
+  unfolding t_sortX_def sortX_recurrence_def using t_msort_conv_msort_recurrence by blast
 
-corollary t_sortY_conv_sortY_cost:
-  "t_sortY xs \<le> sortY_cost (length xs)"
-  unfolding t_sortY_def sortY_cost_def using t_msort_conv_msort_cost by blast
+corollary t_sortY_conv_sortY_recurrence:
+  "t_sortY xs \<le> sortY_recurrence (length xs)"
+  unfolding t_sortY_def sortY_recurrence_def using t_msort_conv_msort_recurrence by blast
 
-theorem msort_cost:
-  "msort_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
-  by (master_theorem) (auto simp: length_cost_def split_at_cost_def merge_cost_def)
+theorem msort_recurrence:
+  "msort_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
+  by (master_theorem) (auto simp: length_recurrence_def split_at_recurrence_def merge_recurrence_def)
 
-corollary sortX_cost:
-  "sortX_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
-  unfolding sortX_cost_def using msort_cost by simp
+corollary sortX_recurrence:
+  "sortX_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
+  unfolding sortX_recurrence_def using msort_recurrence by simp
 
-corollary sortY_cost:
-  "sortY_cost \<in> \<Theta>(\<lambda>n. n * ln n)"
-  unfolding sortY_cost_def using msort_cost by simp
+corollary sortY_recurrence:
+  "sortY_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
+  unfolding sortY_recurrence_def using msort_recurrence by simp
 
 theorem t_msort_bigo:
   "t_msort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have 0: "\<And>xs. t_msort f xs \<le> (msort_cost o length) xs"
-    unfolding comp_def using t_msort_conv_msort_cost by blast
+  have 0: "\<And>xs. t_msort f xs \<le> (msort_recurrence o length) xs"
+    unfolding comp_def using t_msort_conv_msort_recurrence by blast
   show ?thesis
-    using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_cost)
+    using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_recurrence)
 qed
 
 corollary t_sortX_bigo:
   "t_sortX \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
-  unfolding t_sortX_def sortX_cost_def using t_msort_bigo by blast
+  unfolding t_sortX_def sortX_recurrence_def using t_msort_bigo by blast
 
 corollary t_sortY_bigo:
   "t_sortY \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
-  unfolding t_sortY_def sortY_cost_def using t_msort_bigo by blast
+  unfolding t_sortY_def sortY_recurrence_def using t_msort_bigo by blast
 
 subsection "Code Export"
 
@@ -848,16 +848,16 @@ proof (induction rule: t_closest_pair_bf.induct)
     using "4.prems" t_find_closest_bf by simp
 qed auto
 
-definition closest_pair_bf_cost :: "nat \<Rightarrow> real" where
-  "closest_pair_bf_cost n = n * n"
+definition closest_pair_bf_recurrence :: "nat \<Rightarrow> real" where
+  "closest_pair_bf_recurrence n = n * n"
 
-lemma closest_pair_bf_cost_nonneg[simp]:
-  "0 \<le> closest_pair_bf_cost n"
-  unfolding closest_pair_bf_cost_def by simp
+lemma closest_pair_bf_recurrence_nonneg[simp]:
+  "0 \<le> closest_pair_bf_recurrence n"
+  unfolding closest_pair_bf_recurrence_def by simp
 
-lemma t_closest_pair_bf_conv_closest_pair_bf_cost:
-  "t_closest_pair_bf ps \<le> closest_pair_bf_cost (length ps)"
-  unfolding closest_pair_bf_cost_def using t_closest_pair_bf of_nat_mono by fastforce
+lemma t_closest_pair_bf_conv_closest_pair_bf_recurrence:
+  "t_closest_pair_bf ps \<le> closest_pair_bf_recurrence (length ps)"
+  unfolding closest_pair_bf_recurrence_def using t_closest_pair_bf of_nat_mono by fastforce
 
 subsection "Code Export"
 
