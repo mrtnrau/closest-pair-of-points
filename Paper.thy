@@ -50,11 +50,11 @@ lemma closest_pair_rec_simp:
       let ys = merge snd ys\<^sub>L ys\<^sub>R in
       (ys, combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys)
   )"
-  by (auto simp: closest_pair_rec.simps Let_def sortY_def)
+  by (auto simp: closest_pair_rec.simps Let_def)
 
 lemma closest_pair_simp:
   "ps = p # q # ps' \<Longrightarrow> closest_pair ps = (let (ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec (msort fst ps) in (c\<^sub>0, c\<^sub>1))"
-  by (simp add: sortX_def)
+  by simp
 
 lemma t_find_closest_simp:
   "ps \<noteq> [] \<Longrightarrow> ps \<noteq> [p] \<Longrightarrow> t_find_closest p \<delta> (p\<^sub>0 # ps) = 1 + (
@@ -71,11 +71,10 @@ lemma t_find_closest_simp:
 lemma closest_pair_rec_recurrence_simps:
   "closest_pair_rec_recurrence n = (
     if n \<le> 3 then
-      1 + n + n * n + msort_recurrence n
+      n + msort_recurrence n + n * n
     else
-      1 + 13 * n + closest_pair_rec_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_recurrence (nat \<lceil>real n / 2\<rceil>)
-  )" by (auto simp: length_recurrence_def closest_pair_bf_recurrence_def sortY_recurrence_def
-                    split_at_recurrence_def merge_recurrence_def combine_recurrence_def)
+      13 * n + closest_pair_rec_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_recurrence (nat \<lceil>real n / 2\<rceil>)
+  )" by (auto)
 
 (* Styling *)
 

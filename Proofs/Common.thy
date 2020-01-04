@@ -131,17 +131,6 @@ lemma t_length:
   "t_length xs = length xs"
   by (induction xs) auto
 
-definition length_recurrence :: "nat \<Rightarrow> real" where
-  "length_recurrence n = n"
-
-lemma length_recurrence_nonneg[simp]:
-  "0 \<le> length_recurrence n"
-  unfolding length_recurrence_def by simp
-
-lemma t_length_conv_length_recurrence:
-  "t_length xs = length_recurrence (length xs)"
-  unfolding length_recurrence_def using t_length by auto
-
 fun length_it' :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "length_it' acc [] = acc"
 | "length_it' acc (x#xs) = length_it' (acc+1) xs"
@@ -185,17 +174,8 @@ fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   )"
 
 lemma t_take:
-  "t_take n xs = min (n+1) (length xs)"
+  "t_take n xs \<le> min (n + 1) (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
-
-definition take_recurrence :: "nat \<Rightarrow> real" where
-  "take_recurrence n = real n"
-
-lemma t_take_conv_take_recurrence:
-  "t_take n xs \<le> take_recurrence (length xs)"
-  unfolding take_recurrence_def by (auto simp: min_def t_take)
-
-declare t_take.simps [simp del]
 
 subsection "filter"
 
@@ -206,13 +186,6 @@ fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat
 lemma t_filter:
   "t_filter P xs = length xs"
   by (induction xs) auto
-
-definition filter_recurrence :: "nat \<Rightarrow> real" where
-  "filter_recurrence n = n"
-
-lemma t_filter_conv_filter_recurrence:
-  "t_filter P xs = filter_recurrence (length xs)"
-  unfolding filter_recurrence_def using t_filter by auto
 
 fun filter_it' :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "filter_it' acc P [] = rev acc"
@@ -250,8 +223,6 @@ lemma split_at_take_drop_conv:
   "split_at n xs = (take n xs, drop n xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
-declare split_at.simps [simp del]
-
 fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "t_split_at n [] = 0"
 | "t_split_at n (x#xs) = 1 + (
@@ -263,17 +234,6 @@ fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
 lemma t_split_at:
   "t_split_at n xs \<le> length xs"
   by (induction xs arbitrary: n) (auto split: nat.split)
-
-definition split_at_recurrence :: "nat \<Rightarrow> real" where
-  "split_at_recurrence n = n"
-
-lemma split_at_recurrence_nonneg[simp]:
-  "0 \<le> split_at_recurrence n"
-  unfolding split_at_recurrence_def by simp
-
-lemma t_split_at_conv_split_at_recurrence:
-  "t_split_at n xs \<le> split_at_recurrence (length xs)"
-  unfolding split_at_recurrence_def by (auto simp: min_def t_split_at)
 
 fun split_at_it' :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
   "split_at_it' acc n [] = (rev acc, [])"
@@ -390,27 +350,7 @@ proof (induction f xs rule: msort.induct)
     using lr_def by (auto simp: distinct_merge set_msort split: prod.splits)
 qed auto
 
-definition sortX :: "point list \<Rightarrow> point list" where
-  "sortX ps = msort fst ps"
-
-definition sortY :: "point list \<Rightarrow> point list" where
-  "sortY ps = msort snd ps"
-
-lemma sortX:
-  shows sortedX_sortX: "sortedX (sortX ps)" and
-        set_sortX: "set (sortX ps) = set ps" and
-        length_sortX: "length (sortX ps) = length ps" and
-        distinct_sortX: "distinct ps \<Longrightarrow> distinct (sortX ps)"
-  unfolding sortX_def sortedX_def
-  by (auto simp: sorted_wrt_msort set_msort length_msort distinct_msort)
-
-lemma sortY:
-  shows sortedY_sortY: "sortedY (sortY ps)" and
-        set_sortY: "set (sortY ps) = set ps" and
-        length_sortY: "length (sortY ps) = length ps" and
-        distinct_sortY: "distinct ps \<Longrightarrow> distinct (sortY ps)"
-  unfolding sortY_def sortedY_def
-  by (auto simp: sorted_wrt_msort set_msort length_msort distinct_msort)
+lemmas msort = sorted_wrt_msort set_msort length_msort distinct_msort
 
 lemma sortedX_take_less_hd_drop:
   assumes "sortedX ps" "n < length ps"
@@ -441,21 +381,10 @@ lemma t_merge:
   "t_merge f (xs, ys) \<le> length xs + length ys"
   unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
 
-definition merge_recurrence :: "nat \<Rightarrow> real" where
-  "merge_recurrence n = n"
-
-lemma merge_recurrence_nonneg[simp]:
-  "0 \<le> merge_recurrence n"
-  unfolding merge_recurrence_def by simp
-
-lemma t_merge_conv_merge_recurrence:
-  "t_merge f (xs, ys) \<le> merge_recurrence (length xs + length ys)"
-  unfolding merge_recurrence_def by (metis of_nat_mono t_merge)
-
 function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_msort f [] = 0"
 | "t_msort f [_] = 1"
-| "t_msort f (x # y # xs') = 1 + (
+| "t_msort f (x # y # xs') = (
     let xs = x # y # xs' in
     let (l, r) = split_at (length xs div 2) xs in
     t_length xs + t_split_at (length xs div 2) xs +
@@ -467,39 +396,17 @@ termination t_msort
   apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
-definition t_sortX :: "point list \<Rightarrow> nat" where
-  "t_sortX ps = t_msort (\<lambda>p. fst p) ps"
-
-definition t_sortY :: "point list \<Rightarrow> nat" where
-  "t_sortY ps = t_msort (\<lambda>p. snd p) ps"
-
 function msort_recurrence :: "nat \<Rightarrow> real" where
   "msort_recurrence 0 = 0"
 | "msort_recurrence 1 = 1"
-| "2 \<le> n \<Longrightarrow> msort_recurrence n = 1 + length_recurrence n + split_at_recurrence n + 
-    msort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + msort_recurrence (nat \<lceil>real n / 2\<rceil>) + merge_recurrence n"
+| "2 \<le> n \<Longrightarrow> msort_recurrence n = msort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + 
+    msort_recurrence (nat \<lceil>real n / 2\<rceil>) + 3 * n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
-
-definition sortX_recurrence :: "nat \<Rightarrow> real" where
-  "sortX_recurrence = msort_recurrence"
-
-definition sortY_recurrence :: "nat \<Rightarrow> real" where
-  "sortY_recurrence = msort_recurrence"
-
-declare t_length.simps t_split_at.simps[simp del]
 
 lemma msort_recurrence_nonneg[simp]:
   "0 \<le> msort_recurrence n"
   by (induction n rule: msort_recurrence.induct) (auto simp del: One_nat_def)
-
-corollary sortX_recurrence_nonneg[simp]:
-  "0 \<le> sortX_recurrence n"
-  unfolding sortX_recurrence_def by simp
-
-corollary sortY_recurrence_nonneg[simp]:
-  "0 \<le> sortY_recurrence n"
-  unfolding sortY_recurrence_def by simp
 
 lemma t_msort_conv_msort_recurrence:
   "t_msort f xs \<le> msort_recurrence (length xs)"
@@ -516,9 +423,8 @@ next
     using prod.collapse by blast
   note defs = XS_def N_def LR_def
 
-  let ?LHS = "1 + t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
-  let ?RHS = "1 + length_recurrence N + split_at_recurrence N + msort_recurrence (nat \<lfloor>real N / 2\<rfloor>) +
-              msort_recurrence (nat \<lceil>real N / 2\<rceil>) + merge_recurrence N"
+  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
+  let ?RHS = "msort_recurrence (nat \<lfloor>real N / 2\<rfloor>) + msort_recurrence (nat \<lceil>real N / 2\<rceil>) + 3 * N"
 
   have IHL: "t_msort f L \<le> msort_recurrence (length L)"
     using defs "3.IH"(1) prod.collapse by blast
@@ -535,12 +441,12 @@ next
 
   have "N = length L + length R"
     using * by linarith
-  hence "t_merge f (L, R) \<le> merge_recurrence N"
-    using t_merge_conv_merge_recurrence by metis
-  moreover have "t_length XS = length_recurrence N"
-    using t_length_conv_length_recurrence defs by blast
-  moreover have "t_split_at (N div 2) XS \<le> split_at_recurrence N"
-    using t_split_at_conv_split_at_recurrence defs by blast
+  hence "t_merge f (L, R) \<le> N"
+    using t_merge by simp
+  moreover have "t_length XS = N"
+    using t_length N_def by blast
+  moreover have "t_split_at (N div 2) XS \<le> N"
+    using t_split_at N_def by blast
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
   moreover have "t_msort f XS = ?LHS"
@@ -553,25 +459,9 @@ next
     using XS_def N_def by blast
 qed auto
 
-corollary t_sortX_conv_sortX_recurrence:
-  "t_sortX xs \<le> sortX_recurrence (length xs)"
-  unfolding t_sortX_def sortX_recurrence_def using t_msort_conv_msort_recurrence by blast
-
-corollary t_sortY_conv_sortY_recurrence:
-  "t_sortY xs \<le> sortY_recurrence (length xs)"
-  unfolding t_sortY_def sortY_recurrence_def using t_msort_conv_msort_recurrence by blast
-
 theorem msort_recurrence:
   "msort_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
-  by (master_theorem) (auto simp: length_recurrence_def split_at_recurrence_def merge_recurrence_def)
-
-corollary sortX_recurrence:
-  "sortX_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
-  unfolding sortX_recurrence_def using msort_recurrence by simp
-
-corollary sortY_recurrence:
-  "sortY_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
-  unfolding sortY_recurrence_def using msort_recurrence by simp
+  by (master_theorem) auto
 
 theorem t_msort_bigo:
   "t_msort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
@@ -581,14 +471,6 @@ proof -
   show ?thesis
     using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_recurrence)
 qed
-
-corollary t_sortX_bigo:
-  "t_sortX \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
-  unfolding t_sortX_def sortX_recurrence_def using t_msort_bigo by blast
-
-corollary t_sortY_bigo:
-  "t_sortY \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
-  unfolding t_sortY_def sortY_recurrence_def using t_msort_bigo by blast
 
 subsection "Code Export"
 
@@ -847,17 +729,6 @@ proof (induction rule: t_closest_pair_bf.induct)
   thus ?case
     using "4.prems" t_find_closest_bf by simp
 qed auto
-
-definition closest_pair_bf_recurrence :: "nat \<Rightarrow> real" where
-  "closest_pair_bf_recurrence n = n * n"
-
-lemma closest_pair_bf_recurrence_nonneg[simp]:
-  "0 \<le> closest_pair_bf_recurrence n"
-  unfolding closest_pair_bf_recurrence_def by simp
-
-lemma t_closest_pair_bf_conv_closest_pair_bf_recurrence:
-  "t_closest_pair_bf ps \<le> closest_pair_bf_recurrence (length ps)"
-  unfolding closest_pair_bf_recurrence_def using t_closest_pair_bf of_nat_mono by fastforce
 
 subsection "Code Export"
 
