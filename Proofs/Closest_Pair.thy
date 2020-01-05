@@ -316,11 +316,11 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
 
-      let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
-      let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
+      let (ys\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
+      let (ys\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
 
       let ys = merge snd ys\<^sub>L ys\<^sub>R in
-      (ys, combine p\<^sub>L p\<^sub>R l ys) 
+      (ys, combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys) 
   )"
   by pat_completeness auto
 termination closest_pair_rec
@@ -333,10 +333,10 @@ lemma closest_pair_rec_simps:
   shows "closest_pair_rec xs = (
     let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
     let l = fst (hd xs\<^sub>R) in
-    let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
-    let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
+    let (ys\<^sub>L, p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) = closest_pair_rec xs\<^sub>L in
+    let (ys\<^sub>R, p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) = closest_pair_rec xs\<^sub>R in
     let ys = merge snd ys\<^sub>L ys\<^sub>R in
-    (ys, combine p\<^sub>L p\<^sub>R l ys) 
+    (ys, combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ys) 
   )"
   using assms by (auto simp: Let_def)
 

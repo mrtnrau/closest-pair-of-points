@@ -1,28 +1,3 @@
-# HowTo
-
-document:
-  Contains all the latex files. The main file needs to be called root.tex.
-  Curently the style files are for Springer LNCS proceedings.
-
-mk:
- runs Isabelle to produce the tex file(s).
- Isabelle also triggers the latex run.
- The -v option causes the location of the generated pdf file to be output
- It executs 'isabelle' which should be the one of Isabelle 2019.
-
-ROOT:
-  Two sessions: Proofs directory contains the proofs, Paper the text.
-  The two sessions speed things up if the proofs have not changed.
-  All the files needed to produce the document (typically all the files in
-  directory document) need to be listed under document_files.
-
-For more information also read "LaTeX sugar for Isabelle Documents"
-from the Isabelle Documentation panel in jedit.
-
-Running isabelle on the thy files:
-
-isabelle jedit -d . <thy file name(s)>
-
 # ToDo
 
 ## Misc:
@@ -35,37 +10,27 @@ isabelle jedit -d . <thy file name(s)>
 
 ## Section: Closest Pair Algorithm
 
-## Section: Proving Functional Correctness
+## Section: Implementation and Functional Correctness
 
-* Extension 1: Add set_band_filter lemma
-* Extension 2: Add explanation of Cormen et al. original approach instead of merging along the way
-* Extension 3: Add closest_pair_c0_c1 theorem for completeness
+## Section: Time Complexity Proof
 
-## Section: Proving Running Time
-
-* Lead the reader through the Isabelle formalization of the core proof by Cormen et al.
-    1. Isabelle basics cbox, cbox_2D lemma
-    2. Lemma core_argument as target lemma
-        - max_points_square
-        - pigeonhole
-        - cbox_max_dist
-    3. cost function and bigo_measure_trans and landau notation in Isabelle
-    4. obtain the final proof in landau notation
-* Mention additional work: length, filter(!), split_at, merge, msort, 
-  closest_pair_bf, find_closest_pair, combine (and respective cost definitions)
-* Introduce closest_pair_rec_cost definition
-    1. Master Theorem by Manuel Eberl --> automatic closest_pair_rec_cost
+* Mention additional work: length, filter, split_at, merge, msort, closest_pair_bf, find_closest_pair, combine
+* Describe t_closest_pair_rec
+* In principle recurrence solvable with master theorem
+* This is also possible in Isabelle: Master Theorem and Landau Notation by Manuel Eberl
+  --> automatic closest_pair_rec_recurrence
+* Connect timing function with recurrence relation
+    1. bigo_measure_trans
     2. t_closest_pair_rec_conv_closest_pair_rec_cost
     3. t_closest_pair_rec_bigo
     4. t_closest_pair_bigo
-* Wrap up section
 
-## Section: Alternative Implementations and Related Work
-* Introduce alternative two list implementation by Bentley and Shamos
+## Section: Alternative Implementations
+* Add explanation of Cormen et al. original approach instead of merging along the way
 * Introduce hardcoded approach from Algorihm Design textbook (basis of BA)
+* Introduce alternative two list implementation by Bentley and Shamos
 * AFP entry provides both formalizations
-* Mention Qi Ge et al. paper which reduces #points (not needed for current approach)
-* Other verified geometric algorithms
+* (Mention Qi Ge et al. paper which reduces #points (not needed for current approach))
 
 ## Section: Executable Code
 
@@ -73,8 +38,7 @@ isabelle jedit -d . <thy file name(s)>
     1. Distance computations not minimized (Refinement Framework ...)
     2. Code equations for dist and float (Section 2 footnote)
     3. Stackoverflow,
-* Isabelle code_unfold for stackoverflow with auxiliary lemmas for
-  length, filter, rev, split_at and merge
+* Isabelle code_unfold for stackoverflow with auxiliary lemmas for length, filter, rev, split_at and merge
 * Squared Euclidean distance
 * Show final find_closest_code
 * Combine_code excert with more efficient filter
