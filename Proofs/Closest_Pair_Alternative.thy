@@ -7,7 +7,7 @@ section "Functional Correctness Proof"
 subsection "Core Argument"
 
 lemma core_argument:
-  assumes "distinct (p\<^sub>0 # ps)" "sortedY (p\<^sub>0 # ps)" "0 \<le> \<delta>" "set (p\<^sub>0 # ps) = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct (p\<^sub>0 # ps)" "sorted_wrt_y (p\<^sub>0 # ps)" "0 \<le> \<delta>" "set (p\<^sub>0 # ps) = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> set (p\<^sub>0 # ps). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
@@ -52,7 +52,7 @@ proof -
       using RPS_def by auto
 
     have "\<forall>p\<^sub>0 \<in> set (take 8 PS). \<forall>p\<^sub>1 \<in> set (drop 8 PS). snd p\<^sub>0 \<le> snd p\<^sub>1"
-      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" PS 8] assms(2) sortedY_def PS_def by fastforce
+      using sorted_wrt_take_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" PS 8] assms(2) sorted_wrt_y_def PS_def by fastforce
     hence "\<forall>p' \<in> set (take 8 PS). snd p' \<le> snd p"
       using append_take_drop_id set_append Un_iff *(1,3) by metis
     moreover have "snd p \<le> snd p\<^sub>0 + \<delta>"
@@ -60,7 +60,7 @@ proof -
     ultimately have "\<forall>p \<in> set (take 8 PS). snd p \<le> snd p\<^sub>0 + \<delta>"
       by fastforce
     moreover have "\<forall>p \<in> set (take 8 PS). snd p\<^sub>0 \<le> snd p"
-      using sorted_wrt_hd_less_take[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" p\<^sub>0 ps 8] assms(2) sortedY_def PS_def by fastforce
+      using sorted_wrt_hd_less_take[of "\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1" p\<^sub>0 ps 8] assms(2) sorted_wrt_y_def PS_def by fastforce
     moreover have "\<forall>p \<in> set (take 8 PS). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
       using assms(5) PS_def by (meson in_set_takeD)
     ultimately have "\<forall>p \<in> set (take 8 PS). p \<in> R"
@@ -97,7 +97,7 @@ proof -
   moreover have "l - \<delta> \<le> fst p\<^sub>1" "fst p\<^sub>1 \<le> l + \<delta>"
     using assms(5,10) by auto
   moreover have "snd p\<^sub>0 \<le> snd p\<^sub>1"
-    using sortedY_def assms(2,10) by auto
+    using sorted_wrt_y_def assms(2,10) by auto
   ultimately have "p\<^sub>1 \<in> R"
     using mem_cbox_2D[of "l - \<delta>" "fst p\<^sub>1" "l + \<delta>" "snd p\<^sub>0" "snd p\<^sub>1" "snd p\<^sub>0 + \<delta>"] defs
     by (smt case_prod_conv of_int_less_iff prod.case_eq_if)
@@ -113,7 +113,7 @@ subsection "Combine step"
   
 lemma find_closest_bf_dist_take_7:
   assumes "\<exists>p\<^sub>1 \<in> set ps. dist p\<^sub>0 p\<^sub>1 < \<delta>"
-  assumes "distinct (p\<^sub>0 # ps)" "sortedY (p\<^sub>0 # ps)" "0 < length ps" "0 \<le> \<delta>" "set (p\<^sub>0 # ps) = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct (p\<^sub>0 # ps)" "sorted_wrt_y (p\<^sub>0 # ps)" "0 < length ps" "0 \<le> \<delta>" "set (p\<^sub>0 # ps) = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> set (p\<^sub>0 # ps). l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
@@ -247,7 +247,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
 qed auto
 
 lemma find_closest_pair_dist:
-  assumes "sortedY ps" "distinct ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R" "0 \<le> \<delta>"
+  assumes "sorted_wrt_y ps" "distinct ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R" "0 \<le> \<delta>"
   assumes "\<forall>p \<in> set ps. l - \<delta> \<le> fst p \<and> fst p \<le> l + \<delta>"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R" "dist c\<^sub>0 c\<^sub>1 \<le> \<delta>"
@@ -268,11 +268,11 @@ next
   define PS\<^sub>L where PS\<^sub>L_def: "PS\<^sub>L = ps\<^sub>L - { p\<^sub>0 }"
   define PS\<^sub>R where PS\<^sub>R_def: "PS\<^sub>R = ps\<^sub>R - { p\<^sub>0 }"
 
-  have assms: "sortedY (p\<^sub>2 # ps)" "distinct (p\<^sub>2 # ps)" "set (p\<^sub>2 # ps) = PS\<^sub>L \<union> PS\<^sub>R"
+  have assms: "sorted_wrt_y (p\<^sub>2 # ps)" "distinct (p\<^sub>2 # ps)" "set (p\<^sub>2 # ps) = PS\<^sub>L \<union> PS\<^sub>R"
               "\<forall>p \<in> set (p\<^sub>2 # ps). l - \<delta> \<le> (fst p) \<and> (fst p) \<le> l + \<delta>"
               "\<forall>p \<in> PS\<^sub>L. fst p \<le> l" "\<forall>p \<in> PS\<^sub>R. l \<le> fst p"
               "min_dist \<delta> PS\<^sub>L" "min_dist \<delta> PS\<^sub>R"
-    using "3.prems"(1-9) min_dist_def sortedY_def PS\<^sub>L_def PS\<^sub>R_def by auto
+    using "3.prems"(1-9) min_dist_def sorted_wrt_y_def PS\<^sub>L_def PS\<^sub>R_def by auto
 
   show ?case
   proof cases
@@ -387,7 +387,7 @@ proof -
 qed
 
 lemma combine_dist:
-  assumes "distinct ps" "sortedY ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
+  assumes "distinct ps" "sorted_wrt_y ps" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) ps\<^sub>L" "min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) ps\<^sub>R"
   assumes "(c\<^sub>0, c\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps" 
@@ -413,8 +413,8 @@ proof -
     using assms(5,7) C'_def min_dist_def apply (auto split: if_splits) by force+
   hence PS\<^sub>R: "min_dist (dist C\<^sub>0' C\<^sub>1') PS\<^sub>R"
     using PS\<^sub>R_def by (simp add: min_dist_def)
-  have "sortedY ps'"
-    using ps'_def assms(2) sortedY_def sorted_wrt_filter by blast
+  have "sorted_wrt_y ps'"
+    using ps'_def assms(2) sorted_wrt_y_def sorted_wrt_filter by blast
   moreover have "distinct ps'"
     using ps'_def assms(1) distinct_filter by blast
   moreover have "set ps' = PS\<^sub>L \<union> PS\<^sub>R "
@@ -471,9 +471,9 @@ lemma closest_pair_rec_simps:
 
 declare combine.simps closest_pair_rec.simps [simp del]
 
-lemma closest_pair_rec_set_length_sortedY:
+lemma closest_pair_rec_set_length_sorted_wrt_y:
   assumes "(ys, p) = closest_pair_rec xs"
-  shows "set ys = set xs \<and> length ys = length xs \<and> sortedY ys"
+  shows "set ys = set xs \<and> length ys = length xs \<and> sorted_wrt_y ys"
   using assms
 proof (induction xs arbitrary: ys p rule: length_induct)
   case (1 xs)
@@ -481,7 +481,7 @@ proof (induction xs arbitrary: ys p rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True
-    thus ?thesis using "1.prems" sortedY_def
+    thus ?thesis using "1.prems" sorted_wrt_y_def
       by (auto simp: msort closest_pair_rec.simps)
   next
     case False
@@ -501,7 +501,7 @@ proof (induction xs arbitrary: ys p rule: length_induct)
       using False defs by (auto simp: split_at_take_drop_conv)
     hence IH: "set XS\<^sub>L = set YS\<^sub>L" "set XS\<^sub>R = set YS\<^sub>R"
               "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
-              "sortedY YS\<^sub>L" "sortedY YS\<^sub>R"
+              "sorted_wrt_y YS\<^sub>L" "sorted_wrt_y YS\<^sub>R"
       using "1.IH" defs by metis+
 
     have "set xs = set XS\<^sub>L \<union> set XS\<^sub>R"
@@ -514,8 +514,8 @@ proof (induction xs arbitrary: ys p rule: length_induct)
     hence LENGTH: "length xs = length YS"
       using IH(3,4) length_merge defs by metis
 
-    have SORTED: "sortedY YS"
-      using IH(5,6) by (simp add: defs sortedY_def sorted_merge)
+    have SORTED: "sorted_wrt_y YS"
+      using IH(5,6) by (simp add: defs sorted_wrt_y_def sorted_merge)
 
     have "(YS, P) = closest_pair_rec xs"
       using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
@@ -562,7 +562,7 @@ proof (induction xs arbitrary: ys p rule: length_induct)
     have "set XS\<^sub>L \<inter> set XS\<^sub>R = {}"
       using "1.prems"(1) defs by (auto simp: split_at_take_drop_conv set_take_disj_set_drop_if_distinct)
     moreover have "set XS\<^sub>L = set YS\<^sub>L" "set XS\<^sub>R = set YS\<^sub>R"
-      using closest_pair_rec_set_length_sortedY defs by blast+
+      using closest_pair_rec_set_length_sorted_wrt_y defs by blast+
     ultimately have "set YS\<^sub>L \<inter> set YS\<^sub>R = {}"
       by blast
     hence DISTINCT: "distinct YS"
@@ -625,7 +625,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     have *: "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
       using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
     have YS: "set xs = set YS" "distinct YS"
-      using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
+      using "1.prems"(2) closest_pair_rec_set_length_sorted_wrt_y closest_pair_rec_distinct * by blast+
 
     have "C\<^sub>0 \<in> set xs" "C\<^sub>1 \<in> set xs"
       using combine_set IHL2 IHR2 YS defs by blast+
@@ -637,7 +637,7 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
 qed
 
 lemma closest_pair_rec_dist:
-  assumes "1 < length xs" "distinct xs" "sortedX xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
+  assumes "1 < length xs" "distinct xs" "sorted_wrt_x xs" "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec xs"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set xs)"
   using assms
 proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
@@ -672,22 +672,22 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
 
     have "1 < length XS\<^sub>L" "length XS\<^sub>L < length xs"
       using False XSLR by simp_all
-    moreover have "distinct XS\<^sub>L" "sortedX XS\<^sub>L"
-      using "1.prems"(2,3) XSLR by (auto simp: sortedX_def sorted_wrt_take)
+    moreover have "distinct XS\<^sub>L" "sorted_wrt_x XS\<^sub>L"
+      using "1.prems"(2,3) XSLR by (auto simp: sorted_wrt_x_def sorted_wrt_take)
     ultimately have L: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set XS\<^sub>L)"
                        "set XS\<^sub>L = set YS\<^sub>L"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1
+      using 1 closest_pair_rec_set_length_sorted_wrt_y closest_pair_rec_c0_c1
               YSC\<^sub>0\<^sub>1\<^sub>L_def by blast+
     hence IHL: "min_dist (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
       by argo
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length xs"
       using False XSLR by simp_all
-    moreover have "distinct XS\<^sub>R" "sortedX XS\<^sub>R"
-      using "1.prems"(2,3) XSLR by (auto simp: sortedX_def sorted_wrt_drop)
+    moreover have "distinct XS\<^sub>R" "sorted_wrt_x XS\<^sub>R"
+      using "1.prems"(2,3) XSLR by (auto simp: sorted_wrt_x_def sorted_wrt_drop)
     ultimately have R: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set XS\<^sub>R)"
                        "set XS\<^sub>R = set YS\<^sub>R"
-      using 1 closest_pair_rec_set_length_sortedY closest_pair_rec_c0_c1
+      using 1 closest_pair_rec_set_length_sorted_wrt_y closest_pair_rec_c0_c1
               YSC\<^sub>0\<^sub>1\<^sub>R_def by blast+
     hence IHR: "min_dist (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
       by argo
@@ -695,12 +695,12 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 rule: length_induct)
     have *: "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec xs"
       using False closest_pair_rec_simps defs by (auto simp: Let_def split: prod.split)
 
-    have "set xs = set YS" "distinct YS" "sortedY YS"
-      using "1.prems"(2) closest_pair_rec_set_length_sortedY closest_pair_rec_distinct * by blast+
+    have "set xs = set YS" "distinct YS" "sorted_wrt_y YS"
+      using "1.prems"(2) closest_pair_rec_set_length_sorted_wrt_y closest_pair_rec_distinct * by blast+
     moreover have "\<forall>p \<in> set YS\<^sub>L. fst p \<le> L"
-      using False "1.prems"(3) XSLR L_def L(2) sortedX_take_less_hd_drop by simp
+      using False "1.prems"(3) XSLR L_def L(2) sorted_wrt_x_take_less_hd_drop by simp
     moreover have "\<forall>p \<in> set YS\<^sub>R. L \<le> fst p"
-      using False "1.prems"(3) XSLR L_def R(2) sortedX_hd_drop_less_drop by simp
+      using False "1.prems"(3) XSLR L_def R(2) sorted_wrt_x_hd_drop_less_drop by simp
     moreover have "set YS = set YS\<^sub>L \<union> set YS\<^sub>R"
       using set_merge defs by fast
     moreover have "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
@@ -735,7 +735,7 @@ theorem closest_pair_dist:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
   using assms closest_pair_rec_dist[of "msort fst ps"] closest_pair_rec_c0_c1[of "msort fst ps"]
-  by (auto simp: sortedX_def msort closest_pair_simps split: prod.splits)
+  by (auto simp: sorted_wrt_x_def msort closest_pair_simps split: prod.splits)
 
 
 section "Time Complexity Proof"
@@ -934,7 +934,7 @@ proof (induction ps rule: length_induct)
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
       by linarith+
     have "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
-      using defs closest_pair_rec_set_length_sortedY by metis+
+      using defs closest_pair_rec_set_length_sorted_wrt_y by metis+
     hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
       using defs XSLR by fastforce
 
@@ -955,7 +955,7 @@ proof (induction ps rule: length_induct)
     have "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec ps"
       using False closest_pair_rec_simps defs C\<^sub>0\<^sub>1_def by (auto simp: Let_def split: prod.split)
     hence "length ps = length YS"
-      using "1.prems" closest_pair_rec_set_length_sortedY by auto
+      using "1.prems" closest_pair_rec_set_length_sorted_wrt_y by auto
     hence "TC \<le> 17 * ?n"
       using t_combine TC_def by simp
     moreover have "t_length ps = ?n"
@@ -994,7 +994,7 @@ definition closest_pair_time :: "nat \<Rightarrow> real" where
 
 lemma t_closest_pair_conv_closest_pair_recurrence:
   "t_closest_pair ps \<le> closest_pair_time (length ps)"
-  unfolding t_closest_pair_def closest_pair_time_def using msort sortedX_def of_nat_add
+  unfolding t_closest_pair_def closest_pair_time_def using msort sorted_wrt_x_def of_nat_add
   using t_msort_conv_msort_recurrence t_closest_pair_rec_conv_closest_pair_rec_recurrence
   by (smt One_nat_def)
 

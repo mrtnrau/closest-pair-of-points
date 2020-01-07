@@ -270,11 +270,11 @@ section "Mergesort"
 
 subsection "Functional Correctness Proof"
 
-definition sortedX :: "point list \<Rightarrow> bool" where
-  "sortedX ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1) ps"
+definition sorted_wrt_x :: "point list \<Rightarrow> bool" where
+  "sorted_wrt_x ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1) ps"
 
-definition sortedY :: "point list \<Rightarrow> bool" where
-  "sortedY ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1) ps"
+definition sorted_wrt_y :: "point list \<Rightarrow> bool" where
+  "sorted_wrt_y ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1) ps"
 
 fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
   "merge f (x # xs) (y # ys) = (
@@ -352,15 +352,15 @@ qed auto
 
 lemmas msort = sorted_wrt_msort set_msort length_msort distinct_msort
 
-lemma sortedX_take_less_hd_drop:
-  assumes "sortedX ps" "n < length ps"
+lemma sorted_wrt_x_take_less_hd_drop:
+  assumes "sorted_wrt_x ps" "n < length ps"
   shows "\<forall>p \<in> set (take n ps). fst p \<le> fst (hd (drop n ps))"
-  using assms sorted_wrt_take_less_hd_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
+  using assms sorted_wrt_take_less_hd_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sorted_wrt_x_def by fastforce
 
-lemma sortedX_hd_drop_less_drop:
-  assumes "sortedX ps"
+lemma sorted_wrt_x_hd_drop_less_drop:
+  assumes "sorted_wrt_x ps"
   shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
-  using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sortedX_def by fastforce
+  using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sorted_wrt_x_def by fastforce
 
 subsection "Time Complexity Proof"
 

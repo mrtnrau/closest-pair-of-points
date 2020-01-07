@@ -4,7 +4,6 @@
 
 ## Section: Introduction
 
-* Add subsecton describing used Isabelle notation (reference Braun paper)
 * Create AFP entry with both verified versions
 * Add link to AFP entry
 
@@ -13,17 +12,6 @@
 ## Section: Implementation and Functional Correctness
 
 ## Section: Time Complexity Proof
-
-* Mention additional work: length, filter, split_at, merge, msort, closest_pair_bf, find_closest_pair, combine
-* Describe t_closest_pair_rec
-* In principle recurrence solvable with master theorem
-* This is also possible in Isabelle: Master Theorem and Landau Notation by Manuel Eberl
-  --> automatic closest_pair_rec_recurrence
-* Connect timing function with recurrence relation
-    1. bigo_measure_trans
-    2. t_closest_pair_rec_conv_closest_pair_rec_cost
-    3. t_closest_pair_rec_bigo
-    4. t_closest_pair_bigo
 
 ## Section: Alternative Implementations
 * Add explanation of Cormen et al. original approach instead of merging along the way

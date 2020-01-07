@@ -69,11 +69,11 @@ lemma t_find_closest_simp:
   by (cases ps) auto
 
 lemma closest_pair_rec_recurrence_simps:
-  "closest_pair_rec_recurrence n = (
+  "closest_pair_recurrence n = (
     if n \<le> 3 then
       n + msort_recurrence n + n * n
     else
-      13 * n + closest_pair_rec_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_rec_recurrence (nat \<lceil>real n / 2\<rceil>)
+      13 * n + closest_pair_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_recurrence (nat \<lceil>real n / 2\<rceil>)
   )" by (auto)
 
 (* Styling *)
@@ -139,7 +139,20 @@ is also related but considers fixed geometric constructions rather than algorith
 
 \subsection{Isabelle/HOL and Notation}
 
-\textcolor{red}{TODO}
+Isabelle/HOL's basic types include @{type bool}, @{type nat}, @{type int} and @{type real}; the type of 
+polymorphic tuples of binary arity is @{text "'a \<times> 'b"}; functions @{const fst} and @{const snd} retrieve 
+the the first and second value of a tuple. The function arrow syntax is \<open>\<Rightarrow>\<close>; function composition is 
+denoted by the infix operator \<open>(\<circ>)\<close>. Function @{const ln} denotes the natural logarithm. 
+We suppress numeric conversion functions, in particular the functions @{text "nat :: int \<Rightarrow> nat"}, 
+@{text "real :: nat \<Rightarrow> real"} and @{text "real_of_int :: int \<Rightarrow> real"}, except where that would result 
+in ambiguities for the reader. The floor and ceiling conversions \<open>\<lfloor>x\<rfloor>\<close> and \<open>\<lceil>x\<rceil>\<close> convert @{text "real \<Rightarrow> nat"} 
+by rounding down and up respectively. 
+
+Lists are constructed from the empty list \<open>[]\<close> via the infix cons-operator \<open>(#)\<close> and are named using lowercase
+letters. Functions @{const hd} and @{const tl} return head and tail; the length of a list is written explicitly. 
+Sets are written in capital letters; the empty set is denoted as \<open>{}\<close> and set comprehensions are written as 
+@{term "{ x. P x }"} for predicates @{text "P :: 'a \<Rightarrow> bool"}. The cardinality of sets as well as unary 
+and binary set operations are denoted in standard mathematical notation.
 
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
@@ -160,7 +173,7 @@ $y$-coordinate of all points $p_L \in P_L\,(p_R \in P_R)$ is less
 We then conquer the left and right subproblems by applying the algorithm recursively, 
 obtaining $(p_{L0},\;p_{L1})$ and $(p_{R0},\;p_{R1})$, the closest pairs of $P_L$ and 
 $P_R$, respectively. Let $\delta_L$ and $\delta_R$ denote the distance of the left and right closest
-pairs and let $\delta = \mathit{min}\;\{\delta_L,\;\delta_R\}$. 
+pairs and let $\delta = \mathit{min}\;\delta_L\;\delta_R$. 
 At this point the closest pair of $P$ is either $(p_{L0},\; p_{L1})$, 
 $(p_{R0},\,p_{R1})$ or a pair of points $p_0 \in P_L$ and $p_1 \in P_R$
 with a distance strictly less than $\delta$. If the former is the case we have already found our closest pair.
@@ -254,19 +267,14 @@ This is sufficient for the computation of a closest pair because for each possib
 $\mathit{ys}$ we already considered the pair $(q,\,p)$, if needed, and do not have to re-check $(p,\,q)$ due to the
 commutative property of our closest pair definition. Note also that $\delta$ is updated, if possible, 
 during the computation and consequently the search space for each point is limited to a $2\delta \times \delta'$
-rectangle with $\delta' \le \delta$.
-Lastly we intentionally do not minimize the number of distance computations.
-% One could easily do so by annotating the returned
-%closest neighbor of \textit{find\_closest} with its distance to $p$ and memoizing relevant distance 
-%computations of both functions through let bindings. At this point, we refrain from doing so because it does not change 
-%the overall theoretical running time of the algorithm and simplifies the proofs slightly.
+rectangle with $\delta' \le \delta$. Lastly we intentionally do not minimize the number of distance computations.
 In Section \ref{section:executable_code} we make this optimization for the final executable code.
 
 We then prove by induction on the computation of the respective function
 the following lemma, capturing the desired sparsity property of our implementation of the combine step so far. 
 
 \begin{lemma} \label{lemma:find_closest_pair_dist}
-@{text [source, break] "sortedY ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
+@{text [source, break] "sorted_wrt_y ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
@@ -299,7 +307,7 @@ We then can prove, additionally using Lemma \ref{lemma:find_closest_pair_dist}, 
 indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list of points \<open>ps\<close> is (@{term "dist p\<^sub>0 p\<^sub>1"})-sparse.
 
 \begin{lemma} \label{lemma:combine_dist}
-@{text [source, break] "sortedY ps \<and> set ps = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "sorted_wrt_y ps \<and> set ps = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) P\<^sub>L \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} \vskip 0pt
@@ -324,7 +332,7 @@ obtaining the list $\mathit{xs}$, split $\mathit{xs}$ at $\mathit{length\ xs\ di
 still sorted lists $\mathit{xs_L}$ and $\mathit{xs_R}$ and choose $l$ as either the $x$-coordinate of
 the last element of $\mathit{xs_L}$ or the $x$-coordinate of the first element of $\mathit{xs_R}$.
 
-For this presorting step we use an implementation of \textit{Mergesort} which sorts a list of points
+For this presorting step we use an implementation of \textit{mergesort} which sorts a list of points
 depending on a given projection function, \textit{fst} for `by $x$-coordinate' and \textit{snd} for 
 `by $y$-coordinate'. Splitting of the list is achieved by the function \textit{split\_at} with a 
 simple linear pass through $\mathit{xs}$.
@@ -356,8 +364,8 @@ and several auxiliary lemmas proving that \textit{closest\_pair\_rec} also sorts
 we arrive at the correctness proof of the desired sparsity property of the algorithm.
 
 \begin{theorem}
-@{text [source, break] "1 < length xs \<and> sortedX xs \<and> (ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
+@{text [source, break] "1 < length xs \<and> sorted_wrt_x xs \<and>"} \vskip 0pt
+@{text [source, break] "(ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
 \end{theorem}
 
 Corollary \ref{cor:closest_pair_dist} together with Theorems \ref{thm:closest_pair_set} and 
@@ -430,29 +438,30 @@ it encounters the first point within the given list @{term ps} that does not ful
 or if @{term ps} is a list of length @{text "\<le>1"}. The corresponding timing function, @{const t_find_closest} 
 computes the number of recursive function calls, which is, in this case, synonymous with the number of examined points.
 For our time complexity proof it suffices to show the following bound on the result of  @{const t_find_closest}.
-The proof is by induction on the computation of @{const t_find_closest}.
+The proof is by induction on the computation of @{const t_find_closest}. The function @{text "count f"} is
+an abbreviation for @{text "length \<circ> filter f"}.
 
 \begin{lemma}
-@{term [break] "t_find_closest p \<delta> ps \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"}
+@{text [break] "t_find_closest p \<delta> ps \<le> 1 + count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"}
 \end{lemma}
 
-Therefore we need to prove that the term  @{term "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps)"} does not depend
+Therefore we need to prove that the term  @{text "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"} does not depend
 on the length of @{term ps}. Looking back at Figure \ref{fig:Combine}, the point @{term p} representing the
 highlighted red point, we can assume that the list @{term "p # ps"} is distinct and sorted ascendingly by
 @{term y}-coordinate. From the pre-computing effort of the combine step we know that its points are contained 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term P\<^sub>L}
-and @{term P\<^sub>R} consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
+(@{term P\<^sub>R}) consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
-that both @{term ps\<^sub>L} and @{term ps\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma which implies
+that both @{term P\<^sub>L} and @{term P\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma which implies
 @{term "t_find_closest p \<delta> ps \<le> 8"} and thus the constant running time of @{const find_closest}.
 
 \begin{lemma} \label{lemma:core_argument}
-@{text [source, break] "distinct (p # ps) \<and> sortedY (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
+@{text [source, break] "distinct (p # ps) \<and> sorted_wrt_y (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
 @{text [source, break] "set (p # ps) = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> P\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> P\<^sub>L \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> P\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> P\<^sub>R"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow>"} @{term [break] "length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps) \<le> 7"}
+@{text [source, break] "\<Longrightarrow>"} @{text [break] "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps \<le> 7"}
 \end{lemma}
 
 The library HOL-Analysis defines some basic geometric building blocks needed for the proof. A \textit{closed box}
@@ -489,7 +498,7 @@ Using the additional facts @{term "l - \<delta> \<le> fst q"} and @{term "fst q 
 that all points of @{term "p # ps"} are contained within the @{text "2\<delta>"} strip
 and the definitions of \<open>R\<^sub>p\<^sub>s\<close>, \<open>R\<close> and @{const cbox} we know @{term "q \<in> R\<^sub>p\<^sub>s"} and thus @{term "set (p # ps\<^sub>f) \<subseteq> R\<^sub>p\<^sub>s"}. 
 Since the list \<open>p # ps\<^sub>f\<close> maintains the distinctness property of @{term "p # ps"} we additionally have 
-@{term "length (p # ps\<^sub>f) = card (set ps\<^sub>f)"}. Our intermediate goal immediately follows because 
+@{term "length (p # ps\<^sub>f) = card (set (p # ps\<^sub>f))"}. Our intermediate goal immediately follows because 
 @{term "card (set (p # ps\<^sub>f)) \<le> card R\<^sub>p\<^sub>s"} holds for the finite set \<open>R\<^sub>p\<^sub>s\<close>.
 
 But how many points can there be in \<open>R\<^sub>p\<^sub>s\<close>? Lets first try to determine an upper bound for the number of points of \<open>S\<^sub>P\<^sub>L\<close>.
@@ -518,7 +527,7 @@ between two points in a square \<open>S\<close> with side length \<open>\<delta>
 \begin{lemma} \label{lemma:max_dist_square}
 @{text [source, break] "p\<^sub>0 = (x, y) \<and> p\<^sub>1 = (x + \<delta>, y + \<delta>) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(x\<^sub>0, y\<^sub>0) \<in> cbox p\<^sub>0 p\<^sub>1 \<and> (x\<^sub>1, y\<^sub>1) \<in> cbox p\<^sub>0 p\<^sub>1"} \vskip 0pt
-@{text [source ,break] "\<Longrightarrow> dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) \<le> sqrt 2 * \<delta>"}
+@{text [source ,break] "\<Longrightarrow> dist (x\<^sub>0, y\<^sub>0) (x\<^sub>1, y\<^sub>1) \<le> \<^latex>\<open>$\\sqrt{2}$\<close> * \<delta>"}
 \end{lemma}
 
 The proof is straightforward. Both points are contained within the square \<open>S\<close>, the difference between
@@ -554,43 +563,75 @@ Since all points of \<open>P\<close> are contained within \<open>S\<close> and @
 Using Lemma \ref{lemma:pigeonhole} and our assumption  @{term "card P > 4"} we know there exists a square 
 @{term "S\<^sub>i \<in> {S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"} and a pair of distinct points @{term "p\<^sub>0 \<in> S\<^sub>i"} and @{term "p\<^sub>1 \<in> S\<^sub>i"}.
 Lemma \ref{lemma:max_dist_square} and the fact that all four sub-squares have the same side length @{text "\<delta> / 2"}
-shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to $\sqrt{2} / 2 * \delta$ and hence
+shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to @{text "\<^latex>\<open>$\\sqrt{2}$\<close> / 2 * \<delta>"} and hence
 strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because of the facts @{term "p\<^sub>0 \<in> P"},
-@{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction.  
+@{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction. \\
 
-\paragraph{}
+In summary, the time to evaluate @{term "find_closest p \<delta> ps"} is constant in the context of the combine step
+and thus evaluating @{term "find_closest_pair (p\<^sub>0, p\<^sub>1) ps"} as well as @{term "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} 
+takes linear time in @{term "length ps"}.
 
-\textcolor{red}{TODO}
+Next we turn our attention to the timing of @{term "closest_pair_rec xs"}. In the base case evaluating our
+main function takes time proportional to computing @{term "length xs"}, sorting \<open>xs\<close> by \<open>y\<close>-coordinate and
+calculating the closest pair using the brute-force approach. The recursive case is comprised of the time
+necessary to calculate the length of \<open>xs\<close>, split \<open>xs\<close>, the two recursive invocations, merge \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> and
+the combine step.
 
-In principle, we can determine the solution, $\mathcal{O}(n \log n)$, for this relation using the 
-`master theorem' \cite{Introduction-to-Algorithms:2009}.
-
+At this point we could prove a concrete bound on @{const t_closest_pair_rec}.
+But since we are dealing with a divide-and-conquer algorithm we should, in theory, be able to determine its
+running time using the `master theorem' \cite{Introduction-to-Algorithms:2009}. This is, in practice, also
+possible in Isabelle/HOL. Eberl \cite{eberl_akra_bazzi} has formalized the Akra-Bazzi theorem \cite{Akra1998}, 
+a generalization of the master theorem. Using this formalization, available in the Archive of Formal Proofs 
+\cite{Akra_Bazzi-AFP}, we can derive the running time of our divide-and-conquer algorithm without a direct
+proof for @{const t_closest_pair_rec}. First we capture the essence of @{const t_closest_pair_rec} as a 
+recurrence relation.
+%
 \begin{quote}
-@{thm [display] closest_pair_rec_recurrence_simps}
+@{text [source] "closest_pair_recurrence :: nat \<Rightarrow> real"} \vskip 0pt
+@{thm [break] closest_pair_rec_recurrence_simps}
 \end{quote}
 
-\begin{lemma}
-@{text "closest_pair_rec_recurrence \<in> \<Theta>(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
+The tactic `master\_theorem' then proves the time complexity of this recurrence completely automatically.
+
+\begin{lemma} \label{lemma:closest_pair_recurrence}
+@{text "closest_pair_recurrence \<in> \<Theta>(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
 \end{lemma}
 
-\begin{lemma}
+Next we need to connect this bound with our timing function. Utilizing Eberls available formalization of Laudau Notation 
+\cite{eberl19issac} in Isabelle/HOL, Lemma \ref{lemma:bigo_measure_trans} expresses a procedure for deriving complexity 
+properties of the form @{term "t \<in> O[m going_to at_top within A](f o m)"} where \<open>t\<close> is a timing function on the 
+data domain, in our case lists. The function \<open>m\<close> is a measure on that data domain, \<open>r\<close> is a recurrence or any other
+function of type @{text "nat \<Rightarrow> real"} and \<open>A\<close> is the set of valid inputs. The term `@{text "m going_to at_top within A"}'
+should be read as `if the measured size of valid inputs is sufficiently large' and stems from the fact that Asymptotics 
+in Isabelle/HOL are centered around @{text "filters"}, see H\"olzl et al. \cite{filter}. For readability we omit 
+stating them explicitly in the following and just state the  conditions required of the input \<open>A\<close>. The measure \<open>m\<close> always 
+corresponds the the @{const length} function.
+
+\begin{lemma} \label{lemma:bigo_measure_trans}
 @{text [source, break] "(\<forall>x \<in> A. t x \<le> (r \<circ> m) x) \<and> r \<in> O(f) \<and> (\<forall>x \<in> A. 0 \<le> t x)"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> t \<in> O[m going_to at_top within A](f \<circ> m)"}
 \end{lemma}
 
-\begin{lemma}
-@{text [break] "t_closest_pair_rec \<in> O((\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n) \<circ> length)"}
-\end{lemma}
+Using Lemma \ref{lemma:closest_pair_recurrence} and the fact that 
+@{text [break] "t_closest_pair_rec \<le> closest_pair_recurrence \<circ> length"} holds if the inputs are distinct
+and sorted by \<open>x\<close>-coordinate we arrive at Theorem \ref{thm:t_closest_pair_rec}, expressing our main claim: 
+the running time of the divide-and-conquer algorithm is optimal.
 
-@{text "length going_to at_top within {ps | distinct ps \<and> sortedX ps}"}
+\begin{theorem} \label{thm:t_closest_pair_rec}
+@{text [break] "t_closest_pair_rec \<in> O(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
+\end{theorem}
 
-\begin{corollary}
-@{text [break] "t_closest_pair \<in> O((\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n) \<circ> length)"}
+Since the function @{const closest_pair} only presorts the given list of points using our mergesort implementation and 
+then calls @{const closest_pair_rec} we obtain Corollary \ref{cor:t_closest_pair} for distinct inputs
+and finish the time complexity proof.
+
+\begin{corollary} \label{cor:t_closest_pair}
+@{text [break] "t_closest_pair \<in> O(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
 \end{corollary}
 
-@{text "length going_to at_top within {ps | distinct ps}"}
 
 \section{Alternative Implementations} \label{section:alt_impl}
+
 
 \section{Executable Code} \label{section:executable_code}
 

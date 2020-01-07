@@ -21,6 +21,9 @@ notation (latex output)
 notation (latex output)
   ln  ("\<^latex>\<open>$\\ln$\<close>")
 
+notation (latex output)
+  sqrt ("\<^latex>\<open>$\\sqrt{\<close>_\<^latex>\<open>}$\<close>")
+
 (* hiding numeric conversions - embeddings only *)
 translations
   "n" <= "CONST of_nat n"
