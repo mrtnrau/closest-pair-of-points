@@ -150,12 +150,6 @@ let rec msort _B
          let (l, r) = split_at_it n xsa in
           merge_it _B f (msort _B f l) (msort _B f r));;
 
-let rec sortX ps = msort linorder_int fst ps;;
-
-let rec snd (x1, x2) = x2;;
-
-let rec sortY ps = msort linorder_int snd ps;;
-
 let rec hd (x21 :: x22) = x21;;
 
 let rec minus_int
@@ -167,6 +161,8 @@ let rec plus_int
 let rec power _A
   a n = (if equal_nat n zero_nat then one _A.one_power
           else times _A.times_power a (power _A a (minus_nat n one_nat)));;
+
+let rec snd (x1, x2) = x2;;
 
 let rec dist_code
   p_0 p_1 =
@@ -236,7 +232,7 @@ let rec combine_code
 let rec closest_pair_rec_code
   xs = (let n = length_it xs in
          (if less_eq_nat n (nat_of_integer (Z.of_int 3))
-           then (sortY xs, closest_pair_bf_code xs)
+           then (msort linorder_int snd xs, closest_pair_bf_code xs)
            else (let (xs_L, xs_R) =
                    split_at_it (divide_nat n (nat_of_integer (Z.of_int 2))) xs
                    in
@@ -250,9 +246,9 @@ let rec closest_pair_code
   = function [] -> failwith "undefined"
     | [uu] -> failwith "undefined"
     | v :: vb :: vc ->
-        (let a = closest_pair_rec_code (sortX (v :: vb :: vc)) in
+        (let a = closest_pair_rec_code (msort linorder_int fst (v :: vb :: vc))
+           in
          let (_, aa) = a in
          let (_, ab) = aa in
          let (ac, b) = ab in
           (ac, b));;
-
