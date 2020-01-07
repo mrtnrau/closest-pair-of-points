@@ -203,8 +203,10 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
       using A(2) p\<^sub>1_def by simp
     have "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>2 # ps))"
       using "3.hyps"(2)[of p\<^sub>1 C\<^sub>0' C\<^sub>1'] p\<^sub>1_def C'_def "3.prems"(1) A(2) sorted_wrt_y_def by fastforce
-    hence "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>0 # p\<^sub>2 # ps))"
-      using A min_dist_identity by (smt C'_def find_closest_pair_dist_mono)
+    moreover have "dist C\<^sub>0' C\<^sub>1' \<le> dist p\<^sub>0 p\<^sub>1"
+      using C'_def find_closest_pair_dist_mono by blast
+    ultimately have "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>0 # p\<^sub>2 # ps))"
+      using A min_dist_identity order_trans by blast
     thus ?thesis
       using B by (metis "3.prems"(2) Pair_inject)
   next
@@ -217,8 +219,10 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
       using B p\<^sub>1_def by simp
     have "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>2 # ps))"
       using "3.hyps"(1)[of p\<^sub>1 C\<^sub>0' C\<^sub>1'] p\<^sub>1_def C'_def B "3.prems" sorted_wrt_y_def by simp
-    hence "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>0 # p\<^sub>2 # ps))"
-      by (smt A C'_def find_closest_pair_dist_mono min_dist_identity)
+    moreover have "dist C\<^sub>0' C\<^sub>1' \<le> dist c\<^sub>0 c\<^sub>1"
+      using C'_def find_closest_pair_dist_mono by blast
+    ultimately have "min_dist (dist C\<^sub>0' C\<^sub>1') (set (p\<^sub>0 # p\<^sub>2 # ps))"
+      using A min_dist_identity[of "dist C\<^sub>0' C\<^sub>1'" "p\<^sub>2 # ps" p\<^sub>0] order_trans by force
     thus ?thesis
       using C by (metis "3.prems"(2) Pair_inject)
   qed
@@ -295,12 +299,16 @@ proof -
     using assms(4,6) C'_def min_dist_def apply (auto split: if_splits) by force+
   have "sorted_wrt_y ps'"
     using ps'_def assms(1) sorted_wrt_y_def sorted_wrt_filter by blast
-  hence "min_dist (dist C\<^sub>0 C\<^sub>1) (set ps')"
+  hence *: "min_dist (dist C\<^sub>0 C\<^sub>1) (set ps')"
     using find_closest_pair_dist C_def by simp
-  moreover have "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < dist C\<^sub>0' C\<^sub>1' \<longrightarrow> p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
+  have "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < dist C\<^sub>0' C\<^sub>1' \<longrightarrow> p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
     using set_band_filter ps' ps\<^sub>L ps\<^sub>R assms(2,3,4) by blast
-  ultimately have "min_dist (dist C\<^sub>0 C\<^sub>1) (set ps)"
-    by (smt C_def find_closest_pair_dist_mono min_dist_def)
+  moreover have "dist C\<^sub>0 C\<^sub>1 \<le> dist C\<^sub>0' C\<^sub>1'"
+    using C_def find_closest_pair_dist_mono by blast
+  ultimately have "\<forall>p\<^sub>0 \<in> set ps. \<forall>p\<^sub>1 \<in> set ps. p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < dist C\<^sub>0 C\<^sub>1 \<longrightarrow> p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
+    by simp
+  hence "min_dist (dist C\<^sub>0 C\<^sub>1) (set ps)"
+    using min_dist_def * by (meson not_less)
   thus ?thesis
     using EQ by blast
 qed
@@ -714,12 +722,14 @@ proof (induction p \<delta> ps rule: t_find_closest.induct)
       by simp
   next
     case False
-    hence "t_find_closest p \<delta> (p\<^sub>0 # p\<^sub>2 # ps) = 1 + t_find_closest p (min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps)"
-      using p\<^sub>1_def by simp
+    hence *: "snd p\<^sub>0 - snd p \<le> \<delta>"
+      by simp
+    have "t_find_closest p \<delta> (p\<^sub>0 # p\<^sub>2 # ps) = 1 + t_find_closest p (min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps)"
+      using False p\<^sub>1_def by simp
     also have "... \<le> 1 + 1 + length (filter (\<lambda>q. snd q - snd p \<le> min \<delta> (dist p p\<^sub>0)) (p\<^sub>2 # ps))"
       using False 3 p\<^sub>1_def by simp
     also have "... \<le> 1 + 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) (p\<^sub>2 # ps))"
-      using length_filter_P_impl_Q by (smt add_left_mono)
+      using * by (meson add_le_cancel_left length_filter_P_impl_Q min.bounded_iff)
     also have "... \<le> 1 + length (filter (\<lambda>q. snd q - snd p \<le> \<delta>) (p\<^sub>0 # p\<^sub>2 # ps))"
       using False by simp
     ultimately show ?thesis 
@@ -824,7 +834,7 @@ proof -
   define ps\<^sub>R' where ps\<^sub>R'_def: "ps\<^sub>R' = { p \<in> ps\<^sub>R. ?P p }"
   note defs = c_def ps'_def ps\<^sub>L'_def ps\<^sub>R'_def
   have "min_dist (dist c\<^sub>0 c\<^sub>1) ps\<^sub>L" "min_dist (dist c\<^sub>0 c\<^sub>1) ps\<^sub>R"
-    using assms(6,7) min_dist_def c_def by (smt Pair_inject)+
+    using assms(6,7) min_dist_mono c_def by (auto split: if_splits)
   hence "min_dist (dist c\<^sub>0 c\<^sub>1) ps\<^sub>L'" "min_dist (dist c\<^sub>0 c\<^sub>1) ps\<^sub>R'"
     using ps\<^sub>L'_def ps\<^sub>R'_def min_dist_def by auto
   moreover have "distinct ps'"
@@ -932,8 +942,10 @@ proof (induction ps rule: length_induct)
       using t_closest_pair_rec_simps_1 by simp
     moreover have "closest_pair_recurrence ?n = ?n + msort_recurrence ?n + ?n * ?n"
       using True by simp
+    moreover have "t_length ps \<le> ?n" "t_msort snd ps \<le> msort_recurrence ?n" "t_closest_pair_bf ps \<le> ?n * ?n"
+      using t_length[of ps] t_msort_conv_msort_recurrence[of snd ps] t_closest_pair_bf[of ps] by auto
     ultimately show ?thesis
-      using t_length t_msort_conv_msort_recurrence t_closest_pair_bf by (smt of_nat_add of_nat_mono)
+      by linarith
   next
     case False
 
@@ -1049,9 +1061,9 @@ definition closest_pair_time :: "nat \<Rightarrow> real" where
 lemma t_closest_pair_conv_closest_pair_recurrence:
   assumes "distinct ps"
   shows "t_closest_pair ps \<le> closest_pair_time (length ps)"
-  unfolding t_closest_pair_def closest_pair_time_def using assms msort sorted_wrt_x_def
-  using t_closest_pair_rec_conv_closest_pair_recurrence t_msort_conv_msort_recurrence
-  by (smt sorted_wrt_mono_rel of_nat_add)
+  unfolding t_closest_pair_def closest_pair_time_def
+  using t_closest_pair_rec_conv_closest_pair_recurrence[of "msort fst ps"] t_msort_conv_msort_recurrence[of fst ps]
+  by (simp add: msort sorted_wrt_x_def assms)
 
 corollary closest_pair_time:
   "closest_pair_time \<in> O(\<lambda>n. n * ln n)"
@@ -1136,13 +1148,13 @@ proof (induction p \<delta> ps arbitrary: \<delta>' c\<^sub>0 c\<^sub>1 c \<delt
     moreover have "0 \<le> snd p\<^sub>0 - snd p"
       using "3.prems"(4) sorted_wrt_y_def by simp
     ultimately have A: "\<not> \<delta>' \<le> (snd p\<^sub>0 - snd p)\<^sup>2"
-      using "3.prems"(2,3) dist_eq_dist_code_abs_le by (smt of_int_nonneg)
+      using "3.prems"(2,3) dist_eq_dist_code_abs_le[of c\<^sub>0 c\<^sub>1 "snd p\<^sub>0 - snd p"] by simp
     have "min \<delta> \<delta>\<^sub>0 = \<delta> \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>'" "min \<delta> \<delta>\<^sub>0 = \<delta>\<^sub>0 \<longleftrightarrow> min \<delta>' \<delta>\<^sub>0' = \<delta>\<^sub>0'"
-      using "3.prems"(2,3) defs(1,2) dist_eq_dist_code_le by smt+
+      by (metis "3.prems"(2,3) defs(1,2) dist_eq_dist_code_le min.commute min_def)+
     moreover have "sorted_wrt_y (p # p\<^sub>2 # ps)"
       using "3.prems"(4) sorted_wrt_y_def by simp
     ultimately have B: "p\<^sub>1 = p\<^sub>1'"
-      using "3.IH" "3.prems"(2,3) * defs by (smt length_greater_0_conv list.discI)
+      using "3.IH"[of c\<^sub>0 c\<^sub>1 \<delta>' p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1'] "3.IH"[of p p\<^sub>0 \<delta>\<^sub>0' p\<^sub>1 \<delta>\<^sub>1' p\<^sub>1'] "3.prems"(2,3) defs * by auto
     have "\<delta>\<^sub>1' = dist_code p p\<^sub>1'"
       using find_closest_code_dist_eq defs by blast
     hence "\<delta>\<^sub>0 \<le> dist p p\<^sub>1 \<longleftrightarrow> \<delta>\<^sub>0' \<le> \<delta>\<^sub>1'"
