@@ -238,7 +238,7 @@ In the following we focus on proving the sparsity property of our implementation
 set membership and distinctness properties of a closest pair can be proven relatively straightforward
 by adhering to a similar proof structure.
 
-\subsection{Combine Step}
+\subsection{Verification of the Combine Step}
 
 The essence of the combine step deals with the following scenario: We are given an initial pair of points
 with a distance of $\delta$ and and a list $\mathit{ys}$ of points, sorted ascendingly by $y$-coordinate, 
@@ -317,7 +317,7 @@ indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list
 One can show that $(p_0,\;p_1)$ is also the \textit{closest pair} of $\mathit{ps}$, if $(p_{0L},\;p_{1L})$
 and $(p_{0R},\;p_{1R})$ are the closest pairs of $\mathit{P_L}$ and $\mathit{P_R}$, respectively.
 
-\subsection{Divide \& Conquer Algorithm}
+\subsection{Verification of the Divide \& Conquer Algorithm}
 
 In Section \ref{section:closest_pair_algorithm} we glossed over some implementation detail which
 is necessary to achieve to optimal running time of $\mathcal{O}(n \log n)$. In particular
@@ -420,6 +420,8 @@ Note that it might be of interest to define a similar abstract interpretation to
 @{const dist} computations of the algorithm and compare different implementation approaches with 
 regard to this number. Since we choose not to minimize the number of @{const dist} computations,
 except for the final executable code in Section \ref{section:executable_code}, we omit such an analysis.
+
+\subsection{Time Analysis of the Combine Step}
 
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
 captured by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
@@ -565,7 +567,9 @@ Using Lemma \ref{lemma:pigeonhole} and our assumption  @{term "card P > 4"} we k
 Lemma \ref{lemma:max_dist_square} and the fact that all four sub-squares have the same side length @{text "\<delta> / 2"}
 shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to @{text "\<^latex>\<open>$\\sqrt{2}$\<close> / 2 * \<delta>"} and hence
 strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because of the facts @{term "p\<^sub>0 \<in> P"},
-@{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction. \\
+@{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction.
+
+\subsection{Time Analysis of the Divide \& Conquer Algorithm}
 
 In summary, the time to evaluate @{term "find_closest p \<delta> ps"} is constant in the context of the combine step
 and thus evaluating @{term "find_closest_pair (p\<^sub>0, p\<^sub>1) ps"} as well as @{term "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} 
@@ -632,6 +636,31 @@ and finish the time complexity proof.
 
 \section{Alternative Implementations} \label{section:alt_impl}
 
+Our implementation of Section \ref{section:proving_functional_correctness} is based on the work of 
+Cormen et al. \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
+different, implementation approaches in the literature. They deviate from our implementation primarily in two
+aspects: the exact implementation of the combine step and the approach to sorting the points by \<open>y\<close>-coordinate for said combine step.
+We base our second algorithm for solving the Closest Pair problem on the version of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
+
+During the combine step a call of the form @{term "find_closest p \<delta> ps"} searches for the closest neighbor \<open>q\<close> of \<open>p\<close> within 
+the upper rectangle \<open>R\<close> of the highlighted square \<open>S\<close> of Figure \ref{fig:Combine} and terminates the search if it 
+hits the rectangles upper vertical bound. Kleinberg and Tardos instead determine \<open>q\<close> by considering a fixed number of
+points preceding and following \<open>p\<close> in \<open>ps\<close>; @{text 7} to be exact. This approach is correct because we know 
+from Section \ref{section:proving_running_time} that \<open>R\<close> contains at most @{text 8} points, counting \<open>p\<close>,
+and the same argument can be made for the lower half of \<open>S\<close>. Since we showed in Section \ref{section:proving_functional_correctness}
+that checking this lower half is redundant, we replace for our second implementation each call of 
+@{term "find_closest p \<delta> ps"} by a call to @{term "find_closest_bf p (take 7 ps)"} where @{const find_closest_bf}
+iterates in brute-force fashion through its argument list to find the closest neighbor of \<open>p\<close>. To verify this implementation we can reuse
+most of the elementary lemmas and proof structure of Sections \ref{section:proving_functional_correctness}
+and \ref{section:proving_running_time}. Note that the core theorem, of \<open>R\<close> containing at most @{text 8} points,
+previously was strictly a running time argument. Now it is already necessary for the functional correctness
+proof since we need to argue that examining just @{text 7} points of \<open>ps\<close> is sufficient. Although the time analysis itself 
+is greatly simplified for this implementation. A call of the form @{term "find_closest_bf p (take 7 ps)"} 
+obviously runs in constant time and we can reuse remaining time analysis proof structure.
+
+This slightly easier implementation comes at the cost of being less efficient in practice.
+
+\textcolor{red}{TODO}
 
 \section{Executable Code} \label{section:executable_code}
 
