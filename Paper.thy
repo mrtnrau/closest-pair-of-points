@@ -638,9 +638,10 @@ and finish the time complexity proof.
 
 Our implementation of Section \ref{section:proving_functional_correctness} is based on the work of 
 Cormen et al. \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
-different, implementation approaches in the literature. They deviate from our implementation primarily in two
+different, implementation approaches in the literature. They deviate from our first implementation primarily in two
 aspects: the exact implementation of the combine step and the approach to sorting the points by \<open>y\<close>-coordinate for said combine step.
-We base our second algorithm for solving the Closest Pair problem mainly on the version of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
+We base our second algorithm for solving the Closest Pair problem mainly on the version presented by
+Kleinberg and Tardos \cite{Algorithm-Design:2005}.
 
 During the combine step a call of the form @{term "find_closest p \<delta> ps"} searches for the closest neighbor \<open>q\<close> of \<open>p\<close> within 
 the upper rectangle \<open>R\<close> of the highlighted square \<open>S\<close> of Figure \ref{fig:Combine} and terminates the search if it 
@@ -652,27 +653,35 @@ that checking this lower half is redundant, we replace for our second implementa
 @{term "find_closest p \<delta> ps"} by a call to @{term "find_closest_bf p (take 7 ps)"} where @{const find_closest_bf}
 iterates in brute-force fashion through its argument list to find the closest neighbor of \<open>p\<close>. To verify this implementation we can reuse
 most of the elementary lemmas and proof structure of Sections \ref{section:proving_functional_correctness}
-and \ref{section:proving_running_time}. Note that a slightly adapted version of Lemma \ref{lemma:core_argument}, 
-which previously was strictly a running time argument is now already necessary for the functional correctness 
+and \ref{section:proving_running_time}. A slightly adapted version of Lemma \ref{lemma:core_argument}, 
+which previously was strictly a running time argument, is now already necessary for the functional correctness 
 proof since we need to argue that examining just @{text 7} points of \<open>ps\<close> is sufficient. Consequently the 
 functional correctness proof gets more complicated whereas the time analysis is greatly simplified for this 
 implementation. A call of the form @{term "find_closest_bf p (take 7 ps)"} obviously runs in constant time 
 and we can reuse remaining time analysis proof structure.
 
 This slightly easier implementation comes at the cost of being less efficient in practice. We are always
-assuming the worst case by checking all @{text 7} points following \<open>p\<close>. But note that this number is 
+assuming the worst case by checking all @{text 7} points following \<open>p\<close>. Although this number is 
 an over-approximation and can still be improved upon; indeed Cormen et al. \cite{Introduction-to-Algorithms:2009}
-leave it as an exercise to the reader to lower this bound to @{text 5}. We refrain from doing so since a bound
+leave it as an exercise to the reader to lower this bound to @{text 5}; we refrain from doing so since a bound
 of @{text 7} suffices as the time complexity argument for our, inherently faster, first implementation approach.
 
-Furthermore, Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} as well as Ge et al.
-\cite{Ge2006} utilize a third variation to implement to combine step. Lets look one last time at the point \<open>p\<close>
-and Figure \ref{fig:Combine} and try to determine its closest neighbor. Assuming \<open>p\<close> lies to the left of \<open>l\<close>,
-we know due to the \<open>\<delta>\<close>-sparsity of all the points on the left-hand side of \<open>l\<close>, if there exists a point \<open>q\<close> 
-within a distance of \<open>\<delta>\<close>, then \<open>q\<close> must be on the right-hand side of \<open>l\<close>. Consequently we should not merge
-the sorted lists \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> prior to the combine step but consider for each point of \<open>ys\<^sub>L\<close> only the points
-in \<open>ys\<^sub>R\<close> as closest neighbor candidates and vice versa. In theory this should lead to a faster implementation since
-Ge et al. \cite{Ge2006} prove a bound of @{text 3} for the number of points to be examined in the worst case.
+Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} employ a third approach to implement the
+combine step. One last time we consider the point \<open>p\<close> of Figure \ref{fig:Combine} and try to determine 
+its closest neighbor. Assuming \<open>p\<close> lies to the left of \<open>l\<close>, we know due to the \<open>\<delta>\<close>-sparsity of all the 
+points on the left-hand side of \<open>l\<close>, if there exists a point \<open>q\<close> within a distance of \<open>\<delta>\<close>, then \<open>q\<close> must 
+be on the right-hand side of \<open>l\<close>. Consequently we should not merge the sorted lists \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> prior 
+to the combine step but consider for each point of \<open>ys\<^sub>L\<close> only the points in \<open>ys\<^sub>R\<close> as closest neighbor 
+candidates of \<open>p\<close> and vice versa. In theory this should lead to a faster implementation since Ge et al. \cite{Ge2006} 
+prove an upper bound of @{text 3} for the number of points to be examined. Our experimental results suggest
+that this does not seem to be the case, at least for randomized inputs. Although we check in the worst case 
+@{text 2} closest neighbor candidates less than in our previous approaches, we introduce the additional 
+overhead of needing to find the position of the first potential candidate in \<open>ys\<^sub>R\<close>. Overall we conclude 
+that this approach does not speed up the algorithm in practice but complicates implementation and proof.
+
+In both of our verified implementations we use an incorporated bottom-up mergesort implementation to
+sort the points by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
+the only mention of it appears in Cormen et al. and is there only suggested as an exercise for the reader.  
 
 \textcolor{red}{TODO}
 
