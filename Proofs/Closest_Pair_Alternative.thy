@@ -2,6 +2,11 @@ theory Closest_Pair_Alternative
   imports Common
 begin
 
+text\<open>
+  Formalization of a divide-and-conquer alogrithm solving the Closest Pair Problem based
+  on the work of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
+\<close>
+
 section "Functional Correctness Proof"
 
 subsection "Core Argument"

@@ -2,6 +2,11 @@ theory Closest_Pair
   imports Common
 begin
 
+text\<open>
+  Formalization of a divide-and-conquer alogrithm solving the Closest Pair Problem based
+  on the work of Cormen et al. \cite{Introduction-to-Algorithms:2009}.
+\<close>
+
 section "Functional Correctness Proof"
 
 subsection "Combine Step"

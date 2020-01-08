@@ -640,25 +640,39 @@ Our implementation of Section \ref{section:proving_functional_correctness} is ba
 Cormen et al. \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
 different, implementation approaches in the literature. They deviate from our implementation primarily in two
 aspects: the exact implementation of the combine step and the approach to sorting the points by \<open>y\<close>-coordinate for said combine step.
-We base our second algorithm for solving the Closest Pair problem on the version of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
+We base our second algorithm for solving the Closest Pair problem mainly on the version of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
 
 During the combine step a call of the form @{term "find_closest p \<delta> ps"} searches for the closest neighbor \<open>q\<close> of \<open>p\<close> within 
 the upper rectangle \<open>R\<close> of the highlighted square \<open>S\<close> of Figure \ref{fig:Combine} and terminates the search if it 
-hits the rectangles upper vertical bound. Kleinberg and Tardos instead determine \<open>q\<close> by considering a fixed number of
-points preceding and following \<open>p\<close> in \<open>ps\<close>; @{text 7} to be exact. This approach is correct because we know 
-from Section \ref{section:proving_running_time} that \<open>R\<close> contains at most @{text 8} points, counting \<open>p\<close>,
+hits the rectangles upper border. Kleinberg and Tardos instead determine \<open>q\<close> by considering a fixed number of
+points preceding and following \<open>p\<close> in \<open>ps\<close>; @{text 7} to be exact. This approach is correct because, as 
+Section \ref{section:proving_running_time} proves, \<open>R\<close> contains at most @{text 8} points, counting \<open>p\<close>,
 and the same argument can be made for the lower half of \<open>S\<close>. Since we showed in Section \ref{section:proving_functional_correctness}
 that checking this lower half is redundant, we replace for our second implementation each call of 
 @{term "find_closest p \<delta> ps"} by a call to @{term "find_closest_bf p (take 7 ps)"} where @{const find_closest_bf}
 iterates in brute-force fashion through its argument list to find the closest neighbor of \<open>p\<close>. To verify this implementation we can reuse
 most of the elementary lemmas and proof structure of Sections \ref{section:proving_functional_correctness}
-and \ref{section:proving_running_time}. Note that the core theorem, of \<open>R\<close> containing at most @{text 8} points,
-previously was strictly a running time argument. Now it is already necessary for the functional correctness
-proof since we need to argue that examining just @{text 7} points of \<open>ps\<close> is sufficient. Although the time analysis itself 
-is greatly simplified for this implementation. A call of the form @{term "find_closest_bf p (take 7 ps)"} 
-obviously runs in constant time and we can reuse remaining time analysis proof structure.
+and \ref{section:proving_running_time}. Note that a slightly adapted version of Lemma \ref{lemma:core_argument}, 
+which previously was strictly a running time argument is now already necessary for the functional correctness 
+proof since we need to argue that examining just @{text 7} points of \<open>ps\<close> is sufficient. Consequently the 
+functional correctness proof gets more complicated whereas the time analysis is greatly simplified for this 
+implementation. A call of the form @{term "find_closest_bf p (take 7 ps)"} obviously runs in constant time 
+and we can reuse remaining time analysis proof structure.
 
-This slightly easier implementation comes at the cost of being less efficient in practice.
+This slightly easier implementation comes at the cost of being less efficient in practice. We are always
+assuming the worst case by checking all @{text 7} points following \<open>p\<close>. But note that this number is 
+an over-approximation and can still be improved upon; indeed Cormen et al. \cite{Introduction-to-Algorithms:2009}
+leave it as an exercise to the reader to lower this bound to @{text 5}. We refrain from doing so since a bound
+of @{text 7} suffices as the time complexity argument for our, inherently faster, first implementation approach.
+
+Furthermore, Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} as well as Ge et al.
+\cite{Ge2006} utilize a third variation to implement to combine step. Lets look one last time at the point \<open>p\<close>
+and Figure \ref{fig:Combine} and try to determine its closest neighbor. Assuming \<open>p\<close> lies to the left of \<open>l\<close>,
+we know due to the \<open>\<delta>\<close>-sparsity of all the points on the left-hand side of \<open>l\<close>, if there exists a point \<open>q\<close> 
+within a distance of \<open>\<delta>\<close>, then \<open>q\<close> must be on the right-hand side of \<open>l\<close>. Consequently we should not merge
+the sorted lists \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> prior to the combine step but consider for each point of \<open>ys\<^sub>L\<close> only the points
+in \<open>ys\<^sub>R\<close> as closest neighbor candidates and vice versa. In theory this should lead to a faster implementation since
+Ge et al. \cite{Ge2006} prove a bound of @{text 3} for the number of points to be examined in the worst case.
 
 \textcolor{red}{TODO}
 
