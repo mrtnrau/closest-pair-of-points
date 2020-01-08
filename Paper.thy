@@ -191,7 +191,7 @@ This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, 
 \begin{figure}[htpb]
 \centering
 \includegraphics[width=0.5\textwidth,height=0.35\textheight]{./../../img/Combine.png}
-\caption[]{The combine step.}
+\caption[]{The combine step}
 \label{fig:Combine}
 \end{figure}
 %
@@ -215,12 +215,12 @@ in Section \ref{section:proving_running_time} we prove the optimal running time.
 
 We present the implementation of the divide-and-conquer algorithm and the corresponding correctness proofs
 using a bottom-up approach, starting with the combine step. The basis for both implementation and proof is the version
-presented by Cormen et al. \cite{Introduction-to-Algorithms:2009}. But first we need to introduce some definitional
+presented by Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}. But first we need to introduce some definitional
 preliminaries of two-dimensional geometry and precisely define the closest pair problem.
 
-A point in the two-dimensional Euclidean plane is represented as a pair of (arbitrary-precision) integers
-\footnote{We choose this representation over a pair of real numbers because we cannot generate code
-for mathematical reals. See Section \ref{section:executable_code}.}.
+A point in the two-dimensional Euclidean plane is represented as a pair of (unbounded)
+integers\footnote{We chose integers over reals because be we cannot implement
+mathematical reals. See Section \ref{section:executable_code}.}.
 The library HOL-Analysis provides a generic distance function applicable to our point definition.
 For our purposes the definition of this \textit{dist} function corresponds to the familiar Euclidean distance measure.
 
@@ -522,7 +522,7 @@ Our original statement then follows from @{term "length (p # ps\<^sub>f) \<le> c
 %
 
 Note that the intermediate proof for the bound on @{term "card R\<^sub>p\<^sub>s"} relies on basic human geometric intuition. 
-Indeed Cormen et al. \cite{Introduction-to-Algorithms:2009} and most of the proofs in the literature do.
+Indeed Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009} and most of the proofs in the literature do.
 But for a formal proof we have to be rigorous. First we show two auxiliary lemmas: The maximum distance
 between two points in a square \<open>S\<close> with side length \<open>\<delta>\<close> is less than or equal to $\sqrt{2}\delta$. 
 
@@ -607,7 +607,7 @@ properties of the form @{term "t \<in> O[m going_to at_top within A](f o m)"} wh
 data domain, in our case lists. The function \<open>m\<close> is a measure on that data domain, \<open>r\<close> is a recurrence or any other
 function of type @{text "nat \<Rightarrow> real"} and \<open>A\<close> is the set of valid inputs. The term `@{text "m going_to at_top within A"}'
 should be read as `if the measured size of valid inputs is sufficiently large' and stems from the fact that Asymptotics 
-in Isabelle/HOL are centered around @{text "filters"}, see H\"olzl et al. \cite{filter}. For readability we omit 
+in Isabelle/HOL are centered around @{text "filters"}, see H\"olzl \emph{et al.} \cite{filter}. For readability we omit 
 stating them explicitly in the following and just state the  conditions required of the input \<open>A\<close>. The measure \<open>m\<close> always 
 corresponds the the @{const length} function.
 
@@ -637,8 +637,8 @@ and finish the time complexity proof.
 \section{Alternative Implementations} \label{section:alt_impl}
 
 Our implementation of Section \ref{section:proving_functional_correctness} is based on the work of 
-Cormen et al. \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
-different, implementation approaches in the literature. They deviate from our first implementation primarily in two
+Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
+different, implementation approaches in the literature. They deviate from our implementation primarily in two
 aspects: the exact implementation of the combine step and the approach to sorting the points by \<open>y\<close>-coordinate for said combine step.
 We base our second algorithm for solving the Closest Pair problem mainly on the version presented by
 Kleinberg and Tardos \cite{Algorithm-Design:2005}.
@@ -662,7 +662,7 @@ and we can reuse remaining time analysis proof structure.
 
 This slightly easier implementation comes at the cost of being less efficient in practice. We are always
 assuming the worst case by checking all @{text 7} points following \<open>p\<close>. Although this number is 
-an over-approximation and can still be improved upon; indeed Cormen et al. \cite{Introduction-to-Algorithms:2009}
+an over-approximation and can still be improved upon; indeed Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}
 leave it as an exercise to the reader to lower this bound to @{text 5}; we refrain from doing so since a bound
 of @{text 7} suffices as the time complexity argument for our, inherently faster, first implementation approach.
 
@@ -672,7 +672,7 @@ its closest neighbor. Assuming \<open>p\<close> lies to the left of \<open>l\<cl
 points on the left-hand side of \<open>l\<close>, if there exists a point \<open>q\<close> within a distance of \<open>\<delta>\<close>, then \<open>q\<close> must 
 be on the right-hand side of \<open>l\<close>. Consequently we should not merge the sorted lists \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> prior 
 to the combine step but consider for each point of \<open>ys\<^sub>L\<close> only the points in \<open>ys\<^sub>R\<close> as closest neighbor 
-candidates of \<open>p\<close> and vice versa. In theory this should lead to a faster implementation since Ge et al. \cite{Ge2006} 
+candidates of \<open>p\<close> and vice versa. In theory this should lead to a faster implementation since Ge \emph{et al.} \cite{Ge2006} 
 prove an upper bound of @{text 3} for the number of points to be examined. Our experimental results suggest
 that this does not seem to be the case, at least for randomized inputs. Although we check in the worst case 
 @{text 2} closest neighbor candidates less than in our previous approaches, we introduce the additional 
