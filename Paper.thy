@@ -274,7 +274,7 @@ We then prove by induction on the computation of the respective function
 the following lemma, capturing the desired sparsity property of our implementation of the combine step so far. 
 
 \begin{lemma} \label{lemma:find_closest_pair_dist}
-@{text [source, break] "sorted_wrt_y ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
+@{text [source, break] "sorted_snd ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
@@ -307,7 +307,7 @@ We then can prove, additionally using Lemma \ref{lemma:find_closest_pair_dist}, 
 indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list of points \<open>ps\<close> is (@{term "dist p\<^sub>0 p\<^sub>1"})-sparse.
 
 \begin{lemma} \label{lemma:combine_dist}
-@{text [source, break] "sorted_wrt_y ps \<and> set ps = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "sorted_snd ps \<and> set ps = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) P\<^sub>L \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} \vskip 0pt
@@ -364,8 +364,8 @@ and several auxiliary lemmas proving that \textit{closest\_pair\_rec} also sorts
 we arrive at the correctness proof of the desired sparsity property of the algorithm.
 
 \begin{theorem}
-@{text [source, break] "1 < length xs \<and> sorted_wrt_x xs \<and>"} \vskip 0pt
-@{text [source, break] "(ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs \<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
+@{text [source, break] "1 < length xs \<and> sorted_fst xs \<and> (ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs"} \vskip 0pt
+@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
 \end{theorem}
 
 Corollary \ref{cor:closest_pair_dist} together with Theorems \ref{thm:closest_pair_set} and 
@@ -458,7 +458,7 @@ that both @{term P\<^sub>L} and @{term P\<^sub>R} are @{term \<delta>}-sparse, s
 @{term "t_find_closest p \<delta> ps \<le> 8"} and thus the constant running time of @{const find_closest}.
 
 \begin{lemma} \label{lemma:core_argument}
-@{text [source, break] "distinct (p # ps) \<and> sorted_wrt_y (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
+@{text [source, break] "distinct (p # ps) \<and> sorted_snd (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
 @{text [source, break] "set (p # ps) = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> P\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> P\<^sub>L \<and>"} \vskip 0pt
@@ -681,7 +681,7 @@ that this approach does not speed up the algorithm in practice but complicates i
 
 In both of our verified implementations we use an incorporated bottom-up mergesort implementation to
 sort the points by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
-the only mention of it appears in Cormen et al. and is there only suggested as an exercise for the reader.  
+the only mention of it appears in Cormen et al. and is there only hinted at in an exercise.  
 
 \textcolor{red}{TODO}
 
