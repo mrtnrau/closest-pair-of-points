@@ -681,7 +681,12 @@ that this approach does not speed up the algorithm in practice but complicates i
 
 In both of our verified implementations we use an incorporated bottom-up mergesort implementation to
 sort the points by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
-the only mention of it appears in Cormen et al. and is there only hinted at in an exercise.  
+the only mention of it appears in Cormen \emph{et al.} and is there merely hinted at in an exercise.
+A different top-down approach is used instead. The function @{const closest_pair_rec} takes three parameters:
+a set of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which are respectively presorted by \<open>x\<close> and \<open>y\<close>-coordinate.
+As in the bottom-up approach algorithm first divides \<open>xs\<close> into two lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It then proceeds
+to construct the sets \<open>P\<^sub>L = set xs\<^sub>L\<close> and \<open>P\<^sub>R = set xs\<^sub>R\<close>. For the recursive invocations of @{const closest_pair_rec}
+i 
 
 \textcolor{red}{TODO}
 
