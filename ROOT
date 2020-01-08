@@ -1,19 +1,19 @@
-session Proofs = "HOL-Analysis" +
-  sessions
-    "Landau_Symbols"
-    "Akra_Bazzi"
+session Proofs in Proofs = Akra_Bazzi +
   theories
-    (* Alternatively you can take a local copy of LaTeXsugar and modify it: *)
-    "OptionalSugarLocal"
-    "Proofs/Common"
-    "Proofs/Closest_Pair"
-    "Proofs/Closest_Pair_Alternative"
+    "Closest_Pair"
+    "Closest_Pair_Alternative"
+  document_files
+    "root.tex"
+    "root.bib"
 
 session Paper = Proofs +
   options [document = pdf, show_question_marks = false, names_short = true,
     document_output = "generated"]
    (* All the tex files are dumped into directory "generated" and can be
       processed separately if needed. *)
+  theories [document = false]
+    (* Alternatively you can take a local copy of LaTeXsugar and modify it: *)
+    "OptionalSugarLocal"
   theories
     Paper
   document_files

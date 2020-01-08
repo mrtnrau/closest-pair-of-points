@@ -1,7 +1,7 @@
+section "Common"
+
 theory Common
-imports 
-  "HOL-Analysis.Analysis"
-  "Landau_Symbols.Landau_More"
+imports
   "HOL-Library.Going_To_Filter"
   "Akra_Bazzi.Akra_Bazzi_Method"
   "Akra_Bazzi.Akra_Bazzi_Approximation"
@@ -10,9 +10,9 @@ begin
 
 type_synonym point = "int * int"
 
-section "Auxiliary Functions and Lemmas"
+subsection "Auxiliary Functions and Lemmas"
 
-subsection "Landau Auxiliary"
+subsubsection "Landau Auxiliary"
 
 text \<open>
   The following lemma expresses a procedure for deriving complexity properties of
@@ -46,7 +46,7 @@ proof -
   show ?thesis by(rule landau_o.big_trans[OF 1 3])
 qed
 
-subsection "Miscellaneous Lemmas"
+subsubsection "Miscellaneous Lemmas"
 
 lemma set_take_drop_i_le_j:
   "i \<le> j \<Longrightarrow> set xs = set (take j xs) \<union> set (drop i xs)"
@@ -121,7 +121,7 @@ lemma filter_Un:
   apply (induction xs)
   apply (auto) by (metis UnI1 UnI2 insert_iff)+
 
-subsection "length"
+subsubsection \<open>@{const length}\<close>
 
 fun t_length :: "'a list \<Rightarrow> nat" where
   "t_length [] = 0"
@@ -146,7 +146,7 @@ lemma length_conv_length_it[code_unfold]:
   "length xs = length_it xs"
   unfolding length_it_def using length_conv_length_it' add_0_right by metis
 
-subsection "rev"
+subsubsection \<open>@{const rev}\<close>
 
 fun rev_it' :: "'a list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "rev_it' acc [] = acc"
@@ -163,7 +163,7 @@ lemma rev_conv_rev_it[code_unfold]:
   "rev xs = rev_it xs"
   unfolding rev_it_def using rev_conv_rev_it' append_Nil2 by metis
 
-subsection "take"
+subsubsection \<open>@{const take}\<close>
 
 fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "t_take n [] = 0"
@@ -177,7 +177,7 @@ lemma t_take:
   "t_take n xs \<le> min (n + 1) (length xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
-subsection "filter"
+subsubsection \<open>@{const filter}\<close>
 
 fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat" where
   "t_filter P [] = 0"
@@ -207,7 +207,7 @@ lemma filter_conv_filter_it[code_unfold]:
   "filter P xs = filter_it P xs"
   unfolding filter_it_def using filter_conv_filter_it' append_Nil rev.simps(1) by metis
 
-subsection "split_at"
+subsubsection \<open>\<open>split_at\<close>\<close>
 
 fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
   "split_at n [] = ([], [])"
@@ -266,9 +266,9 @@ lemma split_at_conv_split_at_it[code_unfold]:
   using split_at_conv_split_at_it_prod surj_pair by metis
 
 
-section "Mergesort"
+subsection "Mergesort"
 
-subsection "Functional Correctness Proof"
+subsubsection "Functional Correctness Proof"
 
 definition sorted_fst :: "point list \<Rightarrow> bool" where
   "sorted_fst ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1) ps"
@@ -362,7 +362,7 @@ lemma sorted_fst_hd_drop_less_drop:
   shows "\<forall>p \<in> set (drop n ps). fst (hd (drop n ps)) \<le> fst p"
   using assms sorted_wrt_hd_drop_less_drop[of "\<lambda>p\<^sub>0 p\<^sub>1. fst p\<^sub>0 \<le> fst p\<^sub>1"] sorted_fst_def by fastforce
 
-subsection "Time Complexity Proof"
+subsubsection "Time Complexity Proof"
 
 fun t_merge' :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
   "t_merge' f (x#xs) (y#ys) = 1 + (
@@ -472,7 +472,7 @@ proof -
     using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_recurrence)
 qed
 
-subsection "Code Export"
+subsubsection "Code Export"
 
 lemma merge_xs_Nil[simp]:
   "merge f xs [] = xs"
@@ -501,7 +501,7 @@ lemma merge_conv_merge_it[code_unfold]:
   unfolding merge_it_def using merge_conv_merge_it' rev.simps(1) append_Nil by metis
 
 
-section "Minimal Distance"
+subsection "Minimal Distance"
 
 definition min_dist :: "real \<Rightarrow> point set \<Rightarrow> bool" where
   "min_dist \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
@@ -522,7 +522,7 @@ lemma min_dist_mono:
   unfolding min_dist_def by fastforce
 
 
-section "Distance"
+subsection "Distance"
 
 lemma dist_transform:
   fixes p :: point and \<delta> :: real and l :: int
@@ -577,9 +577,9 @@ qed
 declare dist_code.simps [simp del]
 
 
-section "Brute Force Closest Pair Algorithm"
+subsection "Brute Force Closest Pair Algorithm"
 
-subsection "Functional Correctness Proof"
+subsubsection "Functional Correctness Proof"
 
 fun find_closest_bf :: "point \<Rightarrow> point list \<Rightarrow> point" where
   "find_closest_bf _ [] = undefined"
@@ -690,7 +690,7 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
   qed
 qed (auto simp: dist_commute min_dist_def)
 
-subsection "Time Complexity Proof"
+subsubsection "Time Complexity Proof"
 
 fun t_find_closest_bf :: "point \<Rightarrow> point list \<Rightarrow> nat" where
   "t_find_closest_bf _ [] = 0"
@@ -730,7 +730,7 @@ proof (induction rule: t_closest_pair_bf.induct)
     using "4.prems" t_find_closest_bf by simp
 qed auto
 
-subsection "Code Export"
+subsubsection "Code Export"
 
 fun find_closest_bf_code :: "point \<Rightarrow> point list \<Rightarrow> (int * point)" where
   "find_closest_bf_code p [] = undefined"
@@ -831,9 +831,9 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 \<delta>' c\<^sub>0' c\<^sub>
 qed auto
 
 
-section "Geometry"
+subsection "Geometry"
 
-subsection "Band Filter"
+subsubsection "Band Filter"
 
 lemma set_band_filter_aux:
   fixes \<delta> :: real and ps :: "point list"
@@ -917,7 +917,7 @@ proof -
   qed
 qed
 
-subsection "2D-Boxes and Points"
+subsubsection "2D-Boxes and Points"
 
 lemma cbox_2D: 
   fixes x\<^sub>0 :: real and y\<^sub>0 :: real
@@ -964,7 +964,7 @@ proof -
   finally show ?thesis .
 qed
 
-subsection "Pigeonhole Argument"
+subsubsection "Pigeonhole Argument"
 
 lemma card_le_1_if_pairwise_eq:
   assumes "\<forall>x \<in> S. \<forall>y \<in> S. x = y"
@@ -1031,7 +1031,7 @@ proof (rule ccontr)
   finally show False by simp
 qed
 
-subsection "\<delta> Sparse Points within a Square"
+subsubsection "Delta Sparse Points within a Square"
 
 lemma max_points_square:
   assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "min_dist \<delta> ps" "0 \<le> \<delta>"

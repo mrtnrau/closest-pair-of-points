@@ -3,7 +3,7 @@ theory Paper
   imports
   "Proofs.Common"
   "Proofs.Closest_Pair"
-  "Proofs.OptionalSugarLocal"
+  "OptionalSugarLocal"
 begin
 
 (* Alternative simps for display *)

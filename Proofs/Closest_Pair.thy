@@ -1,15 +1,17 @@
+section "Closest Pair Algorithm"
+
 theory Closest_Pair
   imports Common
 begin
 
 text\<open>
-  Formalization of a divide-and-conquer alogrithm solving the Closest Pair Problem based
+  Formalization of a divide-and-conquer algorithm solving the Closest Pair Problem based
   on the work of Cormen et al. \cite{Introduction-to-Algorithms:2009}.
 \<close>
 
-section "Functional Correctness Proof"
+subsection "Functional Correctness Proof"
 
-subsection "Combine Step"
+subsubsection "Combine Step"
 
 fun find_closest :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> point" where
   "find_closest _ _ [] = undefined"
@@ -318,7 +320,7 @@ proof -
     using EQ by blast
 qed
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function closest_pair_rec :: "point list \<Rightarrow> (point list * point * point)" where
   "closest_pair_rec xs = (
@@ -622,9 +624,9 @@ theorem closest_pair_dist:
   by (auto simp: closest_pair_simps msort split: prod.splits)
 
 
-section "Time Complexity Proof"
+subsection "Time Complexity Proof"
 
-subsection "Core Argument"
+subsubsection "Core Argument"
 
 lemma core_argument:
   fixes \<delta> :: real and p :: point and ps :: "point list"
@@ -693,7 +695,7 @@ proof -
     by simp
 qed
 
-subsection "Combine Step"
+subsubsection "Combine Step"
 
 fun t_find_closest :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat" where
   "t_find_closest _ _ [] = 0"
@@ -871,7 +873,7 @@ qed
 
 declare t_combine.simps [simp del]
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
   "t_closest_pair_rec xs = (
@@ -1086,9 +1088,9 @@ proof -
 qed
 
 
-section "Code Export"
+subsection "Code Export"
 
-subsection "Combine Step"
+subsubsection "Combine Step"
 
 fun find_closest_code :: "point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> (int * point)" where
   "find_closest_code _ _ [] = undefined"
@@ -1324,7 +1326,7 @@ proof -
     by blast
 qed
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function closest_pair_rec_code :: "point list \<Rightarrow> (point list * int * point * point)" where
   "closest_pair_rec_code xs = (
