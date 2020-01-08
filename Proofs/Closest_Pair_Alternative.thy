@@ -1,15 +1,17 @@
+section "Closest Pair Algorithm 2"
+
 theory Closest_Pair_Alternative
   imports Common
 begin
 
 text\<open>
-  Formalization of a divide-and-conquer alogrithm solving the Closest Pair Problem based
+  Formalization of a divide-and-conquer algorithm solving the Closest Pair Problem based
   on the work of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
 \<close>
 
-section "Functional Correctness Proof"
+subsection "Functional Correctness Proof"
 
-subsection "Core Argument"
+subsubsection "Core Argument"
 
 lemma core_argument:
   assumes "distinct (p\<^sub>0 # ps)" "sorted_snd (p\<^sub>0 # ps)" "0 \<le> \<delta>" "set (p\<^sub>0 # ps) = ps\<^sub>L \<union> ps\<^sub>R"
@@ -114,7 +116,7 @@ proof -
     using assms(1,10) PS_def by auto
 qed
 
-subsection "Combine step"
+subsubsection "Combine step"
   
 lemma find_closest_bf_dist_take_7:
   assumes "\<exists>p\<^sub>1 \<in> set ps. dist p\<^sub>0 p\<^sub>1 < \<delta>"
@@ -451,7 +453,7 @@ proof -
     using EQ by blast
 qed
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function closest_pair_rec :: "point list \<Rightarrow> (point list * point * point)" where
   "closest_pair_rec xs = (
@@ -755,9 +757,9 @@ theorem closest_pair_dist:
   by (auto simp: sorted_fst_def msort closest_pair_simps split: prod.splits)
 
 
-section "Time Complexity Proof"
+subsection "Time Complexity Proof"
 
-subsection "Combine Step"
+subsubsection "Combine Step"
 
 fun t_find_closest_pair :: "point \<times> point \<Rightarrow> point list \<Rightarrow> nat" where
   "t_find_closest_pair _ [] = 0"
@@ -840,7 +842,7 @@ qed
 
 declare t_combine.simps [simp del]
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
   "t_closest_pair_rec xs = (
@@ -1031,9 +1033,9 @@ proof -
 qed
 
 
-section "Code Export"
+subsection "Code Export"
 
-subsection "Combine Step"
+subsubsection "Combine Step"
 
 fun find_closest_pair_code :: "(int * point * point) \<Rightarrow> point list \<Rightarrow> (int * point * point)" where
   "find_closest_pair_code (\<delta>, c\<^sub>0, c\<^sub>1) [] = (\<delta>, c\<^sub>0, c\<^sub>1)"
@@ -1184,7 +1186,7 @@ proof -
     by blast
 qed
 
-subsection "Divide & Conquer Algorithm"
+subsubsection "Divide and Conquer Algorithm"
 
 function closest_pair_rec_code :: "point list \<Rightarrow> (point list * int * point * point)" where
   "closest_pair_rec_code xs = (
