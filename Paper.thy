@@ -286,7 +286,7 @@ the closest pair of the two recursive invocations of our divide-and-conquer algo
 \begin{adjustwidth}{-15pt}{0pt}
 \begin{quote}
 @{term [source, break] "combine :: point \<times> point \<Rightarrow> point \<times> point \<Rightarrow> int \<Rightarrow> point list \<Rightarrow> point \<times> point"} \vskip 0pt
-@{thm [break,margin=80] combine_simp}
+@{thm [break] combine_simp}
 \end{quote}
 \end{adjustwidth}
 \vskip 10pt
