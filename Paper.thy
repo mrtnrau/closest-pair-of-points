@@ -648,7 +648,7 @@ Kleinberg and Tardos \cite{Algorithm-Design:2005}.
 During the @{const combine} step a call of the form @{term "find_closest p \<delta> ps"} searches for the closest neighbor \<open>q\<close> of \<open>p\<close> within 
 the upper rectangle \<open>R\<close> of the highlighted square \<open>S\<close> of Figure \ref{fig:Combine} and terminates the search if it 
 hits the rectangles upper border. Kleinberg and Tardos instead determine \<open>q\<close> by considering a fixed number of
-points preceding and following \<open>p\<close> in \<open>ps\<close>; @{text 7} to be exact. This approach is correct because, as 
+points preceding and following \<open>p\<close> in \<open>ps\<close>: @{text 7} to be exact. This approach is correct because, as 
 Section \ref{section:proving_running_time} proves, \<open>R\<close> contains at most @{text 8} points, counting \<open>p\<close>,
 and the same argument can be made for the lower half of \<open>S\<close>. Since we showed in Section \ref{section:proving_functional_correctness}
 that checking this lower half is redundant, we replace for our second implementation each call of 
@@ -674,23 +674,35 @@ its closest neighbor. Assuming \<open>p\<close> lies to the left of \<open>l\<cl
 points on the left-hand side of \<open>l\<close>, if there exists a point \<open>q\<close> within a distance of \<open>\<delta>\<close>, then \<open>q\<close> must 
 be on the right-hand side of \<open>l\<close>. Consequently we should not merge the sorted lists \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> prior 
 to the @{const combine} step but consider for each point of \<open>ys\<^sub>L\<close> only the points in \<open>ys\<^sub>R\<close> as closest neighbor 
-candidates of \<open>p\<close> and vice versa. In theory this should lead to a faster implementation since Ge \emph{et al.} \cite{Ge2006} 
+candidates and vice versa. In theory this should lead to a faster implementation since Ge \emph{et al.} \cite{Ge2006} 
 prove an upper bound of @{text 3} for the number of points to be examined. Our experimental results suggest
-that this does not seem to be the case, at least for randomized inputs. Although we check in the worst case 
-@{text 2} closest neighbor candidates less than in our previous approaches, we introduce the additional 
-overhead of needing to find the position of the first potential candidate in \<open>ys\<^sub>R\<close>. Overall we conclude 
-that this approach does not speed up the algorithm in practice but complicates implementation and proof.
+that this does not seem to be the case, at least for randomized inputs. Although we need to check in the worst case 
+@{text "5 - 3 = 2"} closest neighbor candidates less than in our previous approaches, we introduce other additional 
+overhead. Since we start our search for the closest neighbor of \<open>p\<close> at the first point \<open>q\<^sub>0\<close> in \<open>ys\<^sub>R\<close> with
+@{term "snd p \<le> snd q\<^sub>0"}, or at the lower border of \<open>R\<close>, we need to first determine the position of \<open>q\<^sub>0\<close> in \<open>ys\<^sub>R\<close>.
+Even if implemented carefully this seems to negate any performance benefits we gain. Thus we overall conclude that 
+this approach does not speed up the algorithm in practice but complicates implementation and proof.
 
-In both of our verified implementations we use an incorporated bottom-up mergesort implementation to
-sort the points by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
+In both of our verified implementations we use an incorporated mergesort implementation to sort the points 
+bottom-up by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
 the only mention of it appears in Cormen \emph{et al.} and is there merely hinted at in an exercise.
-A different top-down approach is used instead. The function @{const closest_pair_rec} takes three parameters:
-a set of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which are respectively presorted by \<open>x\<close> and \<open>y\<close>-coordinate.
-As in the bottom-up approach algorithm first divides \<open>xs\<close> into two lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It then proceeds
-to construct the sets \<open>P\<^sub>L = set xs\<^sub>L\<close> and \<open>P\<^sub>R = set xs\<^sub>R\<close>. For the recursive invocations of @{const closest_pair_rec}
-i 
+A different top-down approach is used instead. There the function @{const closest_pair_rec} takes three parameters:
+the set of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which are respectively presorted by \<open>x\<close> and \<open>y\<close>-coordinate.
+As in the bottom-up approach we first divide \<open>xs\<close> into two lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> alongside \<open>l\<close>. Then we proceed
+to construct the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> consisting respectively of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. And finally we build 
+for the recursive invocations of @{const closest_pair_rec} the sorted list \<open>ys\<^sub>L\<close> (\<open>ys\<^sub>R\<close>) by iterating once through
+\<open>ys\<close> and checking for each point if it is in \<open>P\<^sub>L\<close> (\<open>P\<^sub>R\<close>). At first glance we might think that the sets
+\<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> are unnecessary and we can compute \<open>ys\<^sub>L\<close> (\<open>ys\<^sub>R\<close>) more efficiently just filtering \<open>ys\<close> by all 
+points that have \<open>x\<close>-coordinates \<open>\<le>l\<close> (\<open>>l\<close>). But this is only valid if all points of \<open>P\<close> have 
+distinct \<open>x\<close>-coordinates.
 
-\textcolor{red}{TODO}
+We choose the bottom-up approach for our purely functional implementations since the top-down solution
+is not efficient enough. To reach the algorithms time complexity of $\mathcal{O}(n \log n)$ we can only allow an at
+most linear overhead for the divide step. But for this the divide step described above requires a purely 
+functional set implementation that supports the operations set construction in $\mathcal{O}(n)$ and 
+set membership test in $\mathcal{O}(1)$ time. Such an implementation does not exist to our knowledge.
+Even for an imperative implementation this assumption seems strong since addition to and membership of sets 
+run in $\mathcal{O}(1)$ time only for the average case for most implementations. 
 
 \section{Executable Code} \label{section:executable_code}
 
