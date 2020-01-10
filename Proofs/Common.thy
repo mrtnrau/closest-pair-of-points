@@ -304,53 +304,53 @@ lemma sorted_merge:
   shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
   using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
-function msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-  "msort f [] = []"
-| "msort f [x] = [x]"
-| "msort f (x # y # xs') = ( 
+function mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+  "mergesort f [] = []"
+| "mergesort f [x] = [x]"
+| "mergesort f (x # y # xs') = ( 
     let xs = x # y # xs' in
     let n = length xs div 2 in
     let (l, r) = split_at n xs in
-    merge f (msort f l) (msort f r)
+    merge f (mergesort f l) (mergesort f r)
   )"
   by pat_completeness auto
-termination msort
+termination mergesort
   apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
   apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
-lemma sorted_wrt_msort:
-  "sorted_wrt (\<lambda>x y. f x \<le> f y) (msort f xs)"
-  by (induction f xs rule: msort.induct) (auto simp: split_at_take_drop_conv sorted_merge)
+lemma sorted_wrt_mergesort:
+  "sorted_wrt (\<lambda>x y. f x \<le> f y) (mergesort f xs)"
+  by (induction f xs rule: mergesort.induct) (auto simp: split_at_take_drop_conv sorted_merge)
 
-lemma set_msort:
-  "set (msort f xs) = set xs"
-  apply (induction f xs rule: msort.induct)
+lemma set_mergesort:
+  "set (mergesort f xs) = set xs"
+  apply (induction f xs rule: mergesort.induct)
   apply (simp_all add: set_merge split_at_take_drop_conv)
   using set_take_drop by (metis list.simps(15))
 
-lemma length_msort:
-  "length (msort f xs) = length xs"
-  by (induction f xs rule: msort.induct) (auto simp: length_merge split_at_take_drop_conv)
+lemma length_mergesort:
+  "length (mergesort f xs) = length xs"
+  by (induction f xs rule: mergesort.induct) (auto simp: length_merge split_at_take_drop_conv)
 
-lemma distinct_msort:
-  "distinct xs \<Longrightarrow> distinct (msort f xs)"
-proof (induction f xs rule: msort.induct)
+lemma distinct_mergesort:
+  "distinct xs \<Longrightarrow> distinct (mergesort f xs)"
+proof (induction f xs rule: mergesort.induct)
   case (3 f x y xs)
   let ?xs' = "x # y # xs"
   obtain l r where lr_def: "(l, r) = split_at (length ?xs' div 2) ?xs'"
     by (metis surj_pair)
   have "distinct l" "distinct r"
     using "3.prems" split_at_take_drop_conv distinct_take distinct_drop lr_def by (metis prod.sel)+
-  hence "distinct (msort f l)" "distinct (msort f r)"
+  hence "distinct (mergesort f l)" "distinct (mergesort f r)"
     using "3.IH" lr_def by auto
   moreover have "set l \<inter> set r = {}"
     using "3.prems" split_at_take_drop_conv lr_def by (metis append_take_drop_id distinct_append prod.sel)
   ultimately show ?case
-    using lr_def by (auto simp: distinct_merge set_msort split: prod.splits)
+    using lr_def by (auto simp: distinct_merge set_mergesort split: prod.splits)
 qed auto
 
-lemmas msort = sorted_wrt_msort set_msort length_msort distinct_msort
+lemmas mergesort = sorted_wrt_mergesort set_mergesort length_mergesort distinct_mergesort
 
 lemma sorted_fst_take_less_hd_drop:
   assumes "sorted_fst ps" "n < length ps"
@@ -381,39 +381,39 @@ lemma t_merge:
   "t_merge f (xs, ys) \<le> length xs + length ys"
   unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
 
-function t_msort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
-  "t_msort f [] = 0"
-| "t_msort f [_] = 1"
-| "t_msort f (x # y # xs') = (
+function t_mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
+  "t_mergesort f [] = 0"
+| "t_mergesort f [_] = 1"
+| "t_mergesort f (x # y # xs') = (
     let xs = x # y # xs' in
     let (l, r) = split_at (length xs div 2) xs in
     t_length xs + t_split_at (length xs div 2) xs +
-    t_msort f l + t_msort f r + t_merge f (l, r)
+    t_mergesort f l + t_mergesort f r + t_merge f (l, r)
   )"
   by pat_completeness auto
-termination t_msort
+termination t_mergesort
   apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
   apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
-function msort_recurrence :: "nat \<Rightarrow> real" where
-  "msort_recurrence 0 = 0"
-| "msort_recurrence 1 = 1"
-| "2 \<le> n \<Longrightarrow> msort_recurrence n = msort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + 
-    msort_recurrence (nat \<lceil>real n / 2\<rceil>) + 3 * n"
+function mergesort_recurrence :: "nat \<Rightarrow> real" where
+  "mergesort_recurrence 0 = 0"
+| "mergesort_recurrence 1 = 1"
+| "2 \<le> n \<Longrightarrow> mergesort_recurrence n = mergesort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + 
+    mergesort_recurrence (nat \<lceil>real n / 2\<rceil>) + 3 * n"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
-lemma msort_recurrence_nonneg[simp]:
-  "0 \<le> msort_recurrence n"
-  by (induction n rule: msort_recurrence.induct) (auto simp del: One_nat_def)
+lemma mergesort_recurrence_nonneg[simp]:
+  "0 \<le> mergesort_recurrence n"
+  by (induction n rule: mergesort_recurrence.induct) (auto simp del: One_nat_def)
 
-lemma t_msort_conv_msort_recurrence:
-  "t_msort f xs \<le> msort_recurrence (length xs)"
-proof (induction f xs rule: t_msort.induct)
+lemma t_mergesort_conv_mergesort_recurrence:
+  "t_mergesort f xs \<le> mergesort_recurrence (length xs)"
+proof (induction f xs rule: t_mergesort.induct)
   case (2 f x)
   thus ?case
-    using msort_recurrence.simps(2) by auto
+    using mergesort_recurrence.simps(2) by auto
 next
   case (3 f x y xs')
 
@@ -423,20 +423,20 @@ next
     using prod.collapse by blast
   note defs = XS_def N_def LR_def
 
-  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_msort f L + t_msort f R + t_merge f (L, R)"
-  let ?RHS = "msort_recurrence (nat \<lfloor>real N / 2\<rfloor>) + msort_recurrence (nat \<lceil>real N / 2\<rceil>) + 3 * N"
+  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_mergesort f L + t_mergesort f R + t_merge f (L, R)"
+  let ?RHS = "mergesort_recurrence (nat \<lfloor>real N / 2\<rfloor>) + mergesort_recurrence (nat \<lceil>real N / 2\<rceil>) + 3 * N"
 
-  have IHL: "t_msort f L \<le> msort_recurrence (length L)"
+  have IHL: "t_mergesort f L \<le> mergesort_recurrence (length L)"
     using defs "3.IH"(1) prod.collapse by blast
-  have IHR: "t_msort f R \<le> msort_recurrence (length R)"
+  have IHR: "t_mergesort f R \<le> mergesort_recurrence (length R)"
     using defs "3.IH"(2) prod.collapse by blast
 
   have *: "length L = N div 2" "length R = N - N div 2"
     using defs by (auto simp: split_at_take_drop_conv)
   hence "(nat \<lfloor>real N / 2\<rfloor>) = length L" "(nat \<lceil>real N / 2\<rceil>) = length R"
     by linarith+
-  hence IH: "t_msort f L \<le> msort_recurrence (nat \<lfloor>real N / 2\<rfloor>)"
-            "t_msort f R \<le> msort_recurrence (nat \<lceil>real N / 2\<rceil>)"
+  hence IH: "t_mergesort f L \<le> mergesort_recurrence (nat \<lfloor>real N / 2\<rfloor>)"
+            "t_mergesort f R \<le> mergesort_recurrence (nat \<lceil>real N / 2\<rceil>)"
     using IHL IHR by simp_all
 
   have "N = length L + length R"
@@ -449,27 +449,27 @@ next
     using t_split_at N_def by blast
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
-  moreover have "t_msort f XS = ?LHS"
+  moreover have "t_mergesort f XS = ?LHS"
     using defs by (auto simp: Let_def split: prod.split)
-  moreover have "msort_recurrence N = ?RHS"
+  moreover have "mergesort_recurrence N = ?RHS"
     by (simp add: defs)
-  ultimately have "t_msort f XS \<le> msort_recurrence N"
+  ultimately have "t_mergesort f XS \<le> mergesort_recurrence N"
     by presburger 
   thus ?case
     using XS_def N_def by blast
 qed auto
 
-theorem msort_recurrence:
-  "msort_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
+theorem mergesort_recurrence:
+  "mergesort_recurrence \<in> \<Theta>(\<lambda>n. n * ln n)"
   by (master_theorem) auto
 
-theorem t_msort_bigo:
-  "t_msort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
+theorem t_mergesort_bigo:
+  "t_mergesort f \<in> O[length going_to at_top]((\<lambda>n. n * ln n) o length)"
 proof -
-  have 0: "\<And>xs. t_msort f xs \<le> (msort_recurrence o length) xs"
-    unfolding comp_def using t_msort_conv_msort_recurrence by blast
+  have 0: "\<And>xs. t_mergesort f xs \<le> (mergesort_recurrence o length) xs"
+    unfolding comp_def using t_mergesort_conv_mergesort_recurrence by blast
   show ?thesis
-    using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 msort_recurrence)
+    using bigo_measure_trans[OF 0] by (simp add: bigthetaD1 mergesort_recurrence)
 qed
 
 subsubsection "Code Export"

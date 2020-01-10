@@ -326,7 +326,7 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
   "closest_pair_rec xs = (
     let n = length xs in
     if n \<le> 3 then
-      (msort snd xs, closest_pair_bf xs)
+      (mergesort snd xs, closest_pair_bf xs)
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
@@ -368,7 +368,7 @@ proof (induction xs arbitrary: ys p rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     thus ?thesis using "1.prems" sorted_snd_def
-      by (auto simp: msort closest_pair_rec.simps)
+      by (auto simp: mergesort closest_pair_rec.simps)
   next
     case False
 
@@ -423,7 +423,7 @@ proof (induction xs arbitrary: ys p rule: length_induct)
   proof (cases "?n \<le> 3")
     case True
     thus ?thesis using "1.prems"
-      by (auto simp: msort closest_pair_rec.simps)
+      by (auto simp: mergesort closest_pair_rec.simps)
   next
     case False
 
@@ -603,10 +603,10 @@ qed
 fun closest_pair :: "point list \<Rightarrow> (point * point)" where
   "closest_pair [] = undefined"
 | "closest_pair [_] = undefined"
-| "closest_pair ps = (let (_, c\<^sub>0, c\<^sub>1) = closest_pair_rec (msort fst ps) in (c\<^sub>0, c\<^sub>1))"
+| "closest_pair ps = (let (_, c\<^sub>0, c\<^sub>1) = closest_pair_rec (mergesort fst ps) in (c\<^sub>0, c\<^sub>1))"
 
 lemma closest_pair_simps:
-  "1 < length ps \<Longrightarrow> closest_pair ps = (let (_, c\<^sub>0, c\<^sub>1) = closest_pair_rec (msort fst ps) in (c\<^sub>0, c\<^sub>1))"
+  "1 < length ps \<Longrightarrow> closest_pair ps = (let (_, c\<^sub>0, c\<^sub>1) = closest_pair_rec (mergesort fst ps) in (c\<^sub>0, c\<^sub>1))"
   by (induction ps rule: induct_list012) auto
 
 declare closest_pair.simps [simp del]
@@ -614,14 +614,14 @@ declare closest_pair.simps [simp del]
 theorem closest_pair_c0_c1:
   assumes "1 < length ps" "distinct ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "c\<^sub>0 \<in> set ps" "c\<^sub>1 \<in> set ps" "c\<^sub>0 \<noteq> c\<^sub>1"
-  using assms closest_pair_rec_c0_c1[of "msort fst ps"]
-  by (auto simp: closest_pair_simps msort split: prod.splits)
+  using assms closest_pair_rec_c0_c1[of "mergesort fst ps"]
+  by (auto simp: closest_pair_simps mergesort split: prod.splits)
 
 theorem closest_pair_dist:
   assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = closest_pair ps"
   shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
-  using assms sorted_fst_def closest_pair_rec_dist[of "msort fst ps"] closest_pair_rec_c0_c1[of "msort fst ps"]
-  by (auto simp: closest_pair_simps msort split: prod.splits)
+  using assms sorted_fst_def closest_pair_rec_dist[of "mergesort fst ps"] closest_pair_rec_c0_c1[of "mergesort fst ps"]
+  by (auto simp: closest_pair_simps mergesort split: prod.splits)
 
 
 subsection "Time Complexity Proof"
@@ -880,7 +880,7 @@ function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
     let n = length xs in
     t_length xs + (
     if n \<le> 3 then
-      t_msort snd xs + t_closest_pair_bf xs
+      t_mergesort snd xs + t_closest_pair_bf xs
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       t_split_at (n div 2) xs + (
@@ -902,7 +902,7 @@ termination t_closest_pair_rec
 
 lemma t_closest_pair_rec_simps_1:
   assumes "n = length xs" "n \<le> 3"
-  shows "t_closest_pair_rec xs = t_length xs + t_msort snd xs + t_closest_pair_bf xs"
+  shows "t_closest_pair_rec xs = t_length xs + t_mergesort snd xs + t_closest_pair_bf xs"
   using assms by simp
 
 lemma t_closest_pair_rec_simps_2:
@@ -925,7 +925,7 @@ lemma t_closest_pair_rec_simps_2:
 declare t_closest_pair_rec.simps [simp del]
 
 function closest_pair_recurrence :: "nat \<Rightarrow> real" where
-  "n \<le> 3 \<Longrightarrow> closest_pair_recurrence n = n + msort_recurrence n + n * n"
+  "n \<le> 3 \<Longrightarrow> closest_pair_recurrence n = n + mergesort_recurrence n + n * n"
 | "3 < n \<Longrightarrow> closest_pair_recurrence n = 13 * n + 
     closest_pair_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_recurrence (nat \<lceil>real n / 2\<rceil>)"
   by force simp_all
@@ -945,12 +945,12 @@ proof (induction ps rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True        
-    hence "t_closest_pair_rec ps = t_length ps + t_msort snd ps + t_closest_pair_bf ps"
+    hence "t_closest_pair_rec ps = t_length ps + t_mergesort snd ps + t_closest_pair_bf ps"
       using t_closest_pair_rec_simps_1 by simp
-    moreover have "closest_pair_recurrence ?n = ?n + msort_recurrence ?n + ?n * ?n"
+    moreover have "closest_pair_recurrence ?n = ?n + mergesort_recurrence ?n + ?n * ?n"
       using True by simp
-    moreover have "t_length ps \<le> ?n" "t_msort snd ps \<le> msort_recurrence ?n" "t_closest_pair_bf ps \<le> ?n * ?n"
-      using t_length[of ps] t_msort_conv_msort_recurrence[of snd ps] t_closest_pair_bf[of ps] by auto
+    moreover have "t_length ps \<le> ?n" "t_mergesort snd ps \<le> mergesort_recurrence ?n" "t_closest_pair_bf ps \<le> ?n * ?n"
+      using t_length[of ps] t_mergesort_conv_mergesort_recurrence[of snd ps] t_closest_pair_bf[of ps] by auto
     ultimately show ?thesis
       by linarith
   next
@@ -1060,22 +1060,22 @@ proof -
 qed
 
 definition t_closest_pair :: "point list \<Rightarrow> nat" where
-  "t_closest_pair ps = t_msort fst ps + t_closest_pair_rec (msort fst ps)"
+  "t_closest_pair ps = t_mergesort fst ps + t_closest_pair_rec (mergesort fst ps)"
 
 definition closest_pair_time :: "nat \<Rightarrow> real" where
-  "closest_pair_time n = msort_recurrence n + closest_pair_recurrence n"
+  "closest_pair_time n = mergesort_recurrence n + closest_pair_recurrence n"
 
 lemma t_closest_pair_conv_closest_pair_recurrence:
   assumes "distinct ps"
   shows "t_closest_pair ps \<le> closest_pair_time (length ps)"
   unfolding t_closest_pair_def closest_pair_time_def
-  using t_closest_pair_rec_conv_closest_pair_recurrence[of "msort fst ps"] t_msort_conv_msort_recurrence[of fst ps]
-  by (simp add: msort sorted_fst_def assms)
+  using t_closest_pair_rec_conv_closest_pair_recurrence[of "mergesort fst ps"] t_mergesort_conv_mergesort_recurrence[of fst ps]
+  by (simp add: mergesort sorted_fst_def assms)
 
 corollary closest_pair_time:
   "closest_pair_time \<in> O(\<lambda>n. n * ln n)"
   unfolding closest_pair_time_def
-  using msort_recurrence closest_pair_recurrence sum_in_bigo(1) by blast
+  using mergesort_recurrence closest_pair_recurrence sum_in_bigo(1) by blast
 
 corollary t_closest_pair_bigo:
   "t_closest_pair \<in> O[length going_to at_top within { ps. distinct ps }]((\<lambda>n. n * ln n) o length)"
@@ -1332,7 +1332,7 @@ function closest_pair_rec_code :: "point list \<Rightarrow> (point list * int * 
   "closest_pair_rec_code xs = (
     let n = length xs in
     if n \<le> 3 then
-      (msort snd xs, closest_pair_bf_code xs)
+      (mergesort snd xs, closest_pair_bf_code xs)
     else
       let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
       let l = fst (hd xs\<^sub>R) in
@@ -1425,9 +1425,9 @@ proof (induction xs arbitrary: ys c\<^sub>0 c\<^sub>1 ys' \<delta>' c\<^sub>0' c
   show ?case
   proof (cases "?n \<le> 3")
     case True
-    hence "ys = msort snd xs"
+    hence "ys = mergesort snd xs"
       using "1.prems"(2) closest_pair_rec.simps by simp
-    moreover have "ys' = msort snd xs"
+    moreover have "ys' = mergesort snd xs"
       using "1.prems"(3) closest_pair_rec_code.simps by (simp add: True)
     ultimately show ?thesis
       using "1.prems"(1) by simp
@@ -1558,18 +1558,18 @@ declare closest_pair.simps [simp add]
 fun closest_pair_code :: "point list \<Rightarrow> (point * point)" where
   "closest_pair_code [] = undefined"
 | "closest_pair_code [_] = undefined"
-| "closest_pair_code ps = (let (_, _, c\<^sub>0, c\<^sub>1) = closest_pair_rec_code (msort fst ps) in (c\<^sub>0, c\<^sub>1))"
+| "closest_pair_code ps = (let (_, _, c\<^sub>0, c\<^sub>1) = closest_pair_rec_code (mergesort fst ps) in (c\<^sub>0, c\<^sub>1))"
 
 lemma closest_pair_code_eq:
   "closest_pair ps = closest_pair_code ps"
 proof (induction ps rule: induct_list012)
   case (3 x y zs)
   obtain ys c\<^sub>0 c\<^sub>1 ys' \<delta>' c\<^sub>0' c\<^sub>1' where *:
-    "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec (msort fst (x # y # zs))"
-    "(ys', \<delta>', c\<^sub>0', c\<^sub>1') = closest_pair_rec_code (msort fst (x # y # zs))"
+    "(ys, c\<^sub>0, c\<^sub>1) = closest_pair_rec (mergesort fst (x # y # zs))"
+    "(ys', \<delta>', c\<^sub>0', c\<^sub>1') = closest_pair_rec_code (mergesort fst (x # y # zs))"
     by (metis prod_cases3)
-  moreover have "1 < length (msort fst (x # y # zs))"
-    using length_msort[of fst "x # y # zs"] by simp
+  moreover have "1 < length (mergesort fst (x # y # zs))"
+    using length_mergesort[of fst "x # y # zs"] by simp
   ultimately have "c\<^sub>0 = c\<^sub>0'" "c\<^sub>1 = c\<^sub>1'"
     using closest_pair_rec_code_eq by blast+
   thus ?case
