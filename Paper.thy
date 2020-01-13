@@ -228,7 +228,7 @@ The closest pair problem can then be stated formally as follows: A set of points
 $\delta$ is a lower bound for the distance of all distinct pairs of points of $P$.
 
 \begin{quote}
-@{text [display] "min_dist \<delta> P = (\<forall>p\<^sub>0 \<in> P. \<forall>p\<^sub>1 \<in> P. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"}
+@{text [display] "sparse \<delta> P = (\<forall>p\<^sub>0 \<in> P. \<forall>p\<^sub>1 \<in> P. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"}
 \end{quote}
 
 A pair of points $(p_0,\;p_1)$ is then the \textit{closest pair} of $P$ iff additionally $p_0 \in P$ and
@@ -276,7 +276,7 @@ the following lemma, capturing the desired sparsity property of our implementati
 
 \begin{lemma} \label{lemma:find_closest_pair_dist}
 @{text [source, break] "sorted_snd ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
+@{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
 We wrap up the @{const combine} step by limiting our search for the closest pair to only the points contained within the
@@ -298,8 +298,8 @@ both its points are contained in the mentioned vertical strip, otherwise we have
 
 \begin{lemma} \label{lemma:set_band_filter}
 @{text [source, break] "p\<^sub>0 \<in> set ps \<and> p\<^sub>1 \<in> set ps \<and> p\<^sub>0 \<noteq> p\<^sub>1 \<and> dist p\<^sub>0 p\<^sub>1 < \<delta> \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> min_dist \<delta> P\<^sub>L \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> min_dist \<delta> P\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> sparse \<delta> P\<^sub>L \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> sparse \<delta> P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "set ps = P\<^sub>L \<union> P\<^sub>R \<and> ps' = filter (\<lambda>p. dist p (l , snd p) < \<delta>) ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"}
 \end{lemma}
@@ -309,10 +309,10 @@ indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list
 
 \begin{lemma} \label{lemma:combine_dist}
 @{text [source, break] "sorted_snd ps \<and> set ps = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> min_dist (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) P\<^sub>L \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> min_dist (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) P\<^sub>R \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> P\<^sub>L. fst p \<le> l) \<and> sparse (dist p\<^sub>0\<^sub>L p\<^sub>1\<^sub>L) P\<^sub>L \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> P\<^sub>R. l \<le> fst p) \<and> sparse (dist p\<^sub>0\<^sub>R p\<^sub>1\<^sub>R) P\<^sub>R \<and>"} \vskip 0pt
 @{text [source, break] "(p\<^sub>0, p\<^sub>1) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) (set ps)"}
+@{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
 One can also show that \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> are in \<open>ps\<close> and distinct, if \<open>p\<^sub>0\<^sub>L\<close> (\<open>p\<^sub>0\<^sub>R\<close>) and \<open>p\<^sub>1\<^sub>L\<close> (\<open>p\<^sub>1\<^sub>R\<close>) are
@@ -367,7 +367,7 @@ we arrive at the correctness proof of the desired sparsity property of the algor
 
 \begin{theorem}
 @{text [source, break] "1 < length xs \<and> sorted_fst xs \<and> (ys, p\<^sub>0, p\<^sub>1) = closest_pair_rec xs"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) xs"}
+@{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) xs"}
 \end{theorem}
 
 Corollary \ref{cor:closest_pair_dist} together with Theorems \ref{thm:closest_pair_set} and 
@@ -376,7 +376,7 @@ is indeed the closest pair of \<open>ps\<close> according to its definition at t
 
 \begin{corollary} \label{cor:closest_pair_dist}
 @{text [source, break] "1 < length ps \<and> (p\<^sub>0, p\<^sub>1) = closest_pair ps"} \vskip 0pt
-@{text [source, break] "\<Longrightarrow> min_dist (dist p\<^sub>0 p\<^sub>1) ps"}
+@{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) ps"}
 \end{corollary}
 
 
@@ -463,8 +463,8 @@ that both @{term P\<^sub>L} and @{term P\<^sub>R} are @{term \<delta>}-sparse, s
 @{text [source, break] "distinct (p # ps) \<and> sorted_snd (p # ps) \<and> 0 \<le> \<delta> \<and>"} \vskip 0pt
 @{text [source, break] "(\<forall>q \<in> set (p # ps). l - \<delta> < fst q \<and> fst q < l + \<delta>) \<and>"} \vskip 0pt
 @{text [source, break] "set (p # ps) = P\<^sub>L \<union> P\<^sub>R \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>q \<in> P\<^sub>L . fst q \<le> l) \<and> min_dist \<delta> P\<^sub>L \<and>"} \vskip 0pt
-@{text [source, break] "(\<forall>q \<in> P\<^sub>R . l \<le> fst q) \<and> min_dist \<delta> P\<^sub>R"} \vskip 0pt
+@{text [source, break] "(\<forall>q \<in> P\<^sub>L . fst q \<le> l) \<and> sparse \<delta> P\<^sub>L \<and>"} \vskip 0pt
+@{text [source, break] "(\<forall>q \<in> P\<^sub>R . l \<le> fst q) \<and> sparse \<delta> P\<^sub>R"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow>"} @{text [break] "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps \<le> 7"}
 \end{lemma}
 \begin{proof}
@@ -557,7 +557,7 @@ distance. Below we employ the following variation of the \textit{pigeonhole} pri
 Finally we replace human intuition with formal proof:
 
 \begin{lemma}
-@{text [source, break] "(\<forall>p \<in> P. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)) \<and> min_dist \<delta> P \<and> 0 \<le> \<delta>"} \vskip 0pt
+@{text [source, break] "(\<forall>p \<in> P. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)) \<and> sparse \<delta> P \<and> 0 \<le> \<delta>"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow>"} @{term "card P \<le> 4"}
 \end{lemma}
 \begin{proof}

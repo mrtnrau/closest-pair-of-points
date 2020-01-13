@@ -503,23 +503,23 @@ lemma merge_conv_merge_it[code_unfold]:
 
 subsection "Minimal Distance"
 
-definition min_dist :: "real \<Rightarrow> point set \<Rightarrow> bool" where
-  "min_dist \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
+definition sparse :: "real \<Rightarrow> point set \<Rightarrow> bool" where
+  "sparse \<delta> ps \<longleftrightarrow> (\<forall>p\<^sub>0 \<in> ps. \<forall>p\<^sub>1 \<in> ps. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"
 
-lemma min_dist_identity:
-  assumes "min_dist \<delta> (set ps)" "\<forall>p \<in> set ps. \<delta> \<le> dist p\<^sub>0 p"
-  shows "min_dist \<delta> (set (p\<^sub>0 # ps))"
-  using assms by (simp add: dist_commute min_dist_def)
+lemma sparse_identity:
+  assumes "sparse \<delta> (set ps)" "\<forall>p \<in> set ps. \<delta> \<le> dist p\<^sub>0 p"
+  shows "sparse \<delta> (set (p\<^sub>0 # ps))"
+  using assms by (simp add: dist_commute sparse_def)
 
-lemma min_dist_update:
-  assumes "min_dist \<delta> (set ps)"
+lemma sparse_update:
+  assumes "sparse \<delta> (set ps)"
   assumes "dist p\<^sub>0 p\<^sub>1 \<le> \<delta>" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
-  shows "min_dist (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
-  using assms apply (auto simp: dist_commute min_dist_def) by force+
+  shows "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
+  using assms apply (auto simp: dist_commute sparse_def) by force+
 
-lemma min_dist_mono:
-  "min_dist \<Delta> P \<Longrightarrow> \<delta> \<le> \<Delta> \<Longrightarrow> min_dist \<delta> P"
-  unfolding min_dist_def by fastforce
+lemma sparse_mono:
+  "sparse \<Delta> P \<Longrightarrow> \<delta> \<le> \<Delta> \<Longrightarrow> sparse \<delta> P"
+  unfolding sparse_def by fastforce
 
 
 subsection "Distance"
@@ -659,7 +659,7 @@ lemmas closest_pair_bf_c0_c1 = closest_pair_bf_c0 closest_pair_bf_c1 closest_pai
 
 lemma closest_pair_bf_dist:
   assumes "1 < length ps" "(c\<^sub>0, c\<^sub>1) = closest_pair_bf ps"
-  shows "min_dist (dist c\<^sub>0 c\<^sub>1) (set ps)"
+  shows "sparse (dist c\<^sub>0 c\<^sub>1) (set ps)"
   using assms
 proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
   case (4 p\<^sub>0 p\<^sub>2 p\<^sub>3 ps)
@@ -668,7 +668,7 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
     using prod.collapse by blast
   define p\<^sub>1 where p\<^sub>1_def: "p\<^sub>1 = find_closest_bf p\<^sub>0 ?ps"
   note defs = c\<^sub>0_def p\<^sub>1_def
-  hence IH: "min_dist (dist c\<^sub>0 c\<^sub>1) (set ?ps)"
+  hence IH: "sparse (dist c\<^sub>0 c\<^sub>1) (set ?ps)"
     using 4 c\<^sub>0_def by simp
   have *: "\<forall>p \<in> set ?ps. (dist p\<^sub>0 p\<^sub>1) \<le> dist p\<^sub>0 p"
     using find_closest_bf_dist defs by blast
@@ -677,18 +677,18 @@ proof (induction ps arbitrary: c\<^sub>0 c\<^sub>1 rule: closest_pair_bf.induct)
     case True
     hence "\<forall>p \<in> set ?ps. dist c\<^sub>0 c\<^sub>1 \<le> dist p\<^sub>0 p"
       using * by auto
-    hence "min_dist (dist c\<^sub>0 c\<^sub>1) (set (p\<^sub>0 # ?ps))"
-      using min_dist_identity IH by blast
+    hence "sparse (dist c\<^sub>0 c\<^sub>1) (set (p\<^sub>0 # ?ps))"
+      using sparse_identity IH by blast
     thus ?thesis
       using True "4.prems" defs by (auto split: prod.splits)
   next
     case False
-    hence "min_dist (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ?ps))"
-      using min_dist_update[of "dist c\<^sub>0 c\<^sub>1" ?ps p\<^sub>0 p\<^sub>1] IH * defs by argo
+    hence "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ?ps))"
+      using sparse_update[of "dist c\<^sub>0 c\<^sub>1" ?ps p\<^sub>0 p\<^sub>1] IH * defs by argo
     thus ?thesis
       using False "4.prems" defs by (auto split: prod.splits)
   qed
-qed (auto simp: dist_commute min_dist_def)
+qed (auto simp: dist_commute sparse_def)
 
 subsubsection "Time Complexity Proof"
 
@@ -894,13 +894,13 @@ qed
 lemma set_band_filter:
   fixes \<delta> :: real and ps :: "point list"
   assumes "p\<^sub>0 \<in> set ps" "p\<^sub>1 \<in> set ps" "p\<^sub>0 \<noteq> p\<^sub>1" "dist p\<^sub>0 p\<^sub>1 < \<delta>" "set ps = ps\<^sub>L \<union> ps\<^sub>R"
-  assumes "min_dist \<delta> ps\<^sub>L" "min_dist \<delta> ps\<^sub>R"
+  assumes "sparse \<delta> ps\<^sub>L" "sparse \<delta> ps\<^sub>R"
   assumes "\<forall>p \<in> ps\<^sub>L. fst p \<le> l" "\<forall>p \<in> ps\<^sub>R. l \<le> fst p"
   assumes "ps' = filter (\<lambda>p. l - \<delta> < fst p \<and> fst p < l + \<delta>) ps"
   shows "p\<^sub>0 \<in> set ps' \<and> p\<^sub>1 \<in> set ps'"
 proof -
   have "p\<^sub>0 \<notin> ps\<^sub>L \<or> p\<^sub>1 \<notin> ps\<^sub>L" "p\<^sub>0 \<notin> ps\<^sub>R \<or> p\<^sub>1 \<notin> ps\<^sub>R"
-    using assms(3,4,6,7) min_dist_def by force+
+    using assms(3,4,6,7) sparse_def by force+
   then consider (A) "p\<^sub>0 \<in> ps\<^sub>L \<and> p\<^sub>1 \<in> ps\<^sub>R" | (B) "p\<^sub>0 \<in> ps\<^sub>R \<and> p\<^sub>1 \<in> ps\<^sub>L"
     using assms(1,2,5) by auto
   thus ?thesis
@@ -1034,7 +1034,7 @@ qed
 subsubsection "Delta Sparse Points within a Square"
 
 lemma max_points_square:
-  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "min_dist \<delta> ps" "0 \<le> \<delta>"
+  assumes "\<forall>p \<in> ps. p \<in> cbox (x, y) (x + \<delta>, y + \<delta>)" "sparse \<delta> ps" "0 \<le> \<delta>"
   shows "card ps \<le> 4"
 proof (cases "\<delta> = 0")
   case True
@@ -1112,7 +1112,7 @@ next
     ultimately have "dist p\<^sub>0 p\<^sub>1 < \<delta>"
       by simp
     moreover have "\<delta> \<le> dist p\<^sub>0 p\<^sub>1"
-      using assms(2) # min_dist_def PS_def by auto
+      using assms(2) # sparse_def PS_def by auto
     ultimately show False
       by simp
   qed
