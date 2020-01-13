@@ -638,53 +638,60 @@ and finish the time complexity proof.
 
 \section{Alternative Implementations} \label{section:alt_impl}
 
-Our implementation of Section \ref{section:proving_functional_correctness} is based on the work of 
-Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}, but there exist several other, related but nonetheless
-different, implementation approaches in the literature. They deviate from our implementation primarily in two
-aspects: the exact implementation of the @{const combine} step and the approach to sorting the points by \<open>y\<close>-coordinate.
+In the literature there exist various other algorithmic approaches to solve the closest pair problem. 
+Most of them are closely related to our implementation of Section \ref{section:proving_functional_correctness}
+deviating primarily in two aspects: the exact implementation of the @{const combine} step and the approach
+to sorting the points by \<open>y\<close>-coordinate. We present a short overview, concentrating on the second
+implementation we verified.
 
-During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} searches for the closest neighbor \<open>q\<close> of \<open>p\<close> within 
-the rectangle \<open>R\<close>, the upper half of the highlighted square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it 
-examines points on or beyond the upper border of \<open>R\<close>. Kleinberg and Tardos \cite{Algorithm-Design:2005} follow 
-a different approach. They determine \<open>q\<close> by considering the @{text 15} points following \<open>p\<close> in \<open>ps\<close>,
-although they state that this number can still be reduced. Indeed, as we proved in Section \ref{section:proving_running_time}, 
-considering only @{text 7} points, the number of points contained within \<open>R\<close> without counting \<open>p\<close>, is enough. 
-We can adapt the implementation of Section \ref{section:proving_functional_correctness} and the proofs 
-of Section \ref{section:proving_running_time} to verify the algorithm of Kleinberg and Tardos as follows:
+During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} 
+searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the highlighted 
+square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it examines points on or beyond 
+the upper border of \<open>R\<close>. Cormen \emph{et al.} originally follow a slightly different approach. They 
+search for a closest neighbor of \<open>p\<close> by examining a constant number of points of \<open>ps\<close>, the first 
+@{text 7} to be exact. This is valid because there are at most @{text 7} points within \<open>R\<close>, not 
+counting \<open>p\<close>, and the @{text 8}th point of \<open>ps\<close> would again lie beyond the upper border of \<open>R\<close>.
+This slightly easier implementation comes at the cost of being less efficient in practice.
+Cormen \emph{et al.} are always assuming the worst case by checking all @{text 7} points following \<open>p\<close>.
+But it is unlikely that the algorithm needs to examine even close to @{text 7} points, except for specifically
+constructed inputs. Cormen \emph{et al.} furthermore state that the bound of @{text 7} is an over-approximation 
+and dare the reader to lower it to @{text 5} as an exercise. We refrain from doing so since a bound of 
+@{text 7} suffices as the time complexity argument for our, inherently faster, implementation. At 
+this point we should also mention that the specific implementation of Section \ref{section:proving_functional_correctness}
+is not our original idea but rather an algorithmic detail which seems to be commonly omitted.
 
+Nonetheless we can adapt the implementation of Section \ref{section:proving_functional_correctness} and the proofs 
+of Section \ref{section:proving_running_time} to verify this second implementation as follows:
 We replace each call of @{term "find_closest p \<delta> ps"} by a call to @{term "find_closest_bf p (take 7 ps)"} 
 where @{const find_closest_bf} iterates in brute-force fashion through its argument list to find the 
 closest neighbor of \<open>p\<close>. To verify this implementation we then reuse most of the elementary lemmas and proof 
 structure of Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time}, 
 only a slightly adapted version of Lemma \ref{lemma:core_argument} is necessary. Note that this lemma was
-previously solely required for the time complexity proof of the algorithm. Now it is already necessary 
+previously \emph{solely} required for the time complexity proof of the algorithm. Now it is already necessary 
 during the functional correctness proof since we need to argue that examining only a constant number of 
 points of \<open>ps\<close> is sufficient. The time analysis is overall greatly simplified: A call of the form 
 @{term "find_closest_bf p (take 7 ps)"} runs in constant time and we again are able to reuse the remaining 
 time analysis proof structure of Section \ref{section:proving_running_time}.
 
-This slightly easier implementation comes at the cost of being less efficient in practice. We are always
-assuming the worst case by checking all @{text 15}, or in our case @{text 7}, points following \<open>p\<close>. At this point 
-we should mention that even this number an over-approximation and can still be improved upon. Cormen \emph{et al.} 
-\cite{Introduction-to-Algorithms:2009} leave it as an exercise to the reader to lower the bound to @{text 5} 
-but we refrain from doing so since a bound of @{text 7} suffices as the time complexity argument for our, 
-inherently faster, implementation of Section \ref{section:proving_functional_correctness}.
-
 Over the years a considerable amount of effort has been made to further optimize the @{const combine} step.
 Central to these improvements is the `complexity of computing distances', abbreviated `CCP' in the following, 
-a term introduced by Zhou \emph{et al.} \cite{zhou1998improved} which measures the number of Euclidean distances computed by a 
-closest pair algorithm. The core idea being, since computing the Euclidean distance is more expensive than other primitive operations, 
-it might be possible to improve overall algorithmic running time by reducing this complexity measure. 
-In the same paper they introduce an optimized version of the closest pair algorithm. To determine the closest
-pair during the @{const combine} step it computes for each point lying to the left-hand, and exclusively 
-the left-hand side of \<open>l\<close>, only @{text 4} distances to its possible closest neighbors lying on the right-hand 
-side of \<open>l\<close>. Assuming the points are about evenly distributed around \<open>l\<close> the corresponding CCP is $2n \log n$,
-in contrast to $7n \log n$ the worst case CCP of the algorithm of Section \ref{section:proving_functional_correctness}
+a term introduced by Zhou \emph{et al.} \cite{zhou1998improved} which measures the number of Euclidean 
+distances computed by a closest pair algorithm. The core idea being, since computing the Euclidean 
+distance is more expensive than other primitive operations, it might be possible to improve overall 
+algorithmic running time by reducing this complexity measure. In the same paper they introduce an 
+optimized version of the closest pair algorithm. It computes for each point lying to the left-hand side, 
+and exclusively the left-hand side of \<open>l\<close>, only @{text 4} distances to its possible closest neighbors 
+lying on the right-hand side of \<open>l\<close>. This corresponds to a CCP of $2n \log n$, in contrast to $7n \log n$ 
+which will be the worst case CCP of the algorithm of Section \ref{section:proving_functional_correctness} 
 after we minimize the number of distance computations in Section \ref{section:executable_code}. They
 improve upon the algorithm presented by Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} 
 which utilizes a similar approach but computes @{text 6} distances per point, or a CCP of $3n \log n$. 
-Ge \emph{et al.} \cite{Ge2006} extend the algorithm of Zhou \emph{et al.} and prove an even lower CCP
-of $\frac{3}{2}n \log n$ for their implementation. 
+Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, algorithm on the version of Zhou \emph{et al.} 
+and prove an even lower CCP of $\frac{3}{2}n \log n$ for their implementation. The race for the lowest
+number of distance computations culminates with the work of Jiang and Gillespie \cite{jiang2007engineering} 
+who present their algorithms `Basic-2' \footnote{Pereira and Lobo \cite{pereira2012optimized} later 
+independently developed the same algorithm and additionally present extensive functional correctness 
+proofs for all Minkowski distances.} and `2-Pass' with a respective CCP of $2n \log n$ and $\frac{7}{2}n$.
 
 \textcolor{red}{TODO Jiang and Gillespie
 Pereira and Lobo
