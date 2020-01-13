@@ -6,7 +6,7 @@ begin
 
 text\<open>
   Formalization of a divide-and-conquer algorithm solving the Closest Pair Problem based
-  on the work of Cormen et al. \cite{Introduction-to-Algorithms:2009}.
+  on the presentation of Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}.
 \<close>
 
 subsection "Functional Correctness Proof"
