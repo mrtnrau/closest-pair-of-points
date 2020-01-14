@@ -6,7 +6,7 @@ begin
 
 text\<open>
   Formalization of a divide-and-conquer algorithm solving the Closest Pair Problem based
-  on the work of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
+  on the presentation of Kleinberg and Tardos \cite{Algorithm-Design:2005}.
 \<close>
 
 subsection "Functional Correctness Proof"
