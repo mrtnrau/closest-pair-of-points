@@ -97,8 +97,7 @@ time of the best known algorithms at the time from $\mathcal{O}(n^2)$ to
 $\mathcal{O}(n \log n)$. They also prove that this running time is optimal for a
 deterministic computation model. One year later, in 1976, Bentley and Shamos
 \cite{Divide-And-Conquer-In-Multidimensional-Space:1976} publish a, also optimal, divide-and-conquer
-algorithm to solve the Closest Pair problem that can be non-trivially extended to work on
-spaces of arbitrary dimension. Since then the problem has been the focus of extensive research and
+algorithm to solve the Closest Pair problem that can be non-trivially extended to work in arbitrary dimensions. Since then the problem has been the focus of extensive research and
 a multitude of optimal algorithms have been published. Smid \cite{Handbook-Computational-Geometry:2000}
 provides a comprehensive overview over the available algorithms, including randomized approaches which
 improve the running time even further to $\mathcal{O}(n)$.
@@ -138,20 +137,15 @@ is also related but considers fixed geometric constructions rather than algorith
 
 \subsection{Isabelle/HOL and Notation}
 
-Isabelle/HOL's basic types include @{type bool}, @{type nat}, @{type int} and @{type real}; the type of 
-polymorphic tuples of binary arity is @{text "'a \<times> 'b"}; functions @{const fst} and @{const snd} return
-the first and second value of a tuple. The function arrow syntax is \<open>\<Rightarrow>\<close>; function composition is 
-denoted by the infix operator \<open>(\<circ>)\<close>. Function @{const ln} denotes the natural logarithm. 
-We suppress numeric conversion functions, in particular the functions @{text "nat :: int \<Rightarrow> nat"}, 
-@{text "real :: nat \<Rightarrow> real"} and @{text "real_of_int :: int \<Rightarrow> real"}, except where that would result 
-in ambiguities for the reader. The floor and ceiling conversions \<open>\<lfloor>x\<rfloor>\<close> and \<open>\<lceil>x\<rceil>\<close> convert @{text "real \<Rightarrow> nat"} 
-by rounding down and up respectively. 
+The notation \<open>t :: \<tau>\<close> means that term \<open>t\<close> has type \<open>\<tau>\<close>.
+Basic types include @{type bool}, @{type nat}, @{type int} and @{type real}; type variables are written @{typ 'a}, @{typ 'b} etc; the function space arrow is \<open>\<Rightarrow>\<close>. Functions @{const fst} and @{const snd} return
+the first and second component of a pair. General tuples are nested pairs, e.g.\ @{term "(a,b,c)"} is \<open>(a, (b, c))\<close>.
 
-Lists are constructed from the empty list \<open>[]\<close> via the infix cons-operator \<open>(#)\<close> and are named using lowercase
-letters. Functions @{const hd} and @{const tl} return head and tail; the length of a list is written explicitly. 
-Sets are written in capital letters; the empty set is denoted as \<open>{}\<close> and set comprehensions are written as 
-@{term "{ x. P x }"} for predicates @{text "P :: 'a \<Rightarrow> bool"}. The cardinality of sets as well as unary 
-and binary set operations are denoted in standard mathematical notation.
+We suppress numeric conversion functions, e.g.\ @{text "real :: nat \<Rightarrow> real"}, except where that would result in ambiguities for the reader.
+
+Most type constructors are written postfix, e.g. @{typ "'a set"} and @{typ "'a list"}.
+Sets follow standard mathematical notation.
+Lists are constructed from the empty list \<open>[]\<close> via the infix cons-operator \<open>(#)\<close>. Functions @{const hd} and @{const tl} return head and tail. 
 
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
@@ -746,7 +740,9 @@ run in $\mathcal{O}(1)$ time only for the average case for most implementations.
 
 \section{Conclusion} \label{section:conclusion}
 
-\paragraph{Acknowledgements}
+We have presented the first verification (both functional correctness and running time) of two related closest pair of points algorithms in the plane, without assuming the \<open>x\<close> coordinates of all points are distinct. The executable code generated from the formalization is competitive with existing reference implementations. A challenging and rewarding next step would be to formalize and verify a closest pair of points algorithm in arbitrary dimensions. This case is treated very sketchily in the literature.
+
+%\paragraph{Acknowledgements}
 \<close>
 
 (*<*)
