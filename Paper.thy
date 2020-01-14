@@ -726,7 +726,7 @@ They also evaluate their algorithms empirically against the implementations of C
 Ge \emph{et al.} which they respectively denote as `Basis-7' and `GWZ-3'. To summarize, unexpectedly
 the algorithm 2-Pass with the lowest number of distance computations comes in last, having an average
 running time of about 32\% more than that of Basic-7, whereas Basic-2, although being a relatively simple
-algorithm, gets first place closely followed by GWZ-3 being about 33\% faster than Basic-7.
+algorithm, gets first place closely followed by GWZ-3, both about 33\% faster than Basic-7.
 
 
 \section{Executable Code} \label{section:executable_code}
@@ -742,7 +742,11 @@ algorithm, gets first place closely followed by GWZ-3 being about 33\% faster th
 
 \section{Conclusion} \label{section:conclusion}
 
-We have presented the first verification (both functional correctness and running time) of two related closest pair of points algorithms in the plane, without assuming the \<open>x\<close> coordinates of all points are distinct. The executable code generated from the formalization is competitive with existing reference implementations. A challenging and rewarding next step would be to formalize and verify a closest pair of points algorithm in arbitrary dimensions. This case is treated very sketchily in the literature.
+We have presented the first verification (both functional correctness and running time) of two related 
+closest pair of points algorithms in the plane, without assuming the \<open>x\<close> coordinates of all points 
+are distinct. The executable code generated from the formalization is competitive with existing 
+reference implementations. A challenging and rewarding next step would be to formalize and verify a 
+closest pair of points algorithm in arbitrary dimensions. This case is treated rather sketchily in the literature.
 
 \paragraph{Acknowledgements}
 Research supported by DFG grants NI 491/16-1 and 18-1.
