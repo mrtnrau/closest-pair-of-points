@@ -108,9 +108,11 @@ The main contribution of this paper is the first verification of two related fun
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive theorem 
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
-running time of the algorithms. Empirical testing also shows that our verified algorithms are 
-competitive with handwritten reference implementations. Our formalizations are available online 
-\textcolor{red}{(TODO LINK)} in the Archive of Formal Proofs.
+running time of the algorithms. In contrast to many publications and implementations we do not assume 
+all points of \<open>P\<close> to have unique \<open>x\<close>-coordinates which causes some tricky complications. Empirical 
+testing also shows that our verified algorithms are competitive with handwritten reference 
+implementations. Our formalizations are available online \textcolor{red}{(TODO LINK)} in the Archive 
+of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
@@ -224,7 +226,7 @@ mathematical reals. See Section \ref{section:executable_code}.}.
 The library HOL-Analysis provides a generic distance function applicable to our point definition.
 For our purposes the definition of this \textit{dist} function corresponds to the familiar Euclidean distance measure.
 
-The closest pair problem can then be stated formally as follows: A set of points $P$ is $\delta$-sparse iff 
+The closest pair problem can then be stated formally as follows: A set of points $P$ is $\mathbf{\delta}$\textbf{-sparse} iff 
 $\delta$ is a lower bound for the distance of all distinct pairs of points of $P$.
 
 \begin{quote}
@@ -326,30 +328,45 @@ we need to partition the given list of points $\mathit{ps}$\footnote{Our impleme
 concrete lists in contrast to the abstract sets used in Section \ref{section:closest_pair_algorithm}.}
 along a vertical line $l$ into two lists of nearly equal length during the divide step and obtain
 a list $\mathit{ys}$ of the same points, sorted ascendingly by $y$-coordinate, for the @{const combine}
-step in linear time at each level of recursion.
+step in \textbf{linear} time at each level of recursion.
 
-Concerning the partitioning of the list we can \textit{presort} $\mathit{ps}$ by $x$-coordinate, 
-obtaining the list $\mathit{xs}$, split $\mathit{xs}$ at $\mathit{length\ xs\ div\ 2}$ into two
-still sorted lists $\mathit{xs_L}$ and $\mathit{xs_R}$ and choose $l$ as either the $x$-coordinate of
-the last element of $\mathit{xs_L}$ or the $x$-coordinate of the first element of $\mathit{xs_R}$.
+Cormen \emph{et al.} propose the following, top-down, approach: Their algorithm takes three arguments: the set 
+of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which refer to the same set of points but are respectively 
+sorted by \<open>x\<close> and \<open>y\<close>-coordinate. The algorithm first splits \<open>xs\<close> at \<open>length xs div 2\<close> into two still
+sorted lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> and chooses \<open>l\<close> as either the \<open>x\<close>-coordinate of the last element of \<open>xs\<^sub>L\<close>
+or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It then constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
+of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For the recursive invocations it then needs to obtain in addition lists 
+\<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> which are still sorted by \<open>y\<close>-coordinate and again respectively refer to the same points as
+\<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
+contained in \<open>P\<^sub>L\<close> or not, constructing \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> along the way.
 
-For this presorting step we use an implementation of @{const mergesort} that sorts a list of points
-depending on a given projection function, \textit{fst} for `by $x$-coordinate' and \textit{snd} for 
-`by $y$-coordinate'. Splitting of the list is achieved by the function \textit{split\_at} with a 
-simple linear pass through $\mathit{xs}$.
+At this point one might correctly call to attention that the usage of sets might be problematic. To
+achieve the overall worst case running time of $\mathcal{O}(n \log n)$ this requires an implementation
+of sets with linear time construction and constant time membership test, which is nontrivial, in 
+particular in a functional setting. To avoid sets many publications and implementations assume
+all points to have unique \<open>x\<close>-coordinates. In this case one can compute \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> by simply 
+filtering \<open>ys\<close> for all point depending on \<open>x\<close>-coordinate relative to \<open>l\<close> and eliminate the usage of
+sets entirely.
 
-Next we need to efficiently obtain $\mathit{ys}$. Looking at the overall structure of our algorithm
-so far we recognize that it closely resembles the structure of a standard mergesort implementation and
-that we only need $\mathit{ys}$ for the @{const combine} step after the two recursive invocations of our algorithm. 
-Consequently we can obtain $\mathit{ys}$ by sorting and merging `along the way'. In the base case we
-sort $\mathit{xs}$ by $y$-coordinate and compute the closest pair using the brute-force approach
-(@{const closest_pair_bf}).
-The recursive call of the algorithm on $\mathit{xs_L}$, the left half of $\mathit{xs}$, 
-returns in addition to the closest pair of $\mathit{xs_L}$ the list $\mathit{ys_L}$, containing all points of
-$\mathit{xs_L}$ sorted by $y$-coordinate. Analogously for $\mathit{xs_R}$ and $\mathit{ys_R}$. We then
-reuse function @{const merge} from our mergesort implementation to obtain $\mathit{ys}$ from
-$\mathit{ys_L}$ and $\mathit{ys_R}$ in linear time at each level of recursion, resulting in the
-following implementation:
+But there exists a third option which is commonly omitted in the literature; indeed the only mention 
+of it we have found appears in Cormen \emph{et al.} and is even there merely hinted at in an exercise
+left to the reader. Taking a step back and looking at the overall structure of the closest pair algorithm 
+we recognize that it closely resembles the structure of a standard mergesort implementation and that 
+we only need \<open>ys \<close> for the @{const combine} step after the two recursive invocations of the algorithm. 
+Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a `bottom-up' approach. Our 
+implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The 
+construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is then analogous to Cormen \emph{et al}. In the base case we
+sort \<open>xs\<close> by \<open>y\<close>-coordinate and compute the closest pair using the brute-force approach 
+(@{const closest_pair_bf}). The recursive call of the algorithm on \<open>xs\<^sub>L\<close> returns in addition to the 
+closest pair of \<open>xs\<^sub>L\<close> the list \<open>ys\<^sub>L\<close>, containing all points of \<open>xs\<^sub>L\<close> but now sorted by \<open>y\<close>-coordinate. 
+Analogously for \<open>xs\<^sub>R\<close> and \<open>ys\<^sub>R\<close>. We then reuse function @{const merge} from our @{const mergesort} 
+implementation, which we utilize to presort the points by \<open>x\<close>-coordinate, to obtain \<open>ys\<close> from \<open>ys\<^sub>L\<close> 
+and \<open>ys\<^sub>R\<close> in linear time at each level of recursion.
+
+Concerning the precise implementation: Splitting of \<open>xs\<close> is achieved by the function @{const split_at}
+through a simple linear pass through \<open>xs\<close>. Our implementation of @{const mergesort} sorts a list of 
+points depending on a given projection function, @{const fst} for `by \<open>x\<close>-coordinate' and @{const snd} 
+for `by \<open>y\<close>-coordinate'. 
 
 \begin{quote}
 @{term [source, break] "closest_pair_rec :: point list \<Rightarrow> point list \<times> point \<times> point"} \vskip 0pt
