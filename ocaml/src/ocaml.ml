@@ -1,5 +1,7 @@
 open Point
 
+(* Handwritten Implementation equivalent to exported Isabelle code without overhead *)
+
 let rec split_at (n : int) (acc : 'a list) (xs : 'a list): 'a list * 'a list =
   match xs with
   | [] -> (List.rev acc, xs)

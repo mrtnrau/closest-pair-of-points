@@ -1,3 +1,5 @@
+(* Verified Implementation exported by Isabelle *)
+
 type int = Int_of_integer of Z.t;;
 
 type num = One | Bit0 of num | Bit1 of num;;

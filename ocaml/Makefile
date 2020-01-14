@@ -7,7 +7,7 @@
 OCB_FLAGS = -use-ocamlfind -I src
 OCB = ocamlbuild $(OCB_FLAGS)
 
-all: native byte # profile debug
+all: native byte # profile # debug
 
 clean:
 	$(OCB) -clean
@@ -25,12 +25,8 @@ profile: sanity
 debug: sanity
 	$(OCB) -tag debug main.byte
 
-# check that packages can be found
 sanity:
 	ocamlfind query zarith
 
-benchmark_small: native
-	./main.native 100 true 10000 90000 10000
-
-benchmark_large: native
-	./main.native 10 true 100000 900000 100000
+example: native
+	./main.native Sedgewick 10000 10

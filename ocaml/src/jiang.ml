@@ -1,5 +1,7 @@
 open Point
 
+(* Implementation based on Jiang and Gillespie Basic-2 algorithm *)
+
 let bf_closest_pair' (ps : point array) (l : int) (h : int): Z.t * point * point =
   let p0 = ref (Array.unsafe_get ps l) in
   let p1 = ref (Array.unsafe_get ps (l + 1)) in
@@ -9,7 +11,7 @@ let bf_closest_pair' (ps : point array) (l : int) (h : int): Z.t * point * point
     for j = i + 1 to h do
       let c1 = Array.unsafe_get ps j in
       let d = dist c0 c1 in
-      if d < !delta then (
+      if Z.lt d !delta then (
           p0 := c0;
           p1 := c1;
           delta := d;
@@ -67,29 +69,75 @@ let rec closest_pair_rec (xs : point array) (ys : point array) (aux : point arra
       let p1 = ref p1' in
       let d = ref d' in
 
-      merge ys aux l m h;
-
-      let k = ref 0 in
-      for i = l to h do
-        let x = Z.sub (fst (Array.unsafe_get ys i)) (fst median) in
-        if Z.lt (Z.pow x 2) !d then (
-            Array.unsafe_set aux !k (Array.unsafe_get ys i);
-            k := !k + 1
-        )
+      let ml = ref l in
+      for i = l to m do
+        let p = Array.unsafe_get ys i in
+        if Z.lt (Z.pow (Z.sub (fst p) (fst median)) 2) !d then (
+          Array.unsafe_set aux !ml p;
+          ml := !ml + 1
+        ) 
       done;
 
-      for i = 0 to !k - 1 do
-        let j = ref (i + 1) in
-        while !j < !k && Z.lt (Z.pow (Z.sub (snd (Array.unsafe_get aux !j)) (snd (Array.unsafe_get aux i))) 2) !d do
-          let d' = dist (Array.unsafe_get aux i) (Array.unsafe_get aux !j) in
-          if d' < !d then (
+      let mr = ref (m + 1) in
+      for i = m + 1 to h do
+        let p = Array.unsafe_get ys i in
+        if Z.lt (Z.pow (Z.sub (fst p) (fst median)) 2) !d then (
+          Array.unsafe_set aux !mr p;
+          mr := !mr + 1
+        ) 
+      done;
+
+      let i = ref l in
+      let j = ref (m + 1) in
+      while !i < !ml && !j < !mr do
+        let pl = Array.unsafe_get aux !i in
+        let pr = Array.unsafe_get aux !j in
+        if Z.lt (snd pl) (snd pr) then (
+          if Z.lt (Z.pow (Z.sub (snd pr) (snd pl)) 2) !d then (
+            let d' = dist pl pr in
+            if Z.lt d' !d then (
               d := d';
-              p0 := Array.unsafe_get aux i;
-              p1 := Array.unsafe_get aux !j
+              p0 := pl;
+              p1 := pr
+            );
+            if !j + 1 < !mr then (
+              let pr2 = Array.unsafe_get aux (!j + 1) in
+              if Z.lt (Z.pow (Z.sub (snd pr2) (snd pl)) 2) !d then (
+                let d' = dist pl pr2 in
+                if Z.lt d' !d then (
+                  d := d';
+                  p0 := pl;
+                  p1 := pr2
+                )
+              )
+            )
+          );
+          i := !i + 1
+        ) else (
+          if Z.lt (Z.pow (Z.sub (snd pl) (snd pr)) 2) !d then (
+            let d' = dist pl pr in
+            if Z.lt d' !d then (
+              d := d';
+              p0 := pl;
+              p1 := pr
+            );
+            if !i + 1 < !ml then (
+              let pl2 = Array.unsafe_get aux (!i + 1) in
+              if Z.lt (Z.pow (Z.sub (snd pl2) (snd pr)) 2) !d then (
+                let d' = dist pl2 pr in
+                if Z.lt d' !d then (
+                  d := d';
+                  p0 := pl2;
+                  p1 := pr
+                )
+              )
+            )
           );
           j := !j + 1
-        done;
+        )
       done;
+        
+      merge ys aux l m h;
 
       (!d, !p0, !p1)
   )
