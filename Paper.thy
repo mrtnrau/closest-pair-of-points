@@ -1,8 +1,7 @@
 (*<*)
 theory Paper
-  imports
-  "Proofs.Common"
-  "Proofs.Closest_Pair"
+imports
+  Closest_Pair_Points.Closest_Pair
   "OptionalSugarLocal"
 begin
 
@@ -111,8 +110,8 @@ prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as 
 running time of the algorithms. In contrast to many publications and implementations we do not assume 
 all points of \<open>P\<close> to have unique \<open>x\<close>-coordinates which causes some tricky complications. Empirical 
 testing also shows that our verified algorithms are competitive with handwritten reference 
-implementations. Our formalizations are available online \textcolor{red}{(TODO LINK)} in the Archive 
-of Formal Proofs.
+implementations. Our formalizations are available online @{cite "Closest_Pair_Points-AFP"} in the 
+Archive of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
@@ -330,8 +329,8 @@ along a vertical line $l$ into two lists of nearly equal length during the divid
 a list $\mathit{ys}$ of the same points, sorted ascendingly by $y$-coordinate, for the @{const combine}
 step in \textbf{linear} time at each level of recursion.
 
-Cormen \emph{et al.} propose the following, top-down, approach: Their algorithm takes three arguments: the set 
-of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which refer to the same set of points but are respectively 
+Cormen \emph{et al.} propose the following `top-down' approach: Their algorithm takes three arguments: the set 
+of points \<open>P\<close> and lists \<open>xs\<close> and \<open>ys\<close> which contain the same set of points \<open>P\<close> but are respectively 
 sorted by \<open>x\<close> and \<open>y\<close>-coordinate. The algorithm first splits \<open>xs\<close> at \<open>length xs div 2\<close> into two still
 sorted lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> and chooses \<open>l\<close> as either the \<open>x\<close>-coordinate of the last element of \<open>xs\<^sub>L\<close>
 or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It then constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
@@ -340,33 +339,37 @@ of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For th
 \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
 contained in \<open>P\<^sub>L\<close> or not, constructing \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> along the way.
 
-At this point one might correctly call to attention that the usage of sets might be problematic. To
-achieve the overall worst case running time of $\mathcal{O}(n \log n)$ this requires an implementation
+At this point one might correctly call to attention that the usage of sets could be problematic.
+Achieving the overall worst case running time of $\mathcal{O}(n \log n)$ requires an implementation
 of sets with linear time construction and constant time membership test, which is nontrivial, in 
-particular in a functional setting. To avoid sets many publications and implementations assume
-all points to have unique \<open>x\<close>-coordinates. In this case one can compute \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> by simply 
-filtering \<open>ys\<close> for all point depending on \<open>x\<close>-coordinate relative to \<open>l\<close> and eliminate the usage of
-sets entirely.
+particular in a functional setting. To avoid sets many publications and implementations either assume
+all points to have unique \<open>x\<close>-coordinates or preprocess the points by applying for example a rotation
+such that the input fulfills this condition. For distinct \<open>x\<close>-coordinates one can then compute \<open>ys\<^sub>L\<close> 
+and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
+eliminate the usage of sets entirely.
 
 But there exists a third option which is commonly omitted in the literature; indeed the only mention 
 of it we have found appears in Cormen \emph{et al.} and is even there merely hinted at in an exercise
-left to the reader. Taking a step back and looking at the overall structure of the closest pair algorithm 
+left to the reader. 
+
+Taking a step back and looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
 we only need \<open>ys \<close> for the @{const combine} step after the two recursive invocations of the algorithm. 
-Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a `bottom-up' approach. Our 
-implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The 
-construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is then analogous to Cormen \emph{et al}. In the base case we
+Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a `bottom-up' approach. 
+
+Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
+construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is analogous to Cormen \emph{et al}. In the base case we then
 sort \<open>xs\<close> by \<open>y\<close>-coordinate and compute the closest pair using the brute-force approach 
 (@{const closest_pair_bf}). The recursive call of the algorithm on \<open>xs\<^sub>L\<close> returns in addition to the 
 closest pair of \<open>xs\<^sub>L\<close> the list \<open>ys\<^sub>L\<close>, containing all points of \<open>xs\<^sub>L\<close> but now sorted by \<open>y\<close>-coordinate. 
-Analogously for \<open>xs\<^sub>R\<close> and \<open>ys\<^sub>R\<close>. We then reuse function @{const merge} from our @{const mergesort} 
+Analogously for \<open>xs\<^sub>R\<close> and \<open>ys\<^sub>R\<close>. Furthermore, we reuse function @{const merge} from our @{const mergesort} 
 implementation, which we utilize to presort the points by \<open>x\<close>-coordinate, to obtain \<open>ys\<close> from \<open>ys\<^sub>L\<close> 
 and \<open>ys\<^sub>R\<close> in linear time at each level of recursion.
 
-Concerning the precise implementation: Splitting of \<open>xs\<close> is achieved by the function @{const split_at}
-through a simple linear pass through \<open>xs\<close>. Our implementation of @{const mergesort} sorts a list of 
-points depending on a given projection function, @{const fst} for `by \<open>x\<close>-coordinate' and @{const snd} 
-for `by \<open>y\<close>-coordinate'. 
+Concerning our precise implementation of the closest pair algorithm: Splitting of \<open>xs\<close> is achieved 
+by the function @{const split_at} through a simple linear pass through \<open>xs\<close>. Our implementation of 
+@{const mergesort} sorts a list of points depending on a given projection function, @{const fst} 
+for `by \<open>x\<close>-coordinate' and @{const snd} for `by \<open>y\<close>-coordinate'. 
 
 \begin{quote}
 @{term [source, break] "closest_pair_rec :: point list \<Rightarrow> point list \<times> point \<times> point"} \vskip 0pt
