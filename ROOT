@@ -1,12 +1,4 @@
-session Proofs in Proofs = Akra_Bazzi +
-  theories
-    "Closest_Pair"
-    "Closest_Pair_Alternative"
-  document_files
-    "root.tex"
-    "root.bib"
-
-session Paper = Proofs +
+session Paper = Closest_Pair_Points +
   options [document = pdf, show_question_marks = false, names_short = true,
     document_output = "generated"]
    (* All the tex files are dumped into directory "generated" and can be

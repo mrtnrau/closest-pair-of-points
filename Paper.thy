@@ -1,8 +1,7 @@
 (*<*)
 theory Paper
-  imports
-  "Proofs.Common"
-  "Proofs.Closest_Pair"
+imports
+  Closest_Pair_Points.Closest_Pair
   "OptionalSugarLocal"
 begin
 
