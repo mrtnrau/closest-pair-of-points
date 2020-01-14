@@ -109,7 +109,7 @@ with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
 running time of the algorithms. Empirical testing also shows that our verified algorithms are 
 competitive with handwritten reference implementations. Our formalizations are available online 
-\textcolor{red}{(TODO LINK)} in the Archive of Formal Proofs.
+@{cite "Closest_Pair_Points-AFP"} in the Archive of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
