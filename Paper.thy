@@ -319,7 +319,7 @@ indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list
 One can also show that \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> are in \<open>ps\<close> and distinct, if \<open>p\<^sub>0\<^sub>L\<close> (\<open>p\<^sub>0\<^sub>R\<close>) and \<open>p\<^sub>1\<^sub>L\<close> (\<open>p\<^sub>1\<^sub>R\<close>) are
 in \<open>P\<^sub>L\<close> (\<open>P\<^sub>R\<close>) and distinct.
 
-\subsection{The Divide \& Conquer Algorithm}
+\subsection{The Divide \& Conquer Algorithm} \label{subsection:dc:fc}
 
 In Section \ref{section:closest_pair_algorithm} we glossed over some implementation detail which
 is necessary to achieve to running time of $\mathcal{O}(n \log n)$. In particular
@@ -674,8 +674,8 @@ For \<open>distinct\<close> inputs:
 In the literature there exist various other algorithmic approaches to solve the closest pair problem. 
 Most of them are closely related to our implementation of Section \ref{section:proving_functional_correctness}
 deviating primarily in two aspects: the exact implementation of the @{const combine} step and the approach
-to sorting the points by \<open>y\<close>-coordinate. We present a short overview, concentrating on the second
-implementation we verified.
+to sorting the points by \<open>y\<close>-coordinate we already discussed in Subsection \ref{subsection:dc:fc}. We 
+present a short overview, concentrating on the @{const combine} step and the second implementation we verified.
 
 During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} 
 searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the highlighted 
