@@ -744,7 +744,8 @@ algorithm, gets first place closely followed by GWZ-3 being about 33\% faster th
 
 We have presented the first verification (both functional correctness and running time) of two related closest pair of points algorithms in the plane, without assuming the \<open>x\<close> coordinates of all points are distinct. The executable code generated from the formalization is competitive with existing reference implementations. A challenging and rewarding next step would be to formalize and verify a closest pair of points algorithm in arbitrary dimensions. This case is treated very sketchily in the literature.
 
-%\paragraph{Acknowledgements}
+\paragraph{Acknowledgements}
+Research supported by DFG grants NI 491/16-1 and 18-1.
 \<close>
 
 (*<*)
