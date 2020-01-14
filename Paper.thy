@@ -108,18 +108,18 @@ with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
 running time of the algorithms. In contrast to many publications and implementations we do not assume 
 all points of \<open>P\<close> to have unique \<open>x\<close>-coordinates which causes some tricky complications. Empirical 
-testing also shows that our verified algorithms are competitive with handwritten reference 
+testing shows that our verified algorithms are competitive with handwritten reference 
 implementations. Our formalizations are available online @{cite "Closest_Pair_Points-AFP"} in the 
 Archive of Formal Proofs.
 
 This paper is structured as follows:
 Section \ref{section:closest_pair_algorithm} familiarizes the reader with the algorithm by presenting a
 high-level description that covers both implementations. Section \ref{section:proving_functional_correctness} presents the first
-implementation and functional correctness proof. Section \ref{section:proving_running_time} proves
+implementation and its functional correctness proof. Section \ref{section:proving_running_time} proves
 the running time of $\mathcal{O}(n \log n)$ of the implementation of the previous section.
 Section \ref{section:alt_impl} describes our second implementation and illustrates how the proofs of
 Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted
-to this implementation. We then shortly give an overview over further implementation approaches.
+to this implementation. We also give an overview over further implementation approaches.
 Section \ref{section:executable_code} describes final adjustments to obtain executable versions of the algorithms in target languages
 such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes.
@@ -147,7 +147,8 @@ We suppress numeric conversion functions, e.g.\ @{text "real :: nat \<Rightarrow
 
 Most type constructors are written postfix, e.g. @{typ "'a set"} and @{typ "'a list"}.
 Sets follow standard mathematical notation.
-Lists are constructed from the empty list \<open>[]\<close> via the infix cons-operator \<open>(#)\<close>. Functions @{const hd} and @{const tl} return head and tail. 
+Lists are constructed from the empty list \<open>[]\<close> via the infix cons-operator \<open>(#)\<close>. Functions @{const hd} and @{const tl} return head and tail, function @{const set}
+converts a list into a set.
 
 
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
@@ -175,11 +176,8 @@ with a distance strictly less than $\delta$. If the former is the case we have a
 
 Now we assume the latter and have reached the most interesting part of divide-and-conquer algorithms,
 the @{const combine} step. It is not hard to see that both points of the closest pair 
-must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ now denote a 
-list of points, sorted in ascending order by $y$-coordinate, of all points $p \in P$ 
-that are also contained within this $2\delta$ wide strip. We can find our closest pair by iterating over
-$\mathit{ys}$ and computing for each point its closest neighbor. Note that, in the worst case, $\mathit{ys}$ 
-contains all points of $P$, 
+must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
+$\mathit{ys}$ and computing for each point its closest neighbor. But in the worst case, $\mathit{ys}$ contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
 This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, illustrated as the red point in Figure \ref{fig:Combine}.
 %
@@ -210,35 +208,34 @@ in Section \ref{section:proving_running_time} we prove the $\mathcal{O}(n \log n
 
 We present the implementation of the divide-and-conquer algorithm and the corresponding correctness proofs
 using a bottom-up approach, starting with the @{const combine} step. The basis for both implementation and proof is the version
-presented by Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}. But first we need to introduce some definitional
-preliminaries of two-dimensional geometry and precisely define the closest pair problem.
+presented by Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}. But first we need to define the closest pair problem formally.
 
 A point in the two-dimensional Euclidean plane is represented as a pair of (unbounded)
 integers\footnote{We chose integers over reals because be we cannot implement
 mathematical reals. See Section \ref{section:executable_code}.}.
-The library HOL-Analysis provides a generic distance function applicable to our point definition.
-For our purposes the definition of this \textit{dist} function corresponds to the familiar Euclidean distance measure.
+The library HOL-Analysis provides a generic distance function @{const dist} applicable to our point definition.
+The definition of this specific @{const dist} instance corresponds to the familiar Euclidean distance measure.
 
-The closest pair problem can then be stated formally as follows: A set of points $P$ is $\mathbf{\delta}$\textbf{-sparse} iff 
+The closest pair problem can be stated formally as follows: A set of points $P$ is $\mathbf{\delta}$\textbf{-sparse} iff 
 $\delta$ is a lower bound for the distance of all distinct pairs of points of $P$.
 
 \begin{quote}
 @{text [display] "sparse \<delta> P = (\<forall>p\<^sub>0 \<in> P. \<forall>p\<^sub>1 \<in> P. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"}
 \end{quote}
 
-A pair of points $(p_0,\;p_1)$ is then the \textit{closest pair} of $P$ iff additionally $p_0 \in P$ and
+A pair of points $(p_0,\;p_1)$ is the \textit{closest pair} of $P$ iff additionally $p_0 \in P$ and
 $p_1 \in P$ hold, and the points $p_0$ and $p_1$ are distinct.
 
 In the following we focus on outlining the proof of the sparsity property of our implementation,
 without going into the details. The additional
-set membership and distinctness properties of a closest pair can be proven relatively straightforward
+set membership and distinctness properties of a closest pair can be proved relatively straightforward
 by adhering to a similar proof structure.
 
 \subsection{The Combine Step}
 
 The essence of the @{const combine} step deals with the following scenario: We are given an initial pair of points
-with a distance of $\delta$ and and a list $\mathit{ys}$ of points, sorted ascendingly by $y$-coordinate, 
-which are contained in the $2\delta$ wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
+with a distance of $\delta$ and a list $\mathit{ys}$ of points, sorted in ascending order by $y$-coordinate
+that are contained in the $2\delta$ wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
 efficiently compute a pair of points with a distance $\delta'\ (\delta' \le \delta)$ such that $\mathit{ys}$ is $\delta'$-sparse.
 The recursive function \textit{find\_closest\_pair} achieves this by iterating over $\mathit{ys}$, computing
 for each point its closest neighbor by calling the recursive function \textit{find\_closest}, which
@@ -320,7 +317,7 @@ is necessary to achieve to running time of $\mathcal{O}(n \log n)$. In particula
 we need to partition the given list of points $\mathit{ps}$\footnote{Our implementation deals with
 concrete lists in contrast to the abstract sets used in Section \ref{section:closest_pair_algorithm}.}
 along a vertical line $l$ into two lists of nearly equal length during the divide step and obtain
-a list $\mathit{ys}$ of the same points, sorted ascendingly by $y$-coordinate, for the @{const combine}
+a list $\mathit{ys}$ of the same points, sorted in ascending order by $y$-coordinate, for the @{const combine}
 step in \textbf{linear} time at each level of recursion.
 
 Cormen \emph{et al.} propose the following `top-down' approach: Their algorithm takes three arguments: the set 
@@ -333,11 +330,11 @@ of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For th
 \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
 contained in \<open>P\<^sub>L\<close> or not, constructing \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> along the way.
 
-At this point one might correctly call to attention that the usage of sets could be problematic.
-Achieving the overall worst case running time of $\mathcal{O}(n \log n)$ requires an implementation
+But this approach requires an implementation of sets. In fact, if we want to
+achieve the overall worst case running time of $\mathcal{O}(n \log n)$ it requires an implementation
 of sets with linear time construction and constant time membership test, which is nontrivial, in 
 particular in a functional setting. To avoid sets many publications and implementations either assume
-all points to have unique \<open>x\<close>-coordinates or preprocess the points by applying for example a rotation
+all points have unique \<open>x\<close>-coordinates or preprocess the points by applying for example a rotation
 such that the input fulfills this condition. For distinct \<open>x\<close>-coordinates one can then compute \<open>ys\<^sub>L\<close> 
 and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
 eliminate the usage of sets entirely.
@@ -345,11 +342,10 @@ eliminate the usage of sets entirely.
 But there exists a third option which is commonly omitted in the literature; indeed the only mention 
 of it we have found appears in Cormen \emph{et al.} and is even there merely hinted at in an exercise
 left to the reader. 
-
-Taking a step back and looking at the overall structure of the closest pair algorithm
+Looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
 we only need \<open>ys \<close> for the @{const combine} step after the two recursive invocations of the algorithm. 
-Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a `bottom-up' approach. 
+Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a bottom-up approach. 
 
 Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
 construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is analogous to Cormen \emph{et al}. In the base case we then
@@ -464,9 +460,9 @@ an abbreviation for @{text "length \<circ> filter f"}.
 \end{lemma}
 
 Therefore we need to prove that the term  @{text "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"} does not depend
-on the length of @{term ps}. Looking back at Figure \ref{fig:Combine}, the point @{term p} representing the
-red point, we can assume that the list @{term "p # ps"} is distinct and sorted ascendingly by
-@{term y}-coordinate. From the pre-computing effort of the @{const combine} step we know that its points are contained 
+on the length of \<open>ps\<close>. Looking back at Figure \ref{fig:Combine}, the point \<open>p\<close> representing the
+red point, we can assume that the list @{term "p # ps"} is distinct and sorted in ascending order by
+\<open>y\<close>-coordinate. From the pre-computing effort of the @{const combine} step we know that its points are contained 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term P\<^sub>L}
 (@{term P\<^sub>R}) consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
@@ -510,7 +506,7 @@ some useful abbreviations for the proof of Lemma \ref{lemma:core_argument}:
 
 Let additionally \<open>ps\<^sub>f\<close> abbreviate the term @{term "filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps"}.
 First we prove @{term "length (p # ps\<^sub>f) \<le> card R\<^sub>p\<^sub>s"}: Let \<open>q\<close> denote an arbitrary point of \<open>p # ps\<^sub>f\<close>. We know
-@{term "snd p \<le> snd q"} because the list @{term "p # ps"} and therefore \<open>p # ps\<^sub>f\<close> is sorted ascendingly by \<open>y\<close>-coordinate and
+@{term "snd p \<le> snd q"} because the list @{term "p # ps"} and therefore \<open>p # ps\<^sub>f\<close> is sorted in ascending order by \<open>y\<close>-coordinate and
 @{term "snd q \<le> snd p + \<delta>"} due to the filter predicate (@{term "\<lambda>q. snd q - snd p \<le> \<delta>"}). 
 Using the additional facts @{term "l - \<delta> \<le> fst q"} and @{term "fst q \<le> l + \<delta>"} (derived from our assumption
 that all points of @{term "p # ps"} are contained within the @{text "2\<delta>"} strip)
@@ -666,7 +662,7 @@ For \<open>distinct\<close> inputs:
 \section{Alternative Implementations} \label{section:alt_impl}
 
 In the literature there exist various other algorithmic approaches to solve the closest pair problem. 
-Most of them are closely related to our implementation of Section \ref{section:proving_functional_correctness}
+Most of them are closely related to our implementation of Section \ref{section:proving_functional_correctness},
 deviating primarily in two aspects: the exact implementation of the @{const combine} step and the approach
 to sorting the points by \<open>y\<close>-coordinate we already discussed in Subsection \ref{subsection:dc:fc}. We 
 present a short overview, concentrating on the @{const combine} step and the second implementation we verified.
