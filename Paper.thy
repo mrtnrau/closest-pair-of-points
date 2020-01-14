@@ -119,7 +119,7 @@ implementation and functional correctness proof. Section \ref{section:proving_ru
 the running time of $\mathcal{O}(n \log n)$ of the implementation of the previous section.
 Section \ref{section:alt_impl} describes our second implementation and illustrates how the proofs of
 Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted
-to this implementation. We then shortly give an overview over further implementation and proof approaches.
+to this implementation. We then shortly give an overview over further implementation approaches.
 Section \ref{section:executable_code} describes final adjustments to obtain executable versions of the algorithms in target languages
 such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes.
@@ -672,7 +672,7 @@ to sorting the points by \<open>y\<close>-coordinate we already discussed in Sub
 present a short overview, concentrating on the @{const combine} step and the second implementation we verified.
 
 During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} 
-searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the highlighted 
+searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the shaded 
 square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it examines points on or beyond 
 the upper border of \<open>R\<close>. Cormen \emph{et al.} originally follow a slightly different approach. They 
 search for a closest neighbor of \<open>p\<close> by examining a constant number of points of \<open>ps\<close>, the first 
@@ -683,12 +683,13 @@ Cormen \emph{et al.} are always assuming the worst case by checking all @{text 7
 But it is unlikely that the algorithm needs to examine even close to @{text 7} points, except for specifically
 constructed inputs. Cormen \emph{et al.} furthermore state that the bound of @{text 7} is an over-approximation 
 and dare the reader to lower it to @{text 5} as an exercise. We refrain from doing so since a bound of 
-@{text 7} suffices as the time complexity argument for our, inherently faster, implementation. At 
+@{text 7} suffices for the time complexity proof for our, inherently faster, implementation. At 
 this point we should also mention that the specific implementation of Section \ref{section:proving_functional_correctness}
-is not our original idea but rather an algorithmic detail which seems to be commonly omitted.
+is not our original idea but rather an algorithmic detail which seems to be commonly omitted in the
+literature.
 
 Nonetheless we can adapt the implementation of Section \ref{section:proving_functional_correctness} and the proofs 
-of Section \ref{section:proving_running_time} to verify this second implementation as follows:
+of Section \ref{section:proving_running_time} to verify the original implementation of Cormen \emph{et al.} as follows:
 We replace each call of @{term "find_closest p \<delta> ps"} by a call to @{term "find_closest_bf p (take 7 ps)"} 
 where @{const find_closest_bf} iterates in brute-force fashion through its argument list to find the 
 closest neighbor of \<open>p\<close>. To verify this implementation we then reuse most of the elementary lemmas and proof 
@@ -698,7 +699,9 @@ previously \emph{solely} required for the time complexity proof of the algorithm
 during the functional correctness proof since we need to argue that examining only a constant number of 
 points of \<open>ps\<close> is sufficient. The time analysis is overall greatly simplified: A call of the form 
 @{term "find_closest_bf p (take 7 ps)"} runs in constant time and we again are able to reuse the remaining 
-time analysis proof structure of Section \ref{section:proving_running_time}.
+time analysis proof structure of Section \ref{section:proving_running_time}. For the exact differences
+between both formalizations we encourage the reader the consult our entry @{cite "Closest_Pair_Points-AFP"} in the 
+Archive of Formal Proofs.
 
 Over the years a considerable amount of effort has been made to further optimize the @{const combine} step.
 Central to these improvements is the `complexity of computing distances', abbreviated `CCP' in the following, 
@@ -706,7 +709,7 @@ a term introduced by Zhou \emph{et al.} \cite{zhou1998improved} which measures t
 distances computed by a closest pair algorithm. The core idea being, since computing the Euclidean 
 distance is more expensive than other primitive operations, it might be possible to improve overall 
 algorithmic running time by reducing this complexity measure. In the same paper they introduce an 
-optimized version of the closest pair algorithm. It computes for each point lying to the left-hand side, 
+optimized version of the closest pair algorithm. It needs to compute for each point lying to the left-hand side, 
 and exclusively the left-hand side of \<open>l\<close>, only @{text 4} distances to its possible closest neighbors 
 lying on the right-hand side of \<open>l\<close>. This corresponds to a CCP of $2n \log n$, in contrast to $7n \log n$ 
 which will be the worst case CCP of the algorithm of Section \ref{section:proving_functional_correctness} 
@@ -715,38 +718,16 @@ improve upon the algorithm presented by Preparata and Shamos \cite{Computational
 which utilizes a similar approach but computes @{text 6} distances per point, or a CCP of $3n \log n$. 
 Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, algorithm on the version of Zhou \emph{et al.} 
 and prove an even lower CCP of $\frac{3}{2}n \log n$ for their implementation. The race for the lowest
-number of distance computations culminates with the work of Jiang and Gillespie \cite{jiang2007engineering} 
+number of distance computations culminates so far with the work of Jiang and Gillespie \cite{jiang2007engineering} 
 who present their algorithms `Basic-2' \footnote{Pereira and Lobo \cite{pereira2012optimized} later 
 independently developed the same algorithm and additionally present extensive functional correctness 
 proofs for all Minkowski distances.} and `2-Pass' with a respective CCP of $2n \log n$ and $\frac{7}{2}n$.
+They also evaluate their algorithms empirically against the implementations of Cormen \emph{et al.} and
+Ge \emph{et al.} which they respectively denote as `Basis-7' and `GWZ-3'. To summarize, unexpectedly
+the algorithm 2-Pass with the lowest number of distance computations comes in last, having an average
+running time of about 32\% more than that of Basic-7, whereas Basic-2, although being a relatively simple
+algorithm, gets first place closely followed by GWZ-3 being about 33\% faster than Basic-7.
 
-\textcolor{red}{TODO Jiang and Gillespie
-Pereira and Lobo
-Run average dist computation tests for our implementation again
-Conclude, one can over-optimize, but most likely the most efficient algorithm is Basic-2.
-Lead into sorting section and rewrite sorting section.
-}
-
-In both of our verified implementations we use an incorporated mergesort implementation to sort the points 
-bottom-up by \<open>y\<close>-coordinate. This method seems to be commonly omitted in the literature; indeed
-the only mention of it appears in Cormen \emph{et al.} and is there merely hinted at in an exercise.
-A different top-down approach is used instead. There the function @{const closest_pair_rec} takes three parameters:
-the set of points \<open>P\<close> and the lists \<open>xs\<close> and \<open>ys\<close> which are respectively presorted by \<open>x\<close> and \<open>y\<close>-coordinate.
-As in the bottom-up approach we first divide \<open>xs\<close> into two lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> alongside \<open>l\<close>. Then we proceed
-to construct the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> consisting respectively of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. And finally we build 
-for the recursive invocations of @{const closest_pair_rec} the sorted list \<open>ys\<^sub>L\<close> (\<open>ys\<^sub>R\<close>) by iterating once through
-\<open>ys\<close> and checking for each point if it is in \<open>P\<^sub>L\<close> (\<open>P\<^sub>R\<close>). At first glance we might think that the sets
-\<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> are unnecessary and we can compute \<open>ys\<^sub>L\<close> (\<open>ys\<^sub>R\<close>) more efficiently just filtering \<open>ys\<close> by all 
-points that have \<open>x\<close>-coordinates \<open>\<le>l\<close> (\<open>>l\<close>). But this is only valid if all points of \<open>P\<close> have 
-distinct \<open>x\<close>-coordinates.
-
-We choose the bottom-up approach for our purely functional implementations since the top-down solution
-is not efficient enough. To reach the algorithms time complexity of $\mathcal{O}(n \log n)$ we can only allow an at
-most linear overhead for the divide step. But for this the divide step described above requires a purely 
-functional set implementation that supports the operations set construction in $\mathcal{O}(n)$ and 
-set membership test in $\mathcal{O}(1)$ time. Such an implementation does not exist to our knowledge.
-Even for an imperative implementation this assumption seems strong since addition to and membership of sets 
-run in $\mathcal{O}(1)$ time only for the average case for most implementations. 
 
 \section{Executable Code} \label{section:executable_code}
 
