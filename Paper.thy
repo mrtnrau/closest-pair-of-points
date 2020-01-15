@@ -222,9 +222,8 @@ $\delta$ is a lower bound for the distance of all distinct pairs of points of $P
 \begin{quote}
 @{text [display] "sparse \<delta> P = (\<forall>p\<^sub>0 \<in> P. \<forall>p\<^sub>1 \<in> P. p\<^sub>0 \<noteq> p\<^sub>1 \<longrightarrow> \<delta> \<le> dist p\<^sub>0 p\<^sub>1)"}
 \end{quote}
-
-A pair of points $(p_0,\;p_1)$ is the \textit{closest pair} of $P$ iff additionally $p_0 \in P$ and
-$p_1 \in P$ hold, and the points $p_0$ and $p_1$ are distinct.
+We can now state easily when two points \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> are a \textit{closest pair} of $P$: \mbox{@{prop "p\<^sub>0 \<in> P"}}, @{prop "p\<^sub>1 \<in> P"}, @{prop "p\<^sub>0 \<noteq> p\<^sub>1"}
+and (most importantly) @{prop "sparse (dist p\<^sub>0 p\<^sub>1) P"}.
 
 In the following we focus on outlining the proof of the sparsity property of our implementation,
 without going into the details. The additional
@@ -339,13 +338,11 @@ such that the input fulfills this condition. For distinct \<open>x\<close>-coord
 and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
 eliminate the usage of sets entirely.
 
-But there exists a third option which is commonly omitted in the literature; indeed the only mention 
-of it we have found appears in Cormen \emph{et al.} and is even there merely hinted at in an exercise
-left to the reader. 
+But there exists a third option which is we have found only in Cormen \emph{et al.} where it is merely hinted at in an exercise left to the reader. The approach is the following.
 Looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
 we only need \<open>ys \<close> for the @{const combine} step after the two recursive invocations of the algorithm. 
-Thus we can obtain \<open>ys\<close> by sorting and merging `along the way' using a bottom-up approach. 
+Thus we can obtain \<open>ys\<close> by merging `along the way' using a bottom-up approach. 
 
 Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
 construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is analogous to Cormen \emph{et al}. In the base case we then
@@ -667,6 +664,13 @@ deviating primarily in two aspects: the exact implementation of the @{const comb
 to sorting the points by \<open>y\<close>-coordinate we already discussed in Subsection \ref{subsection:dc:fc}. We 
 present a short overview, concentrating on the @{const combine} step and the second implementation we verified.
 
+\subsection{A Second Verified Implementation}
+
+Our second implementation we replace the call of @{const find_closest}
+in @{const find_closest_pair} by a call to a new function @{const find_closest_bf}.
+
+TODO
+
 During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} 
 searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the shaded 
 square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it examines points on or beyond 
@@ -698,6 +702,8 @@ points of \<open>ps\<close> is sufficient. The time analysis is overall greatly 
 time analysis proof structure of Section \ref{section:proving_running_time}. For the exact differences
 between both formalizations we encourage the reader the consult our entry @{cite "Closest_Pair_Points-AFP"} in the 
 Archive of Formal Proofs.
+
+\subsection{Related Work}
 
 Over the years a considerable amount of effort has been made to further optimize the @{const combine} step.
 Central to these improvements is the `complexity of computing distances', abbreviated `CCP' in the following, 
