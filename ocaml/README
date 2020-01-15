@@ -1,0 +1,6 @@
+# HOW-TO
+
+opam install dune zarith
+dune clean
+dune build --profile release src/main
+dune exec --profile release ./src/main.exe Sedgewick 10000 1

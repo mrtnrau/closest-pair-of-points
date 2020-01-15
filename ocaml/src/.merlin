@@ -1,0 +1,5 @@
+B /home/martin/.opam/4.07.0/lib/zarith
+B ../_build/default/src/.main.eobjs
+S /home/martin/.opam/4.07.0/lib/zarith
+S .
+FLG -w -40

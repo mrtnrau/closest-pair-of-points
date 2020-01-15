@@ -1,0 +1,4 @@
+(executable
+  (name main)
+  (libraries zarith)
+  (ocamlopt_flags (:standard -O3)))

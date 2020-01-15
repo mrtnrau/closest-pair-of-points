@@ -44,3 +44,4 @@ let main () =
 let _ =
     let t = time main in
     Printf.printf "Total time: %ds\n" (int_of_float t)
+
