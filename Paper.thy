@@ -179,8 +179,8 @@ the @{const combine} step. It is not hard to see that both points of the closest
 must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
 $\mathit{ys}$ and computing for each point its closest neighbor. But in the worst case, $\mathit{ys}$ contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
-This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, depicted as a square
-point point in Figure \ref{fig:Combine}.
+This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, depicted as the square
+point in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
 \centering
@@ -457,9 +457,9 @@ an abbreviation for @{text "length \<circ> filter f"}.
 \end{lemma}
 
 Therefore we need to prove that the term  @{text "count (\<lambda>q. snd q - snd p \<le> \<delta>) ps"} does not depend
-on the length of \<open>ps\<close>. Looking back at Figure \ref{fig:Combine}, the point \<open>p\<close> representing the
-red point, we can assume that the list @{term "p # ps"} is distinct and sorted in ascending order by
-\<open>y\<close>-coordinate. From the pre-computing effort of the @{const combine} step we know that its points are contained 
+on the length of \<open>ps\<close>. Looking back at Figure \ref{fig:Combine}, the square point representing \<open>p\<close>, 
+we can assume that the list @{term "p # ps"} is distinct and sorted in ascending order by \<open>y\<close>-coordinate. 
+From the precomputing effort of the @{const combine} step we know that its points are contained 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term P\<^sub>L}
 (@{term P\<^sub>R}) consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
@@ -483,7 +483,7 @@ describes points contained within rectangular shapes in Euclidean space. For our
 \end{quote}
 
 The box is `closed' since it includes points located on the border of the box. We then introduce
-some useful abbreviations for the proof of Lemma \ref{lemma:core_argument}:
+some useful abbreviations:
 
 \begin{itemize}
 \setlength{\itemsep}{1pt}
@@ -570,13 +570,13 @@ Finally we replace human intuition with formal proof:
 \begin{proof}
 Let \<open>S\<close> denote the square with a side length of \<open>\<delta>\<close> and suppose, for the sake of contradiction, that @{term "card P > 4"}.
 Then \<open>S\<close> can be split into the four congruent squares @{text "S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4"} along the common point
-@{text "(x + \<delta> / 2, y + \<delta> / 2)"} as depicted by the right-hand side of Figure \ref{fig:core_arguments}. 
+@{text "(x + \<delta>/2, y + \<delta>/2)"} as depicted by the right-hand side of Figure \ref{fig:core_arguments}. 
 Since all points of \<open>P\<close> are contained within \<open>S\<close> and @{term "S = \<Union>{S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"} we have @{term "P \<subseteq> \<Union>{S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"}.
 Using Lemma \ref{lemma:pigeonhole} and our assumption  @{term "card P > 4"} we know there exists a square 
 @{term "S\<^sub>i \<in> {S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"} and a pair of distinct points @{term "p\<^sub>0 \<in> S\<^sub>i"} and @{term "p\<^sub>1 \<in> S\<^sub>i"}.
 Lemma \ref{lemma:max_dist_square} and the fact that all four sub-squares have the same side length @{text "\<delta> / 2"}
 shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to @{text "\<^latex>\<open>$\\sqrt{2}$\<close> / 2 * \<delta>"} and hence
-strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because of the facts @{term "p\<^sub>0 \<in> P"},
+strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because @{term "p\<^sub>0 \<in> P"},
 @{term "p\<^sub>0 \<in> P"}, @{term "p\<^sub>0 \<noteq> p\<^sub>1"} and our premise that \<open>P\<close> is \<open>\<delta>\<close>-sparse, a contradiction.\qed
 \end{proof}
 
@@ -588,19 +588,14 @@ takes time linear in @{term "length ps"}.
 
 Next we turn our attention to the timing of @{term "closest_pair_rec xs"}
 and define (but do not show) the corresponding function @{term "t_closest_pair_rec xs"}.
-% In the base case evaluating our
-%main function takes time proportional to computing @{term "length xs"}, sorting \<open>xs\<close> by \<open>y\<close>-coordinate and
-%calculating the closest pair using the brute-force approach. The recursive case is comprised of the time
-%necessary to calculate the length of \<open>xs\<close>, split \<open>xs\<close>, the two recursive invocations, merge \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> and the @{const combine} step.
-%
 At this point we could prove a concrete bound on @{const t_closest_pair_rec}.
 But since we are dealing with a divide-and-conquer algorithm we should, in theory, be able to determine its
 running time using the `master theorem' \cite{Introduction-to-Algorithms:2009}. This is, in practice, also
 possible in Isabelle/HOL. Eberl \cite{eberl_akra_bazzi} has formalized the Akra-Bazzi theorem \cite{Akra1998}, 
-a generalization of the master theorem. Using this formalization, available in the Archive of Formal Proofs 
-\cite{Akra_Bazzi-AFP}, we can derive the running time of our divide-and-conquer algorithm without a direct
-proof for @{const t_closest_pair_rec}. This is achieved by capturing the essence of @{const t_closest_pair_rec} as a 
-recurrence on natural numbers representing the length of the list argument of \<open>(t_)\<close>@{const closest_pair_rec}:
+a generalization of the master theorem. Using this formalization we can derive the running time of 
+our divide-and-conquer algorithm without a direct proof for @{const t_closest_pair_rec}. First
+we capture the essence of @{const t_closest_pair_rec} as a recurrence on natural numbers 
+representing the length of the list argument of \<open>(t_)\<close>@{const closest_pair_rec}:
 %
 \begin{quote}
 @{text [source] "closest_pair_recurrence :: nat \<Rightarrow> real"} \vskip 0pt
@@ -613,34 +608,36 @@ The time complexity of this recurrence is proved completely automatically:
 @{text "closest_pair_recurrence \<in> \<Theta>(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
 \end{lemma}
 
-Next we need to connect this bound with our timing function:
-\begin{lemma}\label{lemma:recurrence}
-@{prop "distinct ps \<and> sorted_fst ps"} \vskip 0pt
-\<open>\<Longrightarrow>\<close> @{prop "t_closest_pair_rec ps \<le> (closest_pair_recurrence \<circ> length) ps"}
-\end{lemma}
+Next we need to connect this bound with our timing function. Lemma \ref{lemma:bigo_measure_trans} below 
+expresses a procedure for deriving complexity properties of the form
 
-Utilizing Eberls formalization of Laudau Notation
-\cite{eberl19issac}, Lemma \ref{lemma:bigo_measure_trans} below expresses a procedure for deriving complexity 
-properties of the form
 \begin{quote}
 @{prop "t \<in> O[m going_to at_top within A](f o m)"}
 \end{quote}
-where \<open>t\<close> is a timing function on the 
-data domain, in our case lists. The function \<open>m\<close> is a measure on that data domain, \<open>r\<close> is a recurrence or any other
-function of type @{text "nat \<Rightarrow> real"} and \<open>A\<close> is the set of valid inputs. The term `@{text "m going_to at_top within A"}'
-should be read as `if the measured size of valid inputs is sufficiently large' and utilizes the ``filter'' machinery of asymptotics 
-in Isabelle/HOL \cite{filter}. For readability we omit 
-stating the filter and \<open>m\<close> explicitly in the following and just state the  conditions required of the input \<open>A\<close>. The measure \<open>m\<close> always 
-corresponds to the @{const length} function.
+
+where \<open>t\<close> is a timing function on the data domain, in our case lists. The function \<open>m\<close> is a measure 
+on that data domain, \<open>r\<close> is a recurrence or any other function of type @{text "nat \<Rightarrow> real"} and \<open>A\<close> 
+is the set of valid inputs. The term `@{text "m going_to at_top within A"}' should be read as 
+`if the measured size of valid inputs is sufficiently large' and utilizes Eberls formalization of
+Landau Notation \cite{eberl19issac} and the ``filter'' machinery of asymptotics in Isabelle/HOL 
+\cite{filter}. For readability we omit stating the filter and \<open>m\<close> explicitly in the following and 
+just state the  conditions required of the input \<open>A\<close>. The measure \<open>m\<close> always corresponds to the 
+@{const length} function.
 
 \begin{lemma} \label{lemma:bigo_measure_trans}
 @{text [source, break] "(\<forall>x \<in> A. t x \<le> (r \<circ> m) x) \<and> r \<in> O(f) \<and> (\<forall>x \<in> A. 0 \<le> t x)"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> t \<in> O[m going_to at_top within A](f \<circ> m)"}
 \end{lemma}
 
-Using Lemmas \ref{lemma:closest_pair_recurrence}, \ref{lemma:recurrence} and \ref{lemma:bigo_measure_trans}
-we arrive at Theorem \ref{thm:t_closest_pair_rec}, expressing our main claim: 
-the running time of the divide-and-conquer algorithm.
+\begin{lemma}\label{lemma:recurrence}
+@{prop "distinct ps \<and> sorted_fst ps"} \vskip 0pt
+\<open>\<Longrightarrow>\<close> @{prop "t_closest_pair_rec ps \<le> (closest_pair_recurrence \<circ> length) ps"}
+\end{lemma}
+
+Using Lemmas \ref{lemma:closest_pair_recurrence}, \ref{lemma:bigo_measure_trans} and \ref{lemma:recurrence}
+we arrive at Theorem \ref{thm:t_closest_pair_rec}, expressing our main claim: the running time of the 
+divide-and-conquer algorithm.
+
 \begin{theorem} \label{thm:t_closest_pair_rec}
 For inputs that are \<open>distinct\<close> and sorted by \<open>x\<close>-coordinate: \vskip 0pt
 @{text [break] "t_closest_pair_rec \<in> O(\<lambda>n. n * \<^latex>\<open>$\\ln$\<close> n)"}
@@ -666,26 +663,23 @@ present a short overview, concentrating on the @{const combine} step and the sec
 
 \subsection{A Second Verified Implementation}
 
-Our second implementation we replace the call of @{const find_closest}
-in @{const find_closest_pair} by a call to a new function @{const find_closest_bf}.
-
-TODO
-
-During execution of @{term "find_closest p \<delta> ps"} the algorithm of Section \ref{section:proving_functional_correctness} 
+Although the algorithm described by Cormen \emph{et al.} is the basis for our implementation of 
+Section \ref{section:proving_functional_correctness}, we took the liberty to apply a slight
+optimization. During execution of @{term "find_closest p \<delta> ps"} our algorithm
 searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the shaded 
 square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it examines points on or beyond 
 the upper border of \<open>R\<close>. Cormen \emph{et al.} originally follow a slightly different approach. They 
 search for a closest neighbor of \<open>p\<close> by examining a constant number of points of \<open>ps\<close>, the first 
 @{text 7} to be exact. This is valid because there are at most @{text 7} points within \<open>R\<close>, not 
-counting \<open>p\<close>, and the @{text 8}th point of \<open>ps\<close> would again lie beyond the upper border of \<open>R\<close>.
+counting \<open>p\<close>, and the @{text 8}th point of \<open>ps\<close> would again lie on or beyond the upper border of \<open>R\<close>.
 This slightly easier implementation comes at the cost of being less efficient in practice.
 Cormen \emph{et al.} are always assuming the worst case by checking all @{text 7} points following \<open>p\<close>.
 But it is unlikely that the algorithm needs to examine even close to @{text 7} points, except for specifically
-constructed inputs. Cormen \emph{et al.} furthermore state that the bound of @{text 7} is an over-approximation 
+constructed inputs. They furthermore state that the bound of @{text 7} is an over-approximation 
 and dare the reader to lower it to @{text 5} as an exercise. We refrain from doing so since a bound of 
 @{text 7} suffices for the time complexity proof for our, inherently faster, implementation. At 
 this point we should also mention that the specific implementation of Section \ref{section:proving_functional_correctness}
-is not our original idea but rather an algorithmic detail which seems to be commonly omitted in the
+is not our original idea but rather an algorithmic detail which is unfortunately rarely mentioned in the
 literature.
 
 Nonetheless we can adapt the implementation of Section \ref{section:proving_functional_correctness} and the proofs 
@@ -700,8 +694,8 @@ during the functional correctness proof since we need to argue that examining on
 points of \<open>ps\<close> is sufficient. The time analysis is overall greatly simplified: A call of the form 
 @{term "find_closest_bf p (take 7 ps)"} runs in constant time and we again are able to reuse the remaining 
 time analysis proof structure of Section \ref{section:proving_running_time}. For the exact differences
-between both formalizations we encourage the reader the consult our entry @{cite "Closest_Pair_Points-AFP"} in the 
-Archive of Formal Proofs.
+between both formalizations we encourage the reader the consult the entry in the Archive of Formal Proofs 
+@{cite "Closest_Pair_Points-AFP"}.
 
 \subsection{Related Work}
 
@@ -711,32 +705,28 @@ a term introduced by Zhou \emph{et al.} \cite{zhou1998improved} which measures t
 distances computed by a closest pair algorithm. The core idea being, since computing the Euclidean 
 distance is more expensive than other primitive operations, it might be possible to improve overall 
 algorithmic running time by reducing this complexity measure. In the same paper they introduce an 
-optimized version of the closest pair algorithm. It needs to compute for each point lying to the left-hand side, 
-and exclusively the left-hand side of \<open>l\<close>, only @{text 4} distances to its possible closest neighbors 
-lying on the right-hand side of \<open>l\<close>. This corresponds to a CCP of $2n \log n$, in contrast to $7n \log n$ 
+optimized version of the closest pair algorithm with a CCP of $2n \log n$, in contrast to $7n \log n$ 
 which will be the worst case CCP of the algorithm of Section \ref{section:proving_functional_correctness} 
 after we minimize the number of distance computations in Section \ref{section:executable_code}. They
 improve upon the algorithm presented by Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} 
-which utilizes a similar approach but computes @{text 6} distances per point, or a CCP of $3n \log n$. 
-Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, algorithm on the version of Zhou \emph{et al.} 
-and prove an even lower CCP of $\frac{3}{2}n \log n$ for their implementation. The race for the lowest
-number of distance computations culminates so far with the work of Jiang and Gillespie \cite{jiang2007engineering} 
-who present their algorithms `Basic-2' \footnote{Pereira and Lobo \cite{pereira2012optimized} later 
-independently developed the same algorithm and additionally present extensive functional correctness 
-proofs for all Minkowski distances.} and `2-Pass' with a respective CCP of $2n \log n$ and $\frac{7}{2}n$.
-They also evaluate their algorithms empirically against the implementations of Cormen \emph{et al.} and
-Ge \emph{et al.} which they respectively denote as `Basis-7' and `GWZ-3'. To summarize, unexpectedly
-the algorithm 2-Pass with the lowest number of distance computations comes in last, having an average
-running time of about 32\% more than that of Basic-7, whereas Basic-2, although being a relatively simple
-algorithm, gets first place closely followed by GWZ-3, both about 33\% faster than Basic-7.
-
+which achieves CCP of $3n \log n$. Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, 
+algorithm on the version of Zhou \emph{et al.} and prove an even lower CCP of $\frac{3}{2}n \log n$ 
+for their implementation. The race for the lowest number of distance computations culminates so far 
+with the work of Jiang and Gillespie \cite{jiang2007engineering} who present their algorithms `Basic-2' 
+\footnote{Pereira and Lobo \cite{pereira2012optimized} later independently developed the same algorithm 
+and additionally present extensive functional correctness proofs for all Minkowski distances.} and 
+`2-Pass' with a respective CCP of $2n \log n$ and $\frac{7}{2}n$.
 
 \section{Executable Code} \label{section:executable_code}
+
+Before we explore how our algorithm stacks up against handwritten implementations (including Basic-2
+which surprisingly is the fastest of the CCP minimizing algorithms according to Jiang and Gillespie) 
+we have to make some final adjustments to generate executable code from our formalization. 
 
 %
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=0.7\textwidth]{./../../benchmark/Benchmarks.png}
+\includegraphics[width=0.9\textwidth]{./../../benchmark/Benchmarks.png}
 \caption[]{Benchmarks.} 
 \label{fig:benchmark}
 \end{figure}
