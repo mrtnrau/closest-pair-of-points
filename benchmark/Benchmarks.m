@@ -54,7 +54,7 @@ blue   = [ 57/255, 106/255, 177/255];
 green  = [ 62/255, 150/255,  81/255];
 purple = [128/255,   0/255, 128/255];
 
-marker_size = 20;
+marker_size = 50;
 line_width = 1.5;
 
 %% Figure
@@ -64,8 +64,8 @@ grid on
 
 scatter(n, s, marker_size, orange, 'filled', 'd')
 %scatter(n, j, marker_size, red   , 'filled', '>')
-scatter(n, c, marker_size, green , 'filled', 's')
-scatter(n, o, marker_size, blue  , 'filled', 'o')
+scatter(n, c, marker_size, green , 'filled', 'o')
+scatter(n, o, marker_size, blue  , 'filled', 's')
 scatter(n, i, marker_size, purple, 'filled', '^')
 
 plot(n, s_fitted, 'Color', orange, 'LineWidth', line_width)

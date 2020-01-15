@@ -86,7 +86,7 @@ text\<open>
 \section{Introduction}
 
 The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
-problems in Computational Geometry: Given a set $P$ of $n \geq 2$ points in $\mathbb{R}^d$,
+problems in Computational Geometry: Given a set \<open>P\<close> of @{prop "n \<ge> 2"} points in $\mathbb{R}^d$,
 find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
 the distance between $p_0$ and $p_1$ is less than or equal to the distance of any distinct pair 
 of points of $P$.
@@ -179,7 +179,8 @@ the @{const combine} step. It is not hard to see that both points of the closest
 must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
 $\mathit{ys}$ and computing for each point its closest neighbor. But in the worst case, $\mathit{ys}$ contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
-This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, illustrated as the red point in Figure \ref{fig:Combine}.
+This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, depicted as a square
+point point in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
 \centering
@@ -306,8 +307,8 @@ indeed a pair of points @{term "(p\<^sub>0,p\<^sub>1)"} such that our given list
 @{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
 
-One can also show that \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> are in \<open>ps\<close> and distinct, if \<open>p\<^sub>0\<^sub>L\<close> (\<open>p\<^sub>0\<^sub>R\<close>) and \<open>p\<^sub>1\<^sub>L\<close> (\<open>p\<^sub>1\<^sub>R\<close>) are
-in \<open>P\<^sub>L\<close> (\<open>P\<^sub>R\<close>) and distinct.
+One can also show that \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> are in \<open>ps\<close> and distinct (and thus a closest pair of @{term "set ps"}), 
+if \<open>p\<^sub>0\<^sub>L\<close> (\<open>p\<^sub>0\<^sub>R\<close>) and \<open>p\<^sub>1\<^sub>L\<close> (\<open>p\<^sub>1\<^sub>R\<close>) are in \<open>P\<^sub>L\<close> (\<open>P\<^sub>R\<close>) and distinct.
 
 \subsection{The Divide \& Conquer Algorithm} \label{subsection:dc:fc}
 
@@ -338,10 +339,10 @@ such that the input fulfills this condition. For distinct \<open>x\<close>-coord
 and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
 eliminate the usage of sets entirely.
 
-But there exists a third option which is we have found only in Cormen \emph{et al.} where it is merely hinted at in an exercise left to the reader. The approach is the following.
+But there exists a third option which we have found only in Cormen \emph{et al.} where it is merely hinted at in an exercise left to the reader. The approach is the following.
 Looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
-we only need \<open>ys \<close> for the @{const combine} step after the two recursive invocations of the algorithm. 
+we only need \<open>ys \<close> for the @{const combine} step \textbf{after} the two recursive invocations of the algorithm. 
 Thus we can obtain \<open>ys\<close> by merging `along the way' using a bottom-up approach. 
 
 Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
@@ -378,8 +379,7 @@ we arrive at the correctness proof of the desired sparsity property of the algor
 \end{theorem}
 
 Corollary \ref{cor:closest_pair_dist} together with Theorems \ref{thm:closest_pair_set} and 
-\ref{thm:closest_pair_distinct} then show that the pair \<open>(p\<^sub>0, p\<^sub>1)\<close> 
-is indeed the closest pair of \<open>ps\<close> according to its definition at the beginning of this section.
+\ref{thm:closest_pair_distinct} then show that the pair \<open>(p\<^sub>0, p\<^sub>1)\<close> is indeed a closest pair of \<open>ps\<close>.
 
 \begin{corollary} \label{cor:closest_pair_dist}
 @{text [source, break] "1 < length ps \<and> (p\<^sub>0, p\<^sub>1) = closest_pair ps"} \vskip 0pt
@@ -422,7 +422,7 @@ complexity proof.
 \end{quote}
 %TODO less about base cases?
 We set the time to execute @{const dist} computations to @{text 0} since it is a combination
-of cheap operations that do not scale with the size of the input. For the base cases of recursive functions
+of cheap operations. For the base cases of recursive functions
 we fix the computation time to be equivalent to the size of the input. This choice of constants is arbitrary and has no
 impact on the overall running time analysis but leads in general to `cleaner' arithmetic bounds. 
 %Note that it might be of interest to define a similar abstract interpretation to count the number of 
@@ -433,7 +433,7 @@ impact on the overall running time analysis but leads in general to `cleaner' ar
 \subsection{Time Analysis of the Combine Step}
 
 In Section \ref{section:closest_pair_algorithm} we claimed that the running time of the algorithm is
-captured by the recurrence relation @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
+captured by the recurrence @{text "T(n) = T(\<lceil>n/2\<rceil>) + T(\<lfloor>n/2\<rfloor>) + O(n)"},
 where @{term n} is the length of the given list of points. This claim implies an at most linear overhead
 at each level of recursion. Splitting of the list @{term xs}, merging @{term ys\<^sub>L} and @{term ys\<^sub>R} and
 the filtering operation of the @{const combine} step run in linear time. But it is non-trivial that the 
@@ -736,8 +736,8 @@ algorithm, gets first place closely followed by GWZ-3, both about 33\% faster th
 %
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=0.9\textwidth]{./../../benchmark/Benchmarks.png}
-\caption[]{Benchmark.} 
+\includegraphics[width=0.7\textwidth]{./../../benchmark/Benchmarks.png}
+\caption[]{Benchmarks.} 
 \label{fig:benchmark}
 \end{figure}
 %
