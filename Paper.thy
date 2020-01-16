@@ -715,7 +715,7 @@ for their implementation. The race for the lowest number of distance computation
 with the work of Jiang and Gillespie \cite{jiang2007engineering} who present their algorithms `Basic-2' 
 \footnote{Pereira and Lobo \cite{pereira2012optimized} later independently developed the same algorithm 
 and additionally present extensive functional correctness proofs for all Minkowski distances.} and 
-`2-Pass' with a respective CCP of $2n \log n$ and $\frac{7}{2}n$.
+`2-Pass' with a respective CCP of $2n \log n$ and (for the first time linear) $\frac{7}{2}n$.
 
 \section{Executable Code} \label{section:executable_code}
 
@@ -725,12 +725,12 @@ we have to make some final adjustments to generate executable code from our form
 
 In Section \ref{section:proving_functional_correctness} we fixed the data representation of a point 
 to be a pair of mathematical ints over a pair of mathematical reals. During code export Isabelle 
-can then correctly and automatically maps its abstract data type int to a suitable concrete 
+can then correctly and automatically maps its abstract data type @{typ int} to a suitable concrete 
 implementation of (arbitrary-sized) integers; for our target language OCaml using the library `zarith'. 
-For the data type real this is not possible since we cannot implement mathematical reals. We would instead 
+For the data type @{typ real} this is not possible since we cannot implement mathematical reals. We would instead 
 have to resort to an approximation (e.g. floats) losing all proven guarantees in the process. 
-But currently our algorithm still computes Euclidean distances and hence uses mathematical reals due 
-to the @{const sqrt} function. For the executable code we thus replace this distance measure by the 
+But currently our algorithm still uses the standard Euclidean distance and hence mathematical reals due 
+to the @{const sqrt} function. For the executable code we muse replace this distance measure by the 
 squared Euclidean distance. To prove that we preserve the correctness of our implementation several 
 small variations of the following lemma suffice:
 %
@@ -743,7 +743,7 @@ auxiliary variables which capture and then replace repeated computations. For al
 functions that return a point or a pair of points this entails annotating the return type with the 
 corresponding computed distance. Furthermore we replace recursive auxiliary functions such as 
 @{const filter} by corresponding tail-recursive implementations to allow the OCaml compiler to 
-optimize to generated code and prevent stackoverflows. To make sure these transformations are correct 
+optimize the generated code and prevent stackoverflows. To make sure these transformations are correct 
 we prove lemmas expressing the equivalence of old and new implementations for each function.
 Isabelles code export machinery can then apply these transformations semi-automatically.
 
@@ -754,8 +754,8 @@ implementation to gauge the overhead of the machine generated code. All algorith
 implemented in OCaml, use our `bottom-up' approach to sorting of Subsection \ref{subsection:dc:fc} 
 and for each input of uniformly distributed points 50 independent executions were performed.
 Remarkably the exported code is (on average) only about 2 times slower than Basic-2 and furthermore 
-most of the difference is caused by the inefficiencies of machine generated code since the equivalent
-handwritten code is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
+most of the difference is caused by the inefficiencies inherent to machine generated code since the equivalent
+handwritten Ocaml implementation is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
 (about 108\% slower than the handwritten code) which demonstrates the huge impact the small optimization 
 of Subsection \ref{subsection:snd} can have in practice.
 %
