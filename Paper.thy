@@ -661,7 +661,7 @@ deviating primarily in two aspects: the exact implementation of the @{const comb
 to sorting the points by \<open>y\<close>-coordinate we already discussed in Subsection \ref{subsection:dc:fc}. We 
 present a short overview, concentrating on the @{const combine} step and the second implementation we verified.
 
-\subsection{A Second Verified Implementation}
+\subsection{A Second Verified Implementation} \label{subsection:snd}
 
 Although the algorithm described by Cormen \emph{et al.} is the basis for our implementation of 
 Section \ref{section:proving_functional_correctness}, we took the liberty to apply a slight
@@ -721,8 +721,43 @@ and additionally present extensive functional correctness proofs for all Minkows
 
 Before we explore how our algorithm stacks up against handwritten implementations (including Basic-2
 which surprisingly is the fastest of the CCP minimizing algorithms according to Jiang and Gillespie) 
-we have to make some final adjustments to generate executable code from our formalization. 
+we have to make some final adjustments to generate executable code from our formalization.
 
+In Section \ref{section:proving_functional_correctness} we fixed the data representation of a point 
+to be a pair of mathematical ints over a pair of mathematical reals. During code export Isabelle 
+can then correctly and automatically maps its abstract data type int to a suitable concrete 
+implementation of (arbitrary-sized) integers; for our target language OCaml using the library `zarith'. 
+For the data type real this is not possible since we cannot implement mathematical reals. We would instead 
+have to resort to an approximation (e.g. floats) losing all proven guarantees in the process. 
+But currently our algorithm still computes Euclidean distances and hence uses mathematical reals due 
+to the @{const sqrt} function. For the executable code we thus replace this distance measure by the 
+squared Euclidean distance. To prove that we preserve the correctness of our implementation several 
+small variations of the following lemma suffice:
+%
+\begin{quote}
+@{text [display] "dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>2 p\<^sub>3 \<longleftrightarrow> (dist p\<^sub>0 p\<^sub>1)\<^sup>2 \<le> (dist p\<^sub>2 p\<^sub>3)\<^sup>2"}
+\end{quote}
+%
+We apply two further code transformations. To minimize the number of distance computations we introduce 
+auxiliary variables which capture and then replace repeated computations. For all of the shown
+functions that return a point or a pair of points this entails annotating the return type with the 
+corresponding computed distance. Furthermore we replace recursive auxiliary functions such as 
+@{const filter} by corresponding tail-recursive implementations to allow the OCaml compiler to 
+optimize to generated code and prevent stackoverflows. To make sure these transformations are correct 
+we prove lemmas expressing the equivalence of old and new implementations for each function.
+Isabelles code export machinery can then apply these transformations semi-automatically.
+
+Now it is time to evaluate the performance of our verified code. Figure \ref{fig:benchmark} depicts 
+benchmarks for imperative implementations of Basic-2 and Basic-7 (the original approach of Cormen
+\emph{et al.}), the exported (purely functional) Isabelle code and an equivalent handwritten OCaml 
+implementation to gauge the overhead of the machine generated code. All algorithms are 
+implemented in OCaml, use our `bottom-up' approach to sorting of Subsection \ref{subsection:dc:fc} 
+and for each input of uniformly distributed points 50 independent executions were performed.
+Remarkably the exported code is (on average) only about 2 times slower than Basic-2 and furthermore 
+most of the difference is caused by the inefficiencies of machine generated code since the equivalent
+handwritten code is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
+(about 108\% slower than the handwritten code) which demonstrates the huge impact the small optimization 
+of Subsection \ref{subsection:snd} can have in practice.
 %
 \begin{figure}[htpb]
 \centering
