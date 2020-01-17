@@ -750,13 +750,15 @@ Isabelles code export machinery can then apply these transformations automatical
 Now it is time to evaluate the performance of our verified code. Figure \ref{fig:benchmark} depicts 
 benchmarks for imperative implementations of Basic-2 and Basic-7 (the original approach of Cormen
 \emph{et al.}), the exported (purely functional) Isabelle code and an equivalent handwritten OCaml 
-implementation (called Basic-$\delta$) to gauge the overhead of the machine generated code. All algorithms are 
+implementation (called Basic-\<open>\<delta>\<close>) to gauge the overhead of the machine generated code. All algorithms are 
 implemented in OCaml, use our bottom-up approach to sorting of Subsection \ref{subsection:dc:fc} 
 and for each input of uniformly distributed points 50 independent executions were performed.
-Remarkably the exported code is (on average) only about 2 times slower than Basic-2 and furthermore 
-most of the difference is caused by the inefficiencies inherent to machine generated code since the equivalent implementation Basic-$\delta$ is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
-(about 108\% slower than the handwritten code) which demonstrates the huge impact the small optimization 
-of Subsection \ref{subsection:snd} can have in practice.
+Remarkably the exported code is only about 2.28 \footnote{We measure differences between 
+running times as the average over all data points weighted by the size of the input.} 
+times slower than Basic-2 and furthermore most of the difference is caused by the inefficiencies 
+inherent to machine generated code since its equivalent implementation Basic-\<open>\<delta>\<close> is only 11\% 
+slower than Basic-2. Basic-7 is 2.03 times slower than Basic-\<open>\<delta>\<close> which demonstrates the huge impact 
+the small optimization of Subsection \ref{subsection:snd} can have in practice.
 %
 \begin{figure}[htpb]
 \centering
@@ -765,7 +767,6 @@ of Subsection \ref{subsection:snd} can have in practice.
 \label{fig:benchmark}
 \end{figure}
 %
-
 \section{Conclusion} \label{section:conclusion}
 
 We have presented the first verification (both functional correctness and running time) of two related 
