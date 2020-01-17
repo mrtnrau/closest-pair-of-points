@@ -318,7 +318,7 @@ we need to partition the given list of points $\mathit{ps}$\footnote{Our impleme
 concrete lists in contrast to the abstract sets used in Section \ref{section:closest_pair_algorithm}.}
 along a vertical line $l$ into two lists of nearly equal length during the divide step and obtain
 a list $\mathit{ys}$ of the same points, sorted in ascending order by $y$-coordinate, for the @{const combine}
-step in \textbf{linear} time at each level of recursion.
+step in \emph{linear} time at each level of recursion.
 
 Cormen \emph{et al.} propose the following `top-down' approach: Their algorithm takes three arguments: the set 
 of points \<open>P\<close> and lists \<open>xs\<close> and \<open>ys\<close> which contain the same set of points \<open>P\<close> but are respectively 
@@ -342,7 +342,7 @@ eliminate the usage of sets entirely.
 But there exists a third option which we have found only in Cormen \emph{et al.} where it is merely hinted at in an exercise left to the reader. The approach is the following.
 Looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
-we only need \<open>ys \<close> for the @{const combine} step \textbf{after} the two recursive invocations of the algorithm. 
+we only need \<open>ys \<close> for the @{const combine} step \emph{after} the two recursive invocations of the algorithm. 
 Thus we can obtain \<open>ys\<close> by merging `along the way' using a bottom-up approach. 
 
 Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
@@ -664,8 +664,8 @@ present a short overview, concentrating on the @{const combine} step and the sec
 \subsection{A Second Verified Implementation} \label{subsection:snd}
 
 Although the algorithm described by Cormen \emph{et al.} is the basis for our implementation of 
-Section \ref{section:proving_functional_correctness}, we took the liberty to apply a slight
-optimization. During execution of @{term "find_closest p \<delta> ps"} our algorithm
+Section \ref{section:proving_functional_correctness}, we took the liberty to
+optimize it. During execution of @{term "find_closest p \<delta> ps"} our algorithm
 searches for the closest neighbor of \<open>p\<close> within the rectangle \<open>R\<close>, the upper half of the shaded 
 square \<open>S\<close> of Figure \ref{fig:Combine}, and terminates the search if it examines points on or beyond 
 the upper border of \<open>R\<close>. Cormen \emph{et al.} originally follow a slightly different approach. They 
@@ -676,10 +676,10 @@ This slightly easier implementation comes at the cost of being less efficient in
 Cormen \emph{et al.} are always assuming the worst case by checking all @{text 7} points following \<open>p\<close>.
 But it is unlikely that the algorithm needs to examine even close to @{text 7} points, except for specifically
 constructed inputs. They furthermore state that the bound of @{text 7} is an over-approximation 
-and dare the reader to lower it to @{text 5} as an exercise. We refrain from doing so since a bound of 
-@{text 7} suffices for the time complexity proof for our, inherently faster, implementation. At 
-this point we should also mention that the specific implementation of Section \ref{section:proving_functional_correctness}
-is not our original idea but rather an algorithmic detail which is unfortunately rarely mentioned in the
+and dare the reader to lower it to \<open>5\<close> as an exercise. We refrain from doing so since a bound of 
+\<open>7\<close> suffices for the time complexity proof for our, inherently faster, implementation. At 
+this point we should also mention that the specific optimization of Section~\ref{section:proving_functional_correctness}
+is not our idea but rather an algorithmic detail which is unfortunately rarely mentioned in the
 literature.
 
 Nonetheless we can adapt the implementation of Section \ref{section:proving_functional_correctness} and the proofs 
@@ -740,22 +740,21 @@ small variations of the following lemma suffice:
 %
 We apply two further code transformations. To minimize the number of distance computations we introduce 
 auxiliary variables which capture and then replace repeated computations. For all of the shown
-functions that return a point or a pair of points this entails annotating the return type with the 
-corresponding computed distance. Furthermore we replace recursive auxiliary functions such as 
+functions that return a point or a pair of points this entails returning the 
+corresponding computed distance as well. Furthermore we replace recursive auxiliary functions such as 
 @{const filter} by corresponding tail-recursive implementations to allow the OCaml compiler to 
 optimize the generated code and prevent stackoverflows. To make sure these transformations are correct 
 we prove lemmas expressing the equivalence of old and new implementations for each function.
-Isabelles code export machinery can then apply these transformations semi-automatically.
+Isabelles code export machinery can then apply these transformations automatically.
 
 Now it is time to evaluate the performance of our verified code. Figure \ref{fig:benchmark} depicts 
 benchmarks for imperative implementations of Basic-2 and Basic-7 (the original approach of Cormen
 \emph{et al.}), the exported (purely functional) Isabelle code and an equivalent handwritten OCaml 
-implementation to gauge the overhead of the machine generated code. All algorithms are 
-implemented in OCaml, use our `bottom-up' approach to sorting of Subsection \ref{subsection:dc:fc} 
+implementation (called Basic-$\delta$) to gauge the overhead of the machine generated code. All algorithms are 
+implemented in OCaml, use our bottom-up approach to sorting of Subsection \ref{subsection:dc:fc} 
 and for each input of uniformly distributed points 50 independent executions were performed.
 Remarkably the exported code is (on average) only about 2 times slower than Basic-2 and furthermore 
-most of the difference is caused by the inefficiencies inherent to machine generated code since the equivalent
-handwritten Ocaml implementation is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
+most of the difference is caused by the inefficiencies inherent to machine generated code since the equivalent implementation Basic-$\delta$ is (on average) a mere 10\% slower than Basic-2. Basic-7 comes in last 
 (about 108\% slower than the handwritten code) which demonstrates the huge impact the small optimization 
 of Subsection \ref{subsection:snd} can have in practice.
 %
