@@ -34,11 +34,11 @@ let main () =
   let ps_verified = map of_point ps_list    in
 
   match algorithm with
-    "Brute"     -> display algorithm n (stats (fun () -> Cormen.bf_closest_pair      ps_array   ) iteration) 
-  | "Sedgewick" -> display algorithm n (stats (fun () -> Sedgewick.closest_pair      ps_array   ) iteration) 
-  | "Jiang"     -> display algorithm n (stats (fun () -> Jiang.closest_pair          ps_array   ) iteration) 
-  | "Cormen"    -> display algorithm n (stats (fun () -> Cormen.closest_pair         ps_array   ) iteration) 
-  | "Ocaml"     -> display algorithm n (stats (fun () -> Ocaml.closest_pair          ps_list    ) iteration) 
+    "Brute"     -> display algorithm n (stats (fun () -> Cormen.bf_closest_pair      ps_array   ) iteration)
+  | "Sedgewick" -> display algorithm n (stats (fun () -> Sedgewick.closest_pair      ps_array   ) iteration)
+  | "Jiang"     -> display algorithm n (stats (fun () -> Jiang.closest_pair          ps_array   ) iteration)
+  | "Cormen"    -> display algorithm n (stats (fun () -> Cormen.closest_pair         ps_array   ) iteration)
+  | "Ocaml"     -> display algorithm n (stats (fun () -> Ocaml.closest_pair          ps_list    ) iteration)
   | "Isabelle"  -> display algorithm n (stats (fun () -> Isabelle.closest_pair_code  ps_verified) iteration)
 
 let _ =

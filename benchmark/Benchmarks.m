@@ -22,12 +22,14 @@ wm_o_j = dot(o./j, w);
 wm_c_j = dot(c./j, w);
 wm_i_o = dot(i./o, w);
 wm_c_o = dot(c./o, w);
+wm_c_s = dot(c./s, w);
 
-fprintf('Isabelle/Basic-2: Mean %f WMean %f\n', mean(i./j), wm_i_j)
-fprintf('Basic-D/Basic-2 : Mean %f WMean %f\n', mean(o./j), wm_o_j)
-fprintf('Basic-7/Basic-2 : Mean %f WMean %f\n', mean(c./j), wm_c_j)
-fprintf('Isabelle/Basic-D: Mean %f WMean %f\n', mean(i./o), wm_i_o)
-fprintf('Basic-7/Basic-D : Mean %f WMean %f\n', mean(c./o), wm_c_o)
+fprintf('Isabelle/Basic-2 : Mean %f WMean %f\n', mean(i./j), wm_i_j)
+fprintf('Basic-D/Basic-2  : Mean %f WMean %f\n', mean(o./j), wm_o_j)
+fprintf('Basic-7/Basic-2  : Mean %f WMean %f\n', mean(c./j), wm_c_j)
+fprintf('Isabelle/OCaml   : Mean %f WMean %f\n', mean(i./o), wm_i_o)
+fprintf('Basic-7/OCaml    : Mean %f WMean %f\n', mean(c./o), wm_c_o)
+fprintf('Basic-7/Sedgewick: Mean %f WMean %f\n', mean(c./s), wm_c_s)
 
 %% Non-linear regression
 model = @(beta,x)(beta(1) + beta(2).*x + beta(3).*x.*log2(x));
@@ -93,15 +95,15 @@ figure
 hold on
 grid on
 
-scatter(n, s./j, marker_size, orange, 'filled', 'd')
 scatter(n, c./j, marker_size, green , 'filled', 'o')
-scatter(n, o./j, marker_size, blue  , 'filled', 's')
 scatter(n, i./j, marker_size, purple, 'filled', '^')
+scatter(n, o./j, marker_size, blue  , 'filled', 's')
+scatter(n, s./j, marker_size, orange, 'filled', 'd')
 
-plot(n, s./j, 'Color', orange, 'LineWidth', line_width, 'LineStyle', '-')
 plot(n, c./j, 'Color', green , 'LineWidth', line_width, 'LineStyle', '-')
-plot(n, o./j, 'Color', blue  , 'LineWidth', line_width, 'LineStyle', '-.')
 plot(n, i./j, 'Color', purple, 'LineWidth', line_width, 'LineStyle', '-.')
+plot(n, o./j, 'Color', blue  , 'LineWidth', line_width, 'LineStyle', '-.')
+plot(n, s./j, 'Color', orange, 'LineWidth', line_width, 'LineStyle', '-')
 
 set(gca, 'yScale', 'linear', 'yLim', [0.8, 2.5]);
 set(gca, 'xScale', 'log');
@@ -109,4 +111,4 @@ set(gca, 'xScale', 'log');
 xlabel('Number of Points' , 'FontWeight', 'bold')
 ylabel('Time Ratio over Basic-2', 'FontWeight', 'bold')
 
-legend('Basic-\delta (imp.)', 'Basic-7 (imp.)', 'Basic-\delta (func.)', 'Isabelle (func.)', 'Location', 'best')
+legend('Basic-7 (imp.)', 'Basic-\delta (Isabelle)', 'Basic-\delta (func.)', 'Basic-\delta (imp.)', 'Location', 'best')

@@ -748,24 +748,23 @@ we prove lemmas expressing the equivalence of old and new implementations for ea
 Isabelles code export machinery can then apply these transformations automatically.
 
 Now it is time to evaluate the performance of our verified code. 
-
 Figure \ref{fig:benchmark} depicts the running time ratios of several implementations of the algorithm 
 of Section \ref{section:proving_functional_correctness} (called Basic-\<open>\<delta>\<close>) and Basic-7 (the original
-approach of Cormen \emph{et al.}) over Basic-2. For the algorithm Basis-\<open>\<delta>\<close> we test the exported 
-(purely functional) Isabelle code, an equivalent handwritten OCaml implementation (to gauge the 
-overhead of the machine generated code) and an imperative implementation. All algorithms are 
-implemented in OCaml, use our bottom-up approach to sorting of Subsection \ref{subsection:dc:fc} 
+approach of Cormen \emph{et al.}) over Basic-2. Basis-\<open>\<delta>\<close> is tested in three variations: the exported 
+(purely functional) Isabelle code and equivalent handwritten functional and imperative implementations
+to gauge the overhead of the machine generated code. All algorithms are implemented in OCaml, use our 
+bottom-up approach to sorting (imperative implementations sort in place) of Subsection \ref{subsection:dc:fc} 
 and for each input of uniformly distributed points 50 independent executions were performed.
 Remarkably the exported code is only about 2.28 \footnote{We measure differences between 
 running times as the average over all data points weighted by the size of the input.} 
 times slower than Basic-2 and furthermore most of the difference is caused by the inefficiencies 
 inherent to machine generated code since its equivalent functional implementation is only 11\% 
-slower than Basic-2. Basic-7 is 2.03 times slower than Basic-\<open>\<delta>\<close> which demonstrates the huge impact 
-the small optimization of Subsection \ref{subsection:snd} can have in practice.
+slower than Basic-2. Basic-7 is 2.26 times slower than the imperative Basic-\<open>\<delta>\<close> which demonstrates 
+the huge impact the small optimization of Subsection \ref{subsection:snd} can have in practice.
 %
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=0.9\textwidth]{./../../benchmark/Benchmarks.png}
+\includegraphics[width=0.8\textwidth]{./../../benchmark/Benchmarks2.png}
 \caption[]{Benchmarks.} 
 \label{fig:benchmark}
 \end{figure}
