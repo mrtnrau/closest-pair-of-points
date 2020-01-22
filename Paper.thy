@@ -102,7 +102,7 @@ a multitude of optimal algorithms have been published. Smid \cite{Handbook-Compu
 provides a comprehensive overview over the available algorithms, including randomized approaches which
 improve the running time even further to $\mathcal{O}(n)$.
 
-The main contribution of this paper is the first verification of two related functional implementations of a
+The main contribution of this paper is the first verification of two related functional implementations of the
 divide-and-conquer algorithm solving the Closest Pair problem for the two-dimensional Euclidean plane
 with the optimal running time of $\mathcal{O}(n \log n)$. We use the interactive theorem 
 prover Isabelle/HOL \cite{LNCS2283,Concrete} to prove functional correctness as well as the 
@@ -124,12 +124,13 @@ Section \ref{section:executable_code} describes final adjustments to obtain exec
 such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes.
 
+
 \subsection{Related Verification Work}
 
 Computational geometry is a vast area but only a few algorithms and theorems seem to have been
 verified formally. We are aware of a number of verifications of convex hull algorithms
 \cite{DBLP:conf/tphol/PichardieB01,DBLP:conf/adg/MeikleF04,DBLP:journals/comgeo/BrunDM12}
-(incl.\ and a similar algorithm for the intersection of zonotopes \cite{Immler:2015})
+(and a similar algorithm for the intersection of zonotopes \cite{Immler:2015})
 and algorithms for triangulation \cite{DBLP:conf/itp/DufourdB10,DBLP:conf/ictac/Bertot18}.
 Geometric models based on maps and hypermaps
 \cite{DBLP:journals/tcs/PuitgD00,DBLP:journals/jar/Dufourd09} are frequently used.
@@ -141,7 +142,7 @@ is also related but considers fixed geometric constructions rather than algorith
 
 The notation \<open>t :: \<tau>\<close> means that term \<open>t\<close> has type \<open>\<tau>\<close>.
 Basic types include @{type bool}, @{type nat}, @{type int} and @{type real}; type variables are written @{typ 'a}, @{typ 'b} etc; the function space arrow is \<open>\<Rightarrow>\<close>. Functions @{const fst} and @{const snd} return
-the first and second component of a pair. General tuples are nested pairs, e.g.\ @{term "(a,b,c)"} is \<open>(a, (b, c))\<close>.
+the first and second component of a pair.
 
 We suppress numeric conversion functions, e.g.\ @{text "real :: nat \<Rightarrow> real"}, except where that would result in ambiguities for the reader.
 
@@ -154,8 +155,8 @@ converts a list into a set.
 \section{Closest Pair Algorithm} \label{section:closest_pair_algorithm}
 
 In this section we provide a high-level overview of the \textit{Closest Pair} algorithm and give
-the reader a first intuition without delving into implementation details and functional correctness 
-and running time proofs.
+the reader a first intuition without delving into implementation details, functional correctness 
+or running time proofs.
 
 Let $P$ denote a set of $n \ge 2$ points. If $n \le 3$ we solve the problem 
 naively using the brute force approach of examining all $n \choose 2$ possible closest pair 
@@ -163,8 +164,8 @@ combinations. Otherwise we apply the divide-and-conquer tactic.
 
 We divide $P$ into two sets $P_L$ and $P_R$ along a vertical 
 line $l$ such that the sizes of $P_L$ and $P_R$ differ by at most $1$ and the
-$y$-coordinate of all points \mbox{$p_L \in P_L\,(p_R \in P_R)$} is less
-(greater) than or equal to $l$.
+$y$-coordinate of all points \mbox{$p_L \in P_L\,(p_R \in P_R)$} is \<open>\<le> l\<close>
+(\<open>\<ge> l\<close>).
 
 We then conquer the left and right subproblems by applying the algorithm recursively, 
 obtaining $(p_{L0},\;p_{L1})$ and $(p_{R0},\;p_{R1})$, the respective closest pairs of $P_L$ and 
@@ -172,9 +173,9 @@ $P_R$. Let $\delta_L$ and $\delta_R$ denote the distance of the left and right c
 pairs and let $\delta = \mathit{min}\;\delta_L\;\delta_R$. 
 At this point the closest pair of $P$ is either $(p_{L0},\; p_{L1})$, 
 $(p_{R0},\,p_{R1})$ or a pair of points $p_0 \in P_L$ and $p_1 \in P_R$
-with a distance strictly less than $\delta$. If the former is the case we have already found our closest pair.
+with a distance strictly less than $\delta$. In the first two cases we have already found our closest pair.
 
-Now we assume the latter and have reached the most interesting part of divide-and-conquer algorithms,
+Now we assume the third case and have reached the most interesting part of divide-and-conquer algorithms,
 the @{const combine} step. It is not hard to see that both points of the closest pair 
 must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ps}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
 $\mathit{ps}$ and computing for each point its closest neighbor. But in the worst case $\mathit{ps}$ contains all points of $P$, 
@@ -199,7 +200,7 @@ the @{const combine} step that runs in linear time and ultimately lets us achiev
 of $T(n) = T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor) + \mathcal{O}(n)$, 
 which results in the running time of $\mathcal{O}(n \log n)$.
 
-We glossed over some implementation details to achieve this theoretical time complexity.
+We glossed over some implementation details to achieve this time complexity.
 In Section \ref{section:proving_functional_correctness} we refine the algorithm and
 in Section \ref{section:proving_running_time} we prove the $\mathcal{O}(n \log n)$ running time.
 
@@ -213,7 +214,7 @@ presented by Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}. But fi
 
 A point in the two-dimensional Euclidean plane is represented as a pair of (unbounded)
 integers\footnote{We choose integers over reals because be we cannot implement
-mathematical reals. See Section \ref{section:executable_code}.}.
+mathematical reals. See Section \ref{section:executable_code}. Alternatively we could have chosen rationals.}.
 The library HOL-Analysis provides a generic distance function @{const dist} applicable to our point definition.
 The definition of this specific @{const dist} instance corresponds to the familiar Euclidean distance measure.
 
@@ -228,19 +229,19 @@ and (most importantly) @{prop "sparse (dist p\<^sub>0 p\<^sub>1) P"}.
 
 In the following we focus on outlining the proof of the sparsity property of our implementation,
 without going into the details. The additional
-set membership and distinctness properties of a closest pair can be proved relatively straightforward
+set membership and distinctness properties of a closest pair can be proved relatively straightforwardly
 by adhering to a similar proof structure.
 
 \subsection{The Combine Step}
 
 The essence of the @{const combine} step deals with the following scenario: We are given an initial pair of points
-with a distance of $\delta$ and a list $\mathit{ps}$ of points, sorted in ascending order by $y$-coordinate
+with a distance of $\delta$ and a list $\mathit{ps}$ of points, sorted in ascending order by $y$-coordinate,
 that are contained in the $2\delta$ wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
-efficiently compute a pair of points with a distance $\delta'\ (\delta' \le \delta)$ such that $\mathit{ps}$ is $\delta'$-sparse.
-The recursive function \textit{find\_closest\_pair} achieves this by iterating over $\mathit{ps}$, computing
-for each point its closest neighbor by calling the recursive function \textit{find\_closest}, which
+efficiently compute a pair of points with a distance $\delta' \le \delta$ such that $\mathit{ps}$ is $\delta'$-sparse.
+The recursive function @{const find_closest_pair} achieves this by iterating over $\mathit{ps}$, computing
+for each point its closest neighbor by calling the recursive function \textit{find\_closest} that
 considers only the points within the shaded square of Figure \ref{fig:Combine}, and updating the
-current pair of points accordingly. We omit the implementation of the trivial base cases.
+current pair of closest points if the newly found pair is closer together. We omit the implementation of the trivial base cases.
 
 \begin{quote}
 @{term [source, break] "find_closest_pair :: point \<times> point \<Rightarrow> point list \<Rightarrow> point \<times> point"} \vskip 0pt
@@ -253,7 +254,7 @@ current pair of points accordingly. We omit the implementation of the trivial ba
 \end{quote}
 
 There are several noteworthy aspects of this implementation. The recursive search for the closest neighbor
-of a given point $p$ of \textit{find\_closest} starts at the first point spatially above $p$, continues upwards and 
+of a given point $p$ of @{const find_closest} starts at the first point spatially above $p$, continues upwards and 
 is stopped early at the first point whose vertical distance to $p$ is equal to or exceeds the given $\delta$. Thus the function
 considers, in contrast to Figure \ref{fig:Combine}, only the upper half of the shaded square during this search. 
 This is sufficient for the computation of a closest pair because for each possible point $q$ preceding $p$ in 
@@ -263,13 +264,13 @@ during the computation and consequently the search space for each point is limit
 rectangle with $\delta' \le \delta$. Lastly we intentionally do not minimize the number of distance computations.
 In Section \ref{section:executable_code} we make this optimization for the final executable code.
 
-We then prove by induction on the computation of the respective function
-the following lemma, capturing the desired sparsity property of our implementation of the @{const combine} step so far. 
+The following lemma captures the desired sparsity property of our implementation of the @{const combine} step so far. It is proved by induction on the computation.
 
 \begin{lemma} \label{lemma:find_closest_pair_dist}
 @{text [source, break] "sorted_snd ps \<and> (p\<^sub>0, p\<^sub>1) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"} \vskip 0pt
 @{text [source, break] "\<Longrightarrow> sparse (dist p\<^sub>0 p\<^sub>1) (set ps)"}
 \end{lemma}
+where @{prop "sorted_snd ps"} means that \<open>ps\<close> is sorted in ascending order by $y$-coordinate.
 
 We wrap up the @{const combine} step by limiting our search for the closest pair to only the points contained within the
 $2\delta$ wide vertical strip and choosing as argument for the initial pair of points of \textit{find\_closest\_pair}
@@ -284,7 +285,7 @@ the closest pair of the two recursive invocations of our divide-and-conquer algo
 \end{adjustwidth}
 \vskip 10pt
 
-Lemma \ref{lemma:set_band_filter} shows that if there exists a pair \<open>(p\<^sub>0, p\<^sub>1)\<close> of distinct points with a distance \<open><\<delta>\<close>, then 
+Lemma \ref{lemma:set_band_filter} shows that if there exists a pair \<open>(p\<^sub>0, p\<^sub>1)\<close> of distinct points with a distance \<open>< \<delta>\<close>, then 
 both its points are contained in the mentioned vertical strip, otherwise we have already found our closest pair
 \<open>(c\<^sub>0, c\<^sub>1)\<close>, and the pair returned by @{const find_closest_pair} is its initial argument.  
 
@@ -314,8 +315,8 @@ if \<open>p\<^sub>0\<^sub>L\<close> (\<open>p\<^sub>0\<^sub>R\<close>) and \<ope
 
 In Section \ref{section:closest_pair_algorithm} we glossed over some implementation detail which
 is necessary to achieve to running time of $\mathcal{O}(n \log n)$. In particular
-we need to partition the given list of points $\mathit{ps}$\footnote{Our implementation deals with
-concrete lists in contrast to the abstract sets used in Section \ref{section:closest_pair_algorithm}.}
+we need to partition the given list\footnote{Our implementation deals with
+concrete lists in contrast to the abstract sets used in Section \ref{section:closest_pair_algorithm}.} of points $\mathit{ps}$
 along a vertical line $l$ into two lists of nearly equal length during the divide step and obtain
 a list $\mathit{ys}$ of the same points, sorted in ascending order by $y$-coordinate, for the @{const combine}
 step in \emph{linear} time at each level of recursion.
@@ -326,7 +327,7 @@ sorted by \<open>x\<close> and \<open>y\<close>-coordinate. The algorithm first 
 sorted lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> and chooses \<open>l\<close> as either the \<open>x\<close>-coordinate of the last element of \<open>xs\<^sub>L\<close>
 or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
 of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For the recursive invocations it needs to obtain in addition lists 
-\<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> which are still sorted by \<open>y\<close>-coordinate and again respectively refer to the same points as
+\<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> that are still sorted by \<open>y\<close>-coordinate and again respectively refer to the same points as
 \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
 contained in \<open>P\<^sub>L\<close> or not, constructing \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> along the way.
 
@@ -343,21 +344,7 @@ But there exists a third option which we have found only in Cormen \emph{et al.}
 Looking at the overall structure of the closest pair algorithm
 we recognize that it closely resembles the structure of a standard mergesort implementation and that 
 we only need \<open>ys \<close> for the @{const combine} step \emph{after} the two recursive invocations of the algorithm. 
-Thus we can obtain \<open>ys\<close> by merging `along the way' using a bottom-up approach. 
-
-Our implementation takes only one argument: the list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
-construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is analogous to Cormen \emph{et al}. In the base case we then
-sort \<open>xs\<close> by \<open>y\<close>-coordinate and compute the closest pair using the brute-force approach 
-(@{const closest_pair_bf}). The recursive call of the algorithm on \<open>xs\<^sub>L\<close> returns in addition to the 
-closest pair of \<open>xs\<^sub>L\<close> the list \<open>ys\<^sub>L\<close>, containing all points of \<open>xs\<^sub>L\<close> but now sorted by \<open>y\<close>-coordinate. 
-Analogously for \<open>xs\<^sub>R\<close> and \<open>ys\<^sub>R\<close>. Furthermore, we reuse function @{const merge} from our @{const mergesort} 
-implementation, which we utilize to presort the points by \<open>x\<close>-coordinate, to obtain \<open>ys\<close> from \<open>ys\<^sub>L\<close> 
-and \<open>ys\<^sub>R\<close> in linear time at each level of recursion.
-
-Concerning our precise implementation of the closest pair algorithm: Splitting of \<open>xs\<close> is achieved 
-by the function @{const split_at} through a simple linear pass through \<open>xs\<close>. Our implementation of 
-@{const mergesort} sorts a list of points depending on a given projection function, @{const fst} 
-for `by \<open>x\<close>-coordinate' and @{const snd} for `by \<open>y\<close>-coordinate'. 
+Thus we can obtain \<open>ys\<close> by merging `along the way' using a bottom-up approach. This is the actual code:
 
 \begin{quote}
 @{term [source, break] "closest_pair_rec :: point list \<Rightarrow> point list \<times> point \<times> point"} \vskip 0pt
@@ -368,6 +355,20 @@ for `by \<open>x\<close>-coordinate' and @{const snd} for `by \<open>y\<close>-c
 @{term [source, break] "closest_pair :: point list \<Rightarrow> point \<times> point"} \vskip 0pt
 @{thm [break] (concl) closest_pair_simp}
 \end{quote}
+
+Function @{const closest_pair_rec} expects a list of points \<open>xs\<close> sorted by \<open>x\<close>-coordinate. The
+construction of \<open>xs\<^sub>L\<close>, \<open>xs\<^sub>R\<close> and \<open>l\<close> is analogous to Cormen \emph{et al}. In the base case we then
+sort \<open>xs\<close> by \<open>y\<close>-coordinate and compute the closest pair using the brute-force approach 
+(@{const closest_pair_bf}). The recursive call of the algorithm on \<open>xs\<^sub>L\<close> returns in addition to the 
+closest pair of \<open>xs\<^sub>L\<close> the list \<open>ys\<^sub>L\<close>, containing all points of \<open>xs\<^sub>L\<close> but now sorted by \<open>y\<close>-coordinate. 
+Analogously for \<open>xs\<^sub>R\<close> and \<open>ys\<^sub>R\<close>. Furthermore, we reuse function @{const merge} from our @{const mergesort} 
+implementation, which we utilize to presort the points by \<open>x\<close>-coordinate, to obtain \<open>ys\<close> from \<open>ys\<^sub>L\<close> 
+and \<open>ys\<^sub>R\<close> in linear time at each level of recursion.
+
+Splitting of \<open>xs\<close> is performed
+by the function @{const split_at} via a simple linear pass over \<open>xs\<close>. Our implementation of 
+@{const mergesort} sorts a list of points depending on a given projection function, @{const fst} 
+for `by \<open>x\<close>-coordinate' and @{const snd} for `by \<open>y\<close>-coordinate'. 
 
 Using Lemma \ref{lemma:combine_dist}, the functional correctness proofs of our mergesort implementation
 and several auxiliary lemmas proving that \textit{closest\_pair\_rec} also sorts the points by $y$-coordinate,
@@ -405,8 +406,7 @@ we define a function @{text "t_f"} that takes the same arguments as @{text f} bu
 calls the computation of @{text f} needs, the `time'. Function @{text "t_f"} follows the same recursion
 structure as @{text f} and can be seen as an abstract interpretation of @{text f}. For simplicity of presentation
 we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
-both the value and the time. We also simplify matters a bit: we count only expensive operations that scale
-with the size of the input and ignore other small additive constants. Due to reasons of space we only show
+both the value and the time. We also simplify matters a bit: we count only expensive operations where the running time increases with the size of the input; in particular we assume constant time arithmetic and ignore small additive constants. Due to reasons of space we only show
 one example of such a `timing' functon, @{const t_find_closest}, which is crucial to our time
 complexity proof. 
 
@@ -446,7 +446,7 @@ some constant @{term c} such that @{term "t_find_closest p \<delta> ps \<le> c"}
 Looking at the definition of @{const find_closest} we see that the function terminates as soon as 
 it encounters the first point within the given list @{term ps} that does not fulfill the predicate 
 (@{term "\<lambda>q. \<delta> \<le> snd q - snd p"}), the point @{term p} being an argument to @{const find_closest},
-or if @{term ps} is a list of length @{text "\<le>1"}. The corresponding timing function, @{const t_find_closest} 
+or if @{term ps} is a list of length @{text "\<le>1"}. The corresponding timing function @{const t_find_closest} 
 computes the number of recursive function calls, which is, in this case, synonymous with the number of examined points.
 For our time complexity proof it suffices to show the following bound on the result of  @{const t_find_closest}.
 The proof is by induction on the computation of @{const t_find_closest}. The function @{text "count f"} is
@@ -586,8 +586,8 @@ In summary, the time to evaluate @{term "find_closest p \<delta> ps"} is constan
 and thus evaluating @{term "find_closest_pair (p\<^sub>0, p\<^sub>1) ps"} as well as @{term "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"} 
 takes time linear in @{term "length ps"}.
 
-Next we turn our attention to the timing of @{term "closest_pair_rec xs"}
-and define (but do not show) the corresponding function @{term "t_closest_pair_rec xs"}.
+Next we turn our attention to the timing of @{const closest_pair_rec}
+and define (but do not show) the corresponding function @{const t_closest_pair_rec}.
 At this point we could prove a concrete bound on @{const t_closest_pair_rec}.
 But since we are dealing with a divide-and-conquer algorithm we should, in theory, be able to determine its
 running time using the `master theorem' \cite{Introduction-to-Algorithms:2009}. This is, in practice, also
@@ -700,7 +700,7 @@ between both formalizations we encourage the reader the consult our entry in the
 \subsection{Related Work}
 
 Over the years a considerable amount of effort has been made to further optimize the @{const combine} step.
-Central to these improvements is the `complexity of computing distances', abbreviated `CCP' in the following, 
+Central to these improvements is the `complexity of computing distances', abbreviated CCP in the following, 
 a term introduced by \mbox{Zhou \emph{et al.}~\cite{zhou1998improved}} which measures the number of Euclidean 
 distances computed by a closest pair algorithm. The core idea being, since computing the Euclidean 
 distance is more expensive than other primitive operations, it might be possible to improve overall 
@@ -724,11 +724,11 @@ the CCP minimizing algorithms according to Jiang and Gillespie) we have to make 
 to generate executable code from our formalization.
 
 In Section \ref{section:proving_functional_correctness} we fixed the data representation of a point 
-to be a pair of mathematical ints over a pair of mathematical reals. During code export Isabelle 
+to be a pair of mathematical ints rather than mathematical reals. During code export Isabelle 
 can then correctly and automatically maps its abstract data type @{typ int} to a suitable concrete 
 implementation of (arbitrary-sized) integers; for our target language OCaml using the library `zarith'. 
 For the data type @{typ real} this is not possible since we cannot implement mathematical reals. We would instead 
-have to resort to an approximation (e.g. floats) losing all proven guarantees in the process. 
+have to resort to an approximation (e.g. floats) losing all proved guarantees in the process. 
 But currently our algorithm still uses the standard Euclidean distance and hence mathematical reals due 
 to the @{const sqrt} function. For the executable code we have to replace this distance measure by the 
 squared Euclidean distance. To prove that we preserve the correctness of our implementation several 
