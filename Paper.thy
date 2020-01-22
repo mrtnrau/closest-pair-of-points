@@ -86,7 +86,7 @@ text\<open>
 \section{Introduction}
 
 The \textit{Closest Pair of Points} or \textit{Closest Pair} problem is one of the fundamental
-problems in Computational Geometry: Given a set \<open>P\<close> of @{prop "n \<ge> 2"} points in $\mathbb{R}^d$,
+problems in Computational Geometry: Given a set \<open>P\<close> of \<open>n \<ge> 2\<close> points in $\mathbb{R}^d$,
 find the closest pair of $P$, i.e. two points $p_0 \in P$ and $p_1 \in P$ ($p_0 \ne p_1$) such that 
 the distance between $p_0$ and $p_1$ is less than or equal to the distance of any distinct pair 
 of points of $P$.
@@ -118,8 +118,8 @@ high-level description that covers both implementations. Section \ref{section:pr
 implementation and its functional correctness proof. Section \ref{section:proving_running_time} proves
 the running time of $\mathcal{O}(n \log n)$ of the implementation of the previous section.
 Section \ref{section:alt_impl} describes our second implementation and illustrates how the proofs of
-Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted
-to this implementation. We also give an overview over further implementation approaches.
+Sections \ref{section:proving_functional_correctness} and \ref{section:proving_running_time} need to be adjusted. 
+We also give an overview over further implementation approaches.
 Section \ref{section:executable_code} describes final adjustments to obtain executable versions of the algorithms in target languages
 such as OCaml and SML and evaluates them against handwritten imperative and functional implementations. 
 Section \ref{section:conclusion} concludes.
@@ -163,12 +163,12 @@ combinations. Otherwise we apply the divide-and-conquer tactic.
 
 We divide $P$ into two sets $P_L$ and $P_R$ along a vertical 
 line $l$ such that the sizes of $P_L$ and $P_R$ differ by at most $1$ and the
-$y$-coordinate of all points $p_L \in P_L\,(p_R \in P_R)$ is less
+$y$-coordinate of all points \mbox{$p_L \in P_L\,(p_R \in P_R)$} is less
 (greater) than or equal to $l$.
 
 We then conquer the left and right subproblems by applying the algorithm recursively, 
-obtaining $(p_{L0},\;p_{L1})$ and $(p_{R0},\;p_{R1})$, the closest pairs of $P_L$ and 
-$P_R$, respectively. Let $\delta_L$ and $\delta_R$ denote the distance of the left and right closest
+obtaining $(p_{L0},\;p_{L1})$ and $(p_{R0},\;p_{R1})$, the respective closest pairs of $P_L$ and 
+$P_R$. Let $\delta_L$ and $\delta_R$ denote the distance of the left and right closest
 pairs and let $\delta = \mathit{min}\;\delta_L\;\delta_R$. 
 At this point the closest pair of $P$ is either $(p_{L0},\; p_{L1})$, 
 $(p_{R0},\,p_{R1})$ or a pair of points $p_0 \in P_L$ and $p_1 \in P_R$
@@ -176,10 +176,10 @@ with a distance strictly less than $\delta$. If the former is the case we have a
 
 Now we assume the latter and have reached the most interesting part of divide-and-conquer algorithms,
 the @{const combine} step. It is not hard to see that both points of the closest pair 
-must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ys}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
-$\mathit{ys}$ and computing for each point its closest neighbor. But in the worst case, $\mathit{ys}$ contains all points of $P$, 
+must be within a $2\delta$ wide vertical strip centered around $l$. Let $\mathit{ps}$ be a list of all points in $P$ that are contained within this $2\delta$ wide strip, sorted in ascending order by $y$-coordinate. We can find our closest pair by iterating over
+$\mathit{ps}$ and computing for each point its closest neighbor. But in the worst case $\mathit{ps}$ contains all points of $P$, 
 and we might think our only option is to again check all $n \choose 2$ point combinations. 
-This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ys}$, depicted as the square
+This is not the case. Let @{term p} denote an arbitrary point of $\mathit{ps}$, depicted as the square
 point in Figure \ref{fig:Combine}.
 %
 \begin{figure}[htpb]
@@ -190,13 +190,13 @@ point in Figure \ref{fig:Combine}.
 \end{figure}
 %
 If @{term p} is one of the points of the closest pair, then the distance to its closest
-neighbor is strictly less than $\delta$ and we only have to check all points $q \in \mathit{set\ ys}$
+neighbor is strictly less than $\delta$ and we only have to check all points $q \in \mathit{set\ ps}$
 that are contained within the $2\delta$ wide horizontal strip centered around the $y$-coordinate of @{term p}.
 
-In Section \ref{section:proving_running_time} we prove that, for each $p \in \mathit{set\ ys}$, it suffices to check 
+In Section \ref{section:proving_running_time} we prove that, for each $p \in \mathit{set\ ps}$, it suffices to check 
 only a constant number of closest point candidates. This fact allows for an implementation of 
 the @{const combine} step that runs in linear time and ultimately lets us achieve the familiar recurrence 
-relation of $T(n) = T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor) + \mathcal{O}(n)$, 
+of $T(n) = T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor) + \mathcal{O}(n)$, 
 which results in the running time of $\mathcal{O}(n \log n)$.
 
 We glossed over some implementation details to achieve this theoretical time complexity.
@@ -212,7 +212,7 @@ using a bottom-up approach, starting with the @{const combine} step. The basis f
 presented by Cormen \emph{et al.} \cite{Introduction-to-Algorithms:2009}. But first we need to define the closest pair problem formally.
 
 A point in the two-dimensional Euclidean plane is represented as a pair of (unbounded)
-integers\footnote{We chose integers over reals because be we cannot implement
+integers\footnote{We choose integers over reals because be we cannot implement
 mathematical reals. See Section \ref{section:executable_code}.}.
 The library HOL-Analysis provides a generic distance function @{const dist} applicable to our point definition.
 The definition of this specific @{const dist} instance corresponds to the familiar Euclidean distance measure.
@@ -234,12 +234,12 @@ by adhering to a similar proof structure.
 \subsection{The Combine Step}
 
 The essence of the @{const combine} step deals with the following scenario: We are given an initial pair of points
-with a distance of $\delta$ and a list $\mathit{ys}$ of points, sorted in ascending order by $y$-coordinate
+with a distance of $\delta$ and a list $\mathit{ps}$ of points, sorted in ascending order by $y$-coordinate
 that are contained in the $2\delta$ wide vertical strip centered around $l$ (see Figure \ref{fig:Combine}). Our task is to
-efficiently compute a pair of points with a distance $\delta'\ (\delta' \le \delta)$ such that $\mathit{ys}$ is $\delta'$-sparse.
-The recursive function \textit{find\_closest\_pair} achieves this by iterating over $\mathit{ys}$, computing
+efficiently compute a pair of points with a distance $\delta'\ (\delta' \le \delta)$ such that $\mathit{ps}$ is $\delta'$-sparse.
+The recursive function \textit{find\_closest\_pair} achieves this by iterating over $\mathit{ps}$, computing
 for each point its closest neighbor by calling the recursive function \textit{find\_closest}, which
-considers only the points within the $2\delta$ sized square of Figure \ref{fig:Combine}, and updating the
+considers only the points within the shaded square of Figure \ref{fig:Combine}, and updating the
 current pair of points accordingly. We omit the implementation of the trivial base cases.
 
 \begin{quote}
@@ -254,10 +254,10 @@ current pair of points accordingly. We omit the implementation of the trivial ba
 
 There are several noteworthy aspects of this implementation. The recursive search for the closest neighbor
 of a given point $p$ of \textit{find\_closest} starts at the first point spatially above $p$, continues upwards and 
-is stopped early at the first point whose vertical distance to $p$ exceeds the given $\delta$. Thus the function
-considers, in contrast to Figure \ref{fig:Combine}, only the upper half of the $2\delta$ sized square during this search. 
+is stopped early at the first point whose vertical distance to $p$ is equal to or exceeds the given $\delta$. Thus the function
+considers, in contrast to Figure \ref{fig:Combine}, only the upper half of the shaded square during this search. 
 This is sufficient for the computation of a closest pair because for each possible point $q$ preceding $p$ in 
-$\mathit{ys}$ we already considered the pair $(q,\,p)$, if needed, and do not have to re-check $(p,\,q)$ due to the
+$\mathit{ps}$ we already considered the pair $(q,\,p)$, if needed, and do not have to re-check $(p,\,q)$ due to the
 commutative property of our closest pair definition. Note also that $\delta$ is updated, if possible, 
 during the computation and consequently the search space for each point is limited to a $2\delta \times \delta'$
 rectangle with $\delta' \le \delta$. Lastly we intentionally do not minimize the number of distance computations.
@@ -320,12 +320,12 @@ along a vertical line $l$ into two lists of nearly equal length during the divid
 a list $\mathit{ys}$ of the same points, sorted in ascending order by $y$-coordinate, for the @{const combine}
 step in \emph{linear} time at each level of recursion.
 
-Cormen \emph{et al.} propose the following `top-down' approach: Their algorithm takes three arguments: the set 
+Cormen \emph{et al.} propose the following top-down approach: Their algorithm takes three arguments: the set 
 of points \<open>P\<close> and lists \<open>xs\<close> and \<open>ys\<close> which contain the same set of points \<open>P\<close> but are respectively 
 sorted by \<open>x\<close> and \<open>y\<close>-coordinate. The algorithm first splits \<open>xs\<close> at \<open>length xs div 2\<close> into two still
 sorted lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> and chooses \<open>l\<close> as either the \<open>x\<close>-coordinate of the last element of \<open>xs\<^sub>L\<close>
-or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It then constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
-of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For the recursive invocations it then needs to obtain in addition lists 
+or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
+of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For the recursive invocations it needs to obtain in addition lists 
 \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> which are still sorted by \<open>y\<close>-coordinate and again respectively refer to the same points as
 \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
 contained in \<open>P\<^sub>L\<close> or not, constructing \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> along the way.
@@ -336,7 +336,7 @@ of sets with linear time construction and constant time membership test, which i
 particular in a functional setting. To avoid sets many publications and implementations either assume
 all points have unique \<open>x\<close>-coordinates or preprocess the points by applying for example a rotation
 such that the input fulfills this condition. For distinct \<open>x\<close>-coordinates one can then compute \<open>ys\<^sub>L\<close> 
-and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
+and \<open>ys\<^sub>R\<close> by simply filtering \<open>ys\<close> depending on the \<open>x\<close>-coordinate of the points relative to \<open>l\<close> and 
 eliminate the usage of sets entirely.
 
 But there exists a third option which we have found only in Cormen \emph{et al.} where it is merely hinted at in an exercise left to the reader. The approach is the following.
@@ -502,19 +502,19 @@ some useful abbreviations:
 \end{itemize}
 
 Let additionally \<open>ps\<^sub>f\<close> abbreviate the term @{term "filter (\<lambda>q. snd q - snd p \<le> \<delta>) ps"}.
-First we prove @{term "length (p # ps\<^sub>f) \<le> card R\<^sub>p\<^sub>s"}: Let \<open>q\<close> denote an arbitrary point of \<open>p # ps\<^sub>f\<close>. We know
-@{term "snd p \<le> snd q"} because the list @{term "p # ps"} and therefore \<open>p # ps\<^sub>f\<close> is sorted in ascending order by \<open>y\<close>-coordinate and
-@{term "snd q \<le> snd p + \<delta>"} due to the filter predicate (@{term "\<lambda>q. snd q - snd p \<le> \<delta>"}). 
+First we prove @{term "length (p # ps\<^sub>f) \<le> card R\<^sub>p\<^sub>s"}: Let \<open>q\<close> denote an arbitrary point of \mbox{\<open>p # ps\<^sub>f\<close>}. We know
+@{term "snd p \<le> snd q"} because the list @{term "p # ps"} and therefore \mbox{\<open>p # ps\<^sub>f\<close>} is sorted in ascending order by \<open>y\<close>-coordinate and
+\mbox{@{term "snd q \<le> snd p + \<delta>"}} due to the filter predicate (@{term "\<lambda>q. snd q - snd p \<le> \<delta>"}). 
 Using the additional facts @{term "l - \<delta> \<le> fst q"} and @{term "fst q \<le> l + \<delta>"} (derived from our assumption
 that all points of @{term "p # ps"} are contained within the @{text "2\<delta>"} strip)
 and the definitions of \<open>R\<^sub>p\<^sub>s\<close>, \<open>R\<close> and @{const cbox} we know @{term "q \<in> R\<^sub>p\<^sub>s"} and thus @{term "set (p # ps\<^sub>f) \<subseteq> R\<^sub>p\<^sub>s"}. 
 Since the list \<open>p # ps\<^sub>f\<close> maintains the distinctness property of @{term "p # ps"} we additionally have 
-@{term "length (p # ps\<^sub>f) = card (set (p # ps\<^sub>f))"}. Our intermediate goal immediately follows because 
+\mbox{@{term "length (p # ps\<^sub>f) = card (set (p # ps\<^sub>f))"}}. Our intermediate goal immediately follows because 
 @{term "card (set (p # ps\<^sub>f)) \<le> card R\<^sub>p\<^sub>s"} holds for the finite set \<open>R\<^sub>p\<^sub>s\<close>.
 
 But how many points can there be in \<open>R\<^sub>p\<^sub>s\<close>? Lets first try to determine an upper bound for the number of points of \<open>S\<^sub>P\<^sub>L\<close>.
 All its points are contained within the square \<open>S\<^sub>L\<close> whose side length is \<open>\<delta>\<close>. Moreover, since \<open>P\<^sub>L\<close> is \<open>\<delta>\<close>-sparse and 
-\<open>S\<^sub>P\<^sub>L \<subseteq> P\<^sub>L\<close>, \<open>S\<^sub>P\<^sub>L\<close> is also \<open>\<delta>\<close>-sparse, or the distance between each distinct pair of points of \<open>S\<^sub>P\<^sub>L\<close> is at least \<open>\<delta>\<close>.
+\mbox{\<open>S\<^sub>P\<^sub>L \<subseteq> P\<^sub>L\<close>}, \<open>S\<^sub>P\<^sub>L\<close> is also \<open>\<delta>\<close>-sparse, or the distance between each distinct pair of points of \<open>S\<^sub>P\<^sub>L\<close> is at least \<open>\<delta>\<close>.
 Therefore the cardinality of \<open>S\<^sub>P\<^sub>L\<close> is bounded by the number of points we can maximally fit into \<open>S\<^sub>L\<close>, maintaining
 a pairwise minimum distance of \<open>\<delta>\<close>. As the left-hand side of Figure \ref{fig:core_arguments} depicts, we can arrange at most four points
 adhering to these restrictions, and consequently have @{term "card S\<^sub>P\<^sub>L \<le> 4"}. An analogous argument holds for
@@ -573,7 +573,7 @@ Then \<open>S\<close> can be split into the four congruent squares @{text "S\<^s
 @{text "(x + \<delta>/2, y + \<delta>/2)"} as depicted by the right-hand side of Figure \ref{fig:core_arguments}. 
 Since all points of \<open>P\<close> are contained within \<open>S\<close> and @{term "S = \<Union>{S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"} we have @{term "P \<subseteq> \<Union>{S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"}.
 Using Lemma \ref{lemma:pigeonhole} and our assumption  @{term "card P > 4"} we know there exists a square 
-@{term "S\<^sub>i \<in> {S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"} and a pair of distinct points @{term "p\<^sub>0 \<in> S\<^sub>i"} and @{term "p\<^sub>1 \<in> S\<^sub>i"}.
+\mbox{@{term "S\<^sub>i \<in> {S\<^sub>1, S\<^sub>2, S\<^sub>3, S\<^sub>4}"}} and a pair of distinct points @{term "p\<^sub>0 \<in> S\<^sub>i"} and @{term "p\<^sub>1 \<in> S\<^sub>i"}.
 Lemma \ref{lemma:max_dist_square} and the fact that all four sub-squares have the same side length @{text "\<delta> / 2"}
 shows that the distance between \<open>p\<^sub>0\<close> and \<open>p\<^sub>1\<close> must be less than or equal to @{text "\<^latex>\<open>$\\sqrt{2}$\<close> / 2 * \<delta>"} and hence
 strictly less than \<open>\<delta>\<close>. But we also know that \<open>\<delta>\<close> is a lower bound for this distance because @{term "p\<^sub>0 \<in> P"},
@@ -677,7 +677,7 @@ Cormen \emph{et al.} are always assuming the worst case by checking all @{text 7
 But it is unlikely that the algorithm needs to examine even close to @{text 7} points, except for specifically
 constructed inputs. They furthermore state that the bound of @{text 7} is an over-approximation 
 and dare the reader to lower it to \<open>5\<close> as an exercise. We refrain from doing so since a bound of 
-\<open>7\<close> suffices for the time complexity proof for our, inherently faster, implementation. At 
+\<open>7\<close> suffices for the time complexity proof of our, inherently faster, implementation. At 
 this point we should also mention that the specific optimization of Section~\ref{section:proving_functional_correctness}
 is not our idea but rather an algorithmic detail which is unfortunately rarely mentioned in the
 literature.
@@ -694,14 +694,14 @@ during the functional correctness proof since we need to argue that examining on
 points of \<open>ps\<close> is sufficient. The time analysis is overall greatly simplified: A call of the form 
 @{term "find_closest_bf p (take 7 ps)"} runs in constant time and we again are able to reuse the remaining 
 time analysis proof structure of Section \ref{section:proving_running_time}. For the exact differences
-between both formalizations we encourage the reader the consult the entry in the Archive of Formal Proofs 
+between both formalizations we encourage the reader the consult our entry in the Archive of Formal Proofs 
 @{cite "Closest_Pair_Points-AFP"}.
 
 \subsection{Related Work}
 
 Over the years a considerable amount of effort has been made to further optimize the @{const combine} step.
 Central to these improvements is the `complexity of computing distances', abbreviated `CCP' in the following, 
-a term introduced by Zhou \emph{et al.} \cite{zhou1998improved} which measures the number of Euclidean 
+a term introduced by \mbox{Zhou \emph{et al.}~\cite{zhou1998improved}} which measures the number of Euclidean 
 distances computed by a closest pair algorithm. The core idea being, since computing the Euclidean 
 distance is more expensive than other primitive operations, it might be possible to improve overall 
 algorithmic running time by reducing this complexity measure. In the same paper they introduce an 
@@ -712,14 +712,14 @@ improve upon the algorithm presented by Preparata and Shamos \cite{Computational
 which achieves CCP of $3n \log n$. Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, 
 algorithm on the version of Zhou \emph{et al.} and prove an even lower CCP of $\frac{3}{2}n \log n$ 
 for their implementation. The race for the lowest number of distance computations culminates so far 
-with the work of Jiang and Gillespie \cite{jiang2007engineering} who present their algorithms `Basic-2' 
+with the work of Jiang and Gillespie~\cite{jiang2007engineering} who present their algorithms `Basic-2' 
 \footnote{Pereira and Lobo \cite{pereira2012optimized} later independently developed the same algorithm 
 and additionally present extensive functional correctness proofs for all Minkowski distances.} and 
 `2-Pass' with a respective CCP of $2n \log n$ and (for the first time linear) $\frac{7}{2}n$.
 
 \section{Executable Code} \label{section:executable_code}
 
-Before we explore how our algorithm stacks up against Basic-2 (which surprisingly is the fastest of 
+Before we explore how our algorithm stacks up against Basic-2 (which is surprisingly the fastest of 
 the CCP minimizing algorithms according to Jiang and Gillespie) we have to make some final adjustments 
 to generate executable code from our formalization.
 
@@ -730,7 +730,7 @@ implementation of (arbitrary-sized) integers; for our target language OCaml usin
 For the data type @{typ real} this is not possible since we cannot implement mathematical reals. We would instead 
 have to resort to an approximation (e.g. floats) losing all proven guarantees in the process. 
 But currently our algorithm still uses the standard Euclidean distance and hence mathematical reals due 
-to the @{const sqrt} function. For the executable code we muse replace this distance measure by the 
+to the @{const sqrt} function. For the executable code we have to replace this distance measure by the 
 squared Euclidean distance. To prove that we preserve the correctness of our implementation several 
 small variations of the following lemma suffice:
 %
