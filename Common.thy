@@ -6,6 +6,7 @@ imports
   "Akra_Bazzi.Akra_Bazzi_Method"
   "Akra_Bazzi.Akra_Bazzi_Approximation"
   "HOL-Library.Code_Target_Numeral"
+  "Time_Monad"
 begin
 
 type_synonym point = "int * int"
@@ -123,13 +124,34 @@ lemma filter_Un:
 
 subsubsection \<open>@{const length}\<close>
 
-fun t_length :: "'a list \<Rightarrow> nat" where
-  "t_length [] = 0"
-| "t_length (x#xs) = 1 + t_length xs"
+fun length_tm :: "'a list \<Rightarrow> nat tm" where
+  "length_tm [] =1 return 0"
+| "length_tm (x # xs) =1
+    do {
+      l <- length_tm xs;
+      return (1 + l)
+    }"
 
-lemma t_length:
-  "t_length xs = length xs"
+lemma length_eq_val_length_tm:
+  "length xs = val (length_tm xs)"
   by (induction xs) auto
+
+definition t_length :: "'a list \<Rightarrow> nat" where
+  "t_length xs = time (length_tm xs)"
+
+lemma t_length_Nil:
+  "t_length [] = 1"
+  unfolding t_length_def by (simp add: tm_simps)
+
+lemma t_length_Cons:
+  "t_length (x # xs) = 1 + t_length xs"
+  unfolding t_length_def by (simp add: tm_simps split: tm.split)
+
+lemmas t_length_simps = t_length_Nil t_length_Cons
+
+lemma t_length_bound:
+  "t_length xs = length xs + 1"
+  by (induction xs) (auto simp: t_length_simps)
 
 fun length_it' :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
   "length_it' acc [] = acc"
@@ -165,27 +187,76 @@ lemma rev_conv_rev_it[code_unfold]:
 
 subsubsection \<open>@{const take}\<close>
 
-fun t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_take n [] = 0"
-| "t_take n (x#xs) = 1 + (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc m \<Rightarrow> t_take m xs
-  )"
+fun take_tm :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list tm" where
+  "take_tm n [] =1 return []"
+| "take_tm n (x # xs) =1
+    (case n of
+       0 \<Rightarrow> return []
+     | Suc m \<Rightarrow> do {
+         ys <- take_tm m xs;
+         return (x # ys)
+       }
+    )"
 
-lemma t_take:
-  "t_take n xs \<le> min (n + 1) (length xs)"
+lemma take_eq_val_take_tm:
+  "take n xs = val (take_tm n xs)"
   by (induction xs arbitrary: n) (auto split: nat.split)
+
+definition t_take :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_take n xs = time (take_tm n xs)"
+
+lemma t_take_Nil:
+  "t_take n [] = 1"
+  unfolding t_take_def by (simp add: tm_simps)
+
+lemma t_take_Cons:
+  "t_take n (x # xs) = (
+    case n of
+      0 \<Rightarrow> 1
+    | Suc m \<Rightarrow> 1 + t_take m xs
+  )"
+  unfolding t_take_def by (simp add: tm_simps split: nat.split tm.split)
+
+lemmas t_take_simps = t_take_Nil t_take_Cons
+
+lemma t_take_bound:
+  "t_take n xs = min n (length xs) + 1"
+  by (induction xs arbitrary: n) (auto simp: t_take_simps split: nat.split)
 
 subsubsection \<open>@{const filter}\<close>
 
-fun t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_filter P [] = 0"
-| "t_filter P (x#xs) = 1 + (if P x then t_filter P xs else t_filter P xs)"
+fun filter_tm :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list tm" where
+  "filter_tm P [] =1 return []"
+| "filter_tm P (x # xs) =1
+    (if P x then
+       do {
+         ys <- filter_tm P xs;
+         return (x # ys)
+       }
+     else
+       filter_tm P xs
+    )"
 
-lemma t_filter:
-  "t_filter P xs = length xs"
+lemma filter_eq_val_filter_tm:
+  "filter P xs = val (filter_tm P xs)"
   by (induction xs) auto
+
+definition t_filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_filter P xs = time (filter_tm P xs)"
+
+lemma t_filter_Nil:
+  "t_filter P [] = 1"
+  unfolding t_filter_def by (simp add: tm_simps)
+
+lemma t_filter_Cons:
+  "t_filter P (x # xs) = 1 + t_filter P xs"
+  unfolding t_filter_def by (simp add: tm_simps split: tm.split)
+
+lemmas t_filter_simps = t_filter_Nil t_filter_Cons
+
+lemma t_filter_bound:
+  "t_filter P xs = length xs + 1"
+  by (induction xs) (auto simp: t_filter_simps)
 
 fun filter_it' :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "filter_it' acc P [] = rev acc"
@@ -209,31 +280,56 @@ lemma filter_conv_filter_it[code_unfold]:
 
 subsubsection \<open>\<open>split_at\<close>\<close>
 
-fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
+fun split_at_tm :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list \<times> 'a list) tm" where
+  "split_at_tm n [] =1 return ([], [])"
+| "split_at_tm n (x # xs) =1 (
+    case n of
+      0 \<Rightarrow> return ([], x # xs)
+    | Suc m \<Rightarrow>
+      do {
+        (xs', ys') <- split_at_tm m xs;
+        return (x # xs', ys')
+      }
+  )"
+
+fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list \<times> 'a list" where
   "split_at n [] = ([], [])"
 | "split_at n (x # xs) = (
-    case n of
+    case n of 
       0 \<Rightarrow> ([], x # xs)
-    | Suc m \<Rightarrow>
-      let (xs', ys') = split_at m xs in
-      (x # xs', ys')
+    | Suc m \<Rightarrow> 
+        let (xs', ys') = split_at m xs in
+        (x # xs', ys')
   )"
+
+lemma split_at_eq_val_split_at_tm:
+  "split_at n xs = val (split_at_tm n xs)"
+  by (induction xs arbitrary: n) (auto split: nat.split prod.split)
 
 lemma split_at_take_drop_conv:
   "split_at n xs = (take n xs, drop n xs)"
-  by (induction xs arbitrary: n) (auto split: nat.split)
+  by (induction xs arbitrary: n) (auto simp: split: nat.split)
 
-fun t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "t_split_at n [] = 0"
-| "t_split_at n (x#xs) = 1 + (
-    case n of
-      0 \<Rightarrow> 0
-    | Suc m \<Rightarrow> t_split_at m xs
+definition t_split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "t_split_at n xs = time (split_at_tm n xs)"
+
+lemma t_split_at_Nil:
+  "t_split_at n [] = 1"
+  unfolding t_split_at_def by (simp add: tm_simps)
+
+lemma t_split_at_Cons:
+  "t_split_at n (x # xs) = (
+    case n of 
+      0 \<Rightarrow> 1
+    | Suc m \<Rightarrow> 1 + t_split_at m xs
   )"
+  unfolding t_split_at_def by (simp add: tm_simps split: nat.split tm.split)
 
-lemma t_split_at:
-  "t_split_at n xs \<le> length xs"
-  by (induction xs arbitrary: n) (auto split: nat.split)
+lemmas t_split_at_simps = t_split_at_Nil t_split_at_Cons
+
+lemma t_split_at_bound:
+  "t_split_at n xs = min n (length xs) + 1"
+  by (induction xs arbitrary: n) (auto simp: t_split_at_simps split: nat.split)
 
 fun split_at_it' :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a list)" where
   "split_at_it' acc n [] = (rev acc, [])"
@@ -247,12 +343,12 @@ definition split_at_it :: "nat \<Rightarrow> 'a list \<Rightarrow> ('a list * 'a
   "split_at_it n xs = split_at_it' [] n xs"
 
 lemma split_at_conv_split_at_it':
-  assumes "(ts, ds) = split_at n xs" "(tsi, dsi) = split_at_it' acc n xs"
-  shows "rev acc @ ts = tsi"
-    and "ds = dsi"
+  assumes "(ts, ds) = split_at n xs" "(ts', ds') = split_at_it' acc n xs"
+  shows "rev acc @ ts = ts'"
+    and "ds = ds'"
   using assms
   apply (induction acc n xs arbitrary: ts rule: split_at_it'.induct)
-  apply (auto simp: split_at.simps split: prod.splits nat.splits)
+  apply (auto simp: split: prod.splits nat.splits)
   done
 
 lemma split_at_conv_split_at_it_prod:
@@ -276,6 +372,22 @@ definition sorted_fst :: "point list \<Rightarrow> bool" where
 definition sorted_snd :: "point list \<Rightarrow> bool" where
   "sorted_snd ps = sorted_wrt (\<lambda>p\<^sub>0 p\<^sub>1. snd p\<^sub>0 \<le> snd p\<^sub>1) ps"
 
+fun merge_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list tm" where
+  "merge_tm f (x # xs) (y # ys) =1 (
+    if f x \<le> f y then
+      do {
+        tl <- merge_tm f xs (y # ys);
+        return (x # tl)
+      }
+    else
+      do {
+        tl <- merge_tm f (x # xs) ys;
+        return (y # tl)
+      }
+  )"
+| "merge_tm f [] ys =1 return ys"
+| "merge_tm f xs [] =1 return xs"
+
 fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> 'b list" where
   "merge f (x # xs) (y # ys) = (
     if f x \<le> f y then
@@ -285,6 +397,10 @@ fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow
   )"
 | "merge f [] ys = ys"
 | "merge f xs [] = xs"
+
+lemma merge_eq_val_merge_tm:
+  "merge f xs ys = val (merge_tm f xs ys)"
+  by (induction f xs ys rule: merge.induct) auto
 
 lemma length_merge:
   "length (merge f xs ys) = length xs + length ys"
@@ -304,6 +420,23 @@ lemma sorted_merge:
   shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
   using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
+function mergesort_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list tm" where
+  "mergesort_tm f [] =1 return []"
+| "mergesort_tm f [x] =1 return [x]"
+| "mergesort_tm f (x # y # xs) =1 (
+    do {
+      n <- length_tm (x # y # xs);
+      (xs\<^sub>l, xs\<^sub>r) <- split_at_tm (n div 2) (x # y # xs);
+      l <- mergesort_tm f xs\<^sub>l;
+      r <- mergesort_tm f xs\<^sub>r;
+      merge_tm f l r
+    }
+  )"
+  by pat_completeness auto
+termination mergesort_tm
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+  sorry
+
 function mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
   "mergesort f [] = []"
 | "mergesort f [x] = [x]"
@@ -315,9 +448,13 @@ function mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<R
   )"
   by pat_completeness auto
 termination mergesort
-  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-  apply (auto simp: split_at_take_drop_conv Let_def)
-  done
+  by (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+     (auto simp: split_at_take_drop_conv Let_def)
+
+lemma mergesort_eq_val_mergesort_tm:
+  "mergesort f xs = val (mergesort_tm f xs)"
+  by (induction f xs rule: mergesort.induct)
+     (auto simp add: length_eq_val_length_tm split_at_eq_val_split_at_tm merge_eq_val_merge_tm split: prod.split)
 
 lemma sorted_wrt_mergesort:
   "sorted_wrt (\<lambda>x y. f x \<le> f y) (mergesort f xs)"
@@ -364,31 +501,39 @@ lemma sorted_fst_hd_drop_less_drop:
 
 subsubsection "Time Complexity Proof"
 
-fun t_merge' :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
-  "t_merge' f (x#xs) (y#ys) = 1 + (
+fun t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list \<Rightarrow> nat" where
+  "t_merge f (x#xs) (y#ys) = 1 + (
     if f x \<le> f y then
-      t_merge' f xs (y#ys)
+      t_merge f xs (y#ys)
     else
-      t_merge' f (x#xs) ys
+      t_merge f (x#xs) ys
   )"
-| "t_merge' f xs [] = 0"
-| "t_merge' f [] ys = 0"
+| "t_merge f xs [] = 1"
+| "t_merge f [] ys = 1"
 
-definition t_merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> ('b list * 'b list) \<Rightarrow> nat" where
-  "t_merge f xys = t_merge' f (fst xys) (snd xys)"
+lemma t_merge_eq_time_merge_tm:
+  "t_merge f xs ys = time (merge_tm f xs ys)"
+  apply (induction f xs ys rule: t_merge.induct)
+  apply (auto simp: tm_simps split: tm.split)
+  subgoal for f xs
+    apply (cases xs, auto simp: tm_simps)
+    done
+  done
 
-lemma t_merge:
-  "t_merge f (xs, ys) \<le> length xs + length ys"
-  unfolding t_merge_def by (induction f xs ys rule: t_merge'.induct) auto
+lemma t_merge_bound:
+  "t_merge f xs ys \<le> length xs + length ys + 1"
+  by (induction f xs ys rule: t_merge.induct) auto
 
 function t_mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> nat" where
-  "t_mergesort f [] = 0"
+  "t_mergesort f [] = 1"
 | "t_mergesort f [_] = 1"
-| "t_mergesort f (x # y # xs') = (
-    let xs = x # y # xs' in
-    let (l, r) = split_at (length xs div 2) xs in
-    t_length xs + t_split_at (length xs div 2) xs +
-    t_mergesort f l + t_mergesort f r + t_merge f (l, r)
+| "t_mergesort f (x # y # xs) = 1 + (
+    let n = length (x # y # xs) in
+    let (l, r) = split_at (n div 2) (x # y # xs) in
+    let lm = mergesort f l in
+    let rm = mergesort f r in
+    t_length (x # y # xs) + t_split_at (n div 2) (x # y # xs) +
+    t_mergesort f l + t_mergesort f r + t_merge f lm rm
   )"
   by pat_completeness auto
 termination t_mergesort
@@ -396,11 +541,36 @@ termination t_mergesort
   apply (auto simp: split_at_take_drop_conv Let_def)
   done
 
+lemma t_mergesort_eq_time_mergesort_tm:
+  "t_mergesort f xs = time (mergesort_tm f xs)"
+proof (induction f xs rule: t_mergesort.induct)
+  case (3 f x y xs)
+
+  let ?xs = "x # y # xs"
+  let ?n = "length ?xs"
+  obtain l r where lr_def: "(l, r) = split_at (?n div 2) ?xs"
+    by (simp add: split_at_take_drop_conv)
+  let ?l = "mergesort f l"
+  let ?r = "mergesort f r"
+
+  have *: "t_mergesort f ?xs = 1 + t_length ?xs + t_split_at (?n div 2) ?xs + t_mergesort f l + 
+                            t_mergesort f r + t_merge f ?l ?r"
+    using lr_def by (auto split: prod.splits)
+
+  have "time (mergesort_tm f ?xs) = 1 + time (length_tm ?xs) + time (split_at_tm (?n div 2) ?xs) +
+         time (mergesort_tm f l) + time (mergesort_tm f r) + time (merge_tm f ?l ?r)"
+    using lr_def apply (auto simp del: split_at.simps split_at_tm.simps simp add: tm_simps split: tm.split)
+    by (metis (no_types, lifting) length_eq_val_length_tm mergesort_eq_val_mergesort_tm prod.sel(1) prod.sel(2) split_at_eq_val_split_at_tm surj_TM tm.inject)
+
+  thus ?case
+    by (metis "3.IH" * lr_def t_length_def t_merge_eq_time_merge_tm t_split_at_def)
+qed (auto simp: tm_simps)
+
 function mergesort_recurrence :: "nat \<Rightarrow> real" where
-  "mergesort_recurrence 0 = 0"
+  "mergesort_recurrence 0 = 1"
 | "mergesort_recurrence 1 = 1"
-| "2 \<le> n \<Longrightarrow> mergesort_recurrence n = mergesort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + 
-    mergesort_recurrence (nat \<lceil>real n / 2\<rceil>) + 3 * n"
+| "2 \<le> n \<Longrightarrow> mergesort_recurrence n = 1 + mergesort_recurrence (nat \<lfloor>real n / 2\<rfloor>) + 
+    mergesort_recurrence (nat \<lceil>real n / 2\<rceil>) + 3 * n + 3"
   by force simp_all
 termination by akra_bazzi_termination simp_all
 
@@ -421,10 +591,12 @@ next
   define N where "N = length XS"
   obtain L R where LR_def: "(L, R) = split_at (N div 2) XS"
     using prod.collapse by blast
-  note defs = XS_def N_def LR_def
+  define LM where "LM = mergesort f L"
+  define RM where "RM = mergesort f R"
+  note defs = XS_def N_def LR_def LM_def RM_def
 
-  let ?LHS = "t_length XS + t_split_at (N div 2) XS + t_mergesort f L + t_mergesort f R + t_merge f (L, R)"
-  let ?RHS = "mergesort_recurrence (nat \<lfloor>real N / 2\<rfloor>) + mergesort_recurrence (nat \<lceil>real N / 2\<rceil>) + 3 * N"
+  let ?LHS = "1 + t_length XS + t_split_at (N div 2) XS + t_mergesort f L + t_mergesort f R + t_merge f LM RM"
+  let ?RHS = "1 + mergesort_recurrence (nat \<lfloor>real N / 2\<rfloor>) + mergesort_recurrence (nat \<lceil>real N / 2\<rceil>) + 3 * N + 3"
 
   have IHL: "t_mergesort f L \<le> mergesort_recurrence (length L)"
     using defs "3.IH"(1) prod.collapse by blast
@@ -441,16 +613,16 @@ next
 
   have "N = length L + length R"
     using * by linarith
-  hence "t_merge f (L, R) \<le> N"
-    using t_merge by simp
-  moreover have "t_length XS = N"
-    using t_length N_def by blast
-  moreover have "t_split_at (N div 2) XS \<le> N"
-    using t_split_at N_def by blast
+  hence "t_merge f LM RM \<le> N + 1"
+    using t_merge_bound defs by (metis length_mergesort)
+  moreover have "t_length XS = N + 1"
+    using t_length_bound N_def by blast
+  moreover have "t_split_at (N div 2) XS \<le> N + 1"
+    using N_def by (simp add: t_split_at_bound)
   ultimately have *: "?LHS \<le> ?RHS"
     using IH by simp
   moreover have "t_mergesort f XS = ?LHS"
-    using defs by (auto simp: Let_def split: prod.split)
+    using defs by (auto simp add: Let_def split: prod.split)
   moreover have "mergesort_recurrence N = ?RHS"
     by (simp add: defs)
   ultimately have "t_mergesort f XS \<le> mergesort_recurrence N"
