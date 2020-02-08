@@ -1,7 +1,7 @@
 section "Common"
 
 theory Common
-imports
+  imports
   "HOL-Library.Going_To_Filter"
   "Akra_Bazzi.Akra_Bazzi_Method"
   "Akra_Bazzi.Akra_Bazzi_Approximation"
@@ -420,7 +420,7 @@ lemma sorted_merge:
   shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
   using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
-function mergesort_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list tm" where
+function (sequential) mergesort_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list tm" where
   "mergesort_tm f [] =1 return []"
 | "mergesort_tm f [x] =1 return [x]"
 | "mergesort_tm f (x # y # xs) =1 (
@@ -448,8 +448,9 @@ function mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<R
   )"
   by pat_completeness auto
 termination mergesort
-  by (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-     (auto simp: split_at_take_drop_conv Let_def)
+  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+  apply (auto simp: split_at_take_drop_conv Let_def)
+  done
 
 lemma mergesort_eq_val_mergesort_tm:
   "mergesort f xs = val (mergesort_tm f xs)"
@@ -547,23 +548,36 @@ proof (induction f xs rule: t_mergesort.induct)
   case (3 f x y xs)
 
   let ?xs = "x # y # xs"
-  let ?n = "length ?xs"
-  obtain l r where lr_def: "(l, r) = split_at (?n div 2) ?xs"
+  define n where "n = length ?xs"
+  obtain l r where lr_def: "(l, r) = split_at (n div 2) ?xs"
     by (simp add: split_at_take_drop_conv)
-  let ?l = "mergesort f l"
-  let ?r = "mergesort f r"
+  define lm where "lm = mergesort f l"
+  define rm where "rm = mergesort f r"
 
-  have *: "t_mergesort f ?xs = 1 + t_length ?xs + t_split_at (?n div 2) ?xs + t_mergesort f l + 
-                            t_mergesort f r + t_merge f ?l ?r"
-    using lr_def by (auto split: prod.splits)
+  define n_tm where "n_tm =  val (length_tm ?xs)"
+  obtain l_tm r_tm where lr_tm_def: "(l_tm, r_tm) = val (split_at_tm (n_tm div 2) ?xs)"
+    by (metis surj_pair)
+  define lm_tm where "lm_tm = val (mergesort_tm f l_tm)"
+  define rm_tm where "rm_tm = val (mergesort_tm f r_tm)"
+  note defs = n_def lm_def rm_def n_tm_def lm_tm_def rm_tm_def lr_def lr_tm_def
 
-  have "time (mergesort_tm f ?xs) = 1 + time (length_tm ?xs) + time (split_at_tm (?n div 2) ?xs) +
-         time (mergesort_tm f l) + time (mergesort_tm f r) + time (merge_tm f ?l ?r)"
-    using lr_def apply (auto simp del: split_at.simps split_at_tm.simps simp add: tm_simps split: tm.split)
-    by (metis (no_types, lifting) length_eq_val_length_tm mergesort_eq_val_mergesort_tm prod.sel(1) prod.sel(2) split_at_eq_val_split_at_tm surj_TM tm.inject)
+  have "n = n_tm"
+    using n_def n_tm_def length_eq_val_length_tm by blast
+  hence "l = l_tm" "r = r_tm"
+    using lr_def lr_tm_def by (metis prod.inject split_at_eq_val_split_at_tm)+
+  hence "lm = lm_tm" "rm = rm_tm"
+    using lm_def rm_def lm_tm_def rm_tm_def by (simp add: mergesort_eq_val_mergesort_tm)+
+  note eq = \<open>n = n_tm\<close> \<open>l = l_tm\<close> \<open>r = r_tm\<close> \<open>lm = lm_tm\<close> \<open>rm = rm_tm\<close>
 
-  thus ?case
-    by (metis "3.IH" * lr_def t_length_def t_merge_eq_time_merge_tm t_split_at_def)
+  have "t_mergesort f ?xs = 1 + t_length ?xs + t_split_at (n div 2) ?xs + t_mergesort f l
+                          + t_mergesort f r + t_merge f lm rm"
+    using defs by (auto split: prod.splits)
+  also have "... = 1 + time (length_tm ?xs) + time (split_at_tm (n_tm div 2) ?xs) + time (mergesort_tm f l_tm)
+                 + time (mergesort_tm f r_tm) + time (merge_tm f lm_tm rm_tm)"
+    using "3.IH" eq defs by (simp add: t_length_def t_split_at_def t_merge_eq_time_merge_tm)
+  also have "... = time (mergesort_tm f ?xs)"
+    using defs by (auto simp add: tm_simps split: tm.split)
+  finally show ?case .
 qed (auto simp: tm_simps)
 
 function mergesort_recurrence :: "nat \<Rightarrow> real" where
