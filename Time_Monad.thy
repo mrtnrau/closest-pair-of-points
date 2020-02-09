@@ -52,7 +52,13 @@ lemma val_let: "val (let x = t in f(x)) = (let x = t in val(f x))"
 by simp
 
 lemma let_id: "(let x = t in x) = t"
-by simp
+  by simp
+
+lemma time_distrib_bind:
+  "time (bind_tm tm f) = time tm + time (f (val tm))"
+  unfolding bind_tm_def by (simp split: tm.split)
+
+lemmas time_simps = time_distrib_bind tick_def
 
 lemmas val_simps =
   val_return
