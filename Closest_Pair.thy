@@ -1008,58 +1008,30 @@ declare t_combine.simps [simp del]
 
 subsubsection "Divide and Conquer Algorithm"
 
-function t_closest_pair_rec :: "point list \<Rightarrow> nat" where
-  "t_closest_pair_rec xs = (
-    let n = length xs in
-    t_length xs + (
-    if n \<le> 3 then
-      t_mergesort snd xs + t_closest_pair_bf xs
-    else
-      let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
-      t_split_at (n div 2) xs + (
+lemma time_closest_pair_rec_tm_simps_1:
+  assumes "length xs \<le> 3"
+  shows "time (closest_pair_rec_tm xs) = 1 + time (length_tm xs) + time (mergesort_tm snd xs) + time (closest_pair_bf_tm xs)"
+  using assms by  (auto simp: time_simps length_eq_val_length_tm)
 
-      let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
-      t_closest_pair_rec xs\<^sub>L + (
-      let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
-      t_closest_pair_rec xs\<^sub>R + (
-
-      let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-      t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys
-    ))))
+lemma time_closest_pair_rec_tm_simps_2:
+  assumes "\<not> (length xs \<le> 3)"
+  shows "time (closest_pair_rec_tm xs) = 1 + (
+    let (xs\<^sub>L, xs\<^sub>R) = val (split_at_tm (length xs div 2) xs) in
+    let (ys\<^sub>L, p\<^sub>L) = val (closest_pair_rec_tm xs\<^sub>L) in
+    let (ys\<^sub>R, p\<^sub>R) = val (closest_pair_rec_tm xs\<^sub>R) in
+    let ys = val (merge_tm (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R) in
+    time (length_tm xs) + time (split_at_tm (length xs div 2) xs) + time (closest_pair_rec_tm xs\<^sub>L) + 
+    time (closest_pair_rec_tm xs\<^sub>R) + time (merge_tm (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R) + t_combine p\<^sub>L p\<^sub>R (fst (hd xs\<^sub>R)) ys
   )"
-  by pat_completeness auto
-termination t_closest_pair_rec
-  apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp: split_at_take_drop_conv Let_def)
-  done
-
-lemma t_closest_pair_rec_simps_1:
-  assumes "n = length xs" "n \<le> 3"
-  shows "t_closest_pair_rec xs = t_length xs + t_mergesort snd xs + t_closest_pair_bf xs"
-  using assms by simp
-
-lemma t_closest_pair_rec_simps_2:
-  assumes "n = length xs" "\<not> (n \<le> 3)"
-  shows "t_closest_pair_rec xs = (
-    let (xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs in
-    let t_s = t_split_at (n div 2) xs in
-    let l = fst (hd xs\<^sub>R) in
-    let (ys\<^sub>L, p\<^sub>L) = closest_pair_rec xs\<^sub>L in
-    let (ys\<^sub>R, p\<^sub>R) = closest_pair_rec xs\<^sub>R in
-    let t_cl = t_closest_pair_rec xs\<^sub>L in
-    let t_cr = t_closest_pair_rec xs\<^sub>R in
-    let ys = merge (\<lambda>p. snd p) ys\<^sub>L ys\<^sub>R in
-    let t_m = t_merge (\<lambda>p. snd p) (ys\<^sub>L, ys\<^sub>R) in
-    let t_c = t_combine p\<^sub>L p\<^sub>R l ys in
-    t_length xs + t_s + t_cl + t_cr + t_m + t_c
-  )"
-  using assms by (auto simp add: Let_def split!: if_splits prod.splits)
-
-declare t_closest_pair_rec.simps [simp del]
+  using assms
+  apply (subst closest_pair_rec_tm.simps)
+  by (auto simp del: closest_pair_rec_tm.simps combine_tm.simps
+           simp add: time_simps length_eq_val_length_tm t_combine_eq_time_combine_tm
+              split: prod.split)
 
 function closest_pair_recurrence :: "nat \<Rightarrow> real" where
-  "n \<le> 3 \<Longrightarrow> closest_pair_recurrence n = n + mergesort_recurrence n + n * n"
-| "3 < n \<Longrightarrow> closest_pair_recurrence n = 13 * n + 
+  "n \<le> 3 \<Longrightarrow> closest_pair_recurrence n = 3 + n + mergesort_recurrence n + n * n"
+| "3 < n \<Longrightarrow> closest_pair_recurrence n = 7 + 13 * n + 
     closest_pair_recurrence (nat \<lfloor>real n / 2\<rfloor>) + closest_pair_recurrence (nat \<lceil>real n / 2\<rceil>)"
   by force simp_all
 termination by akra_bazzi_termination simp_all
@@ -1068,9 +1040,9 @@ lemma closest_pair_recurrence_nonneg[simp]:
   "0 \<le> closest_pair_recurrence n"
   by (induction n rule: closest_pair_recurrence.induct) auto
 
-lemma t_closest_pair_rec_conv_closest_pair_recurrence:
+lemma time_closest_pair_rec_conv_closest_pair_recurrence:
   assumes "distinct ps" "sorted_fst ps"
-  shows "t_closest_pair_rec ps \<le> closest_pair_recurrence (length ps)"
+  shows "time (closest_pair_rec_tm ps) \<le> closest_pair_recurrence (length ps)"
   using assms
 proof (induction ps rule: length_induct)
   case (1 ps)
@@ -1078,50 +1050,37 @@ proof (induction ps rule: length_induct)
   show ?case
   proof (cases "?n \<le> 3")
     case True        
-    hence "t_closest_pair_rec ps = t_length ps + t_mergesort snd ps + t_closest_pair_bf ps"
-      using t_closest_pair_rec_simps_1 by simp
-    moreover have "closest_pair_recurrence ?n = ?n + mergesort_recurrence ?n + ?n * ?n"
+    hence "time (closest_pair_rec_tm ps) = 1 + time (length_tm ps) + time (mergesort_tm snd ps) + time (closest_pair_bf_tm ps)"
+      using time_closest_pair_rec_tm_simps_1 by simp
+    moreover have "closest_pair_recurrence ?n = 3 + ?n + mergesort_recurrence ?n + ?n * ?n"
       using True by simp
-    moreover have "t_length ps \<le> ?n" "t_mergesort snd ps \<le> mergesort_recurrence ?n" "t_closest_pair_bf ps \<le> ?n * ?n"
-      using t_length[of ps] t_mergesort_conv_mergesort_recurrence[of snd ps] t_closest_pair_bf[of ps] by auto
+    moreover have "time (length_tm ps) \<le> 1 + ?n" "time (mergesort_tm snd ps) \<le> mergesort_recurrence ?n" 
+                  "time (closest_pair_bf_tm ps) \<le> 1 + ?n * ?n"
+      using time_length_tm[of ps] time_mergesort_conv_mergesort_recurrence[of snd ps] time_closest_pair_bf_tm[of ps] by auto
     ultimately show ?thesis
       by linarith
   next
     case False
 
-    obtain XS\<^sub>L XS\<^sub>R where XS_def: "(XS\<^sub>L, XS\<^sub>R) = split_at (?n div 2) ps"
+    obtain XS\<^sub>L XS\<^sub>R where XS_def: "(XS\<^sub>L, XS\<^sub>R) = val (split_at_tm (?n div 2) ps)"
       using prod.collapse by blast
-    define TS where "TS = t_split_at (?n div 2) ps"
-    define L where "L = fst (hd XS\<^sub>R)"
-
-    obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where CP\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = closest_pair_rec XS\<^sub>L"
+    obtain YS\<^sub>L C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L where CP\<^sub>L_def: "(YS\<^sub>L, C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) = val (closest_pair_rec_tm XS\<^sub>L)"
       using prod.collapse by metis
-    define TL where "TL = t_closest_pair_rec XS\<^sub>L"
-    obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where CP\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = closest_pair_rec XS\<^sub>R"
+    obtain YS\<^sub>R C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R where CP\<^sub>R_def: "(YS\<^sub>R, C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) = val (closest_pair_rec_tm XS\<^sub>R)"
       using prod.collapse by metis
-    define TR where "TR = t_closest_pair_rec XS\<^sub>R"
-
-    define YS where "YS = merge (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R"
-    define TM where "TM = t_merge (\<lambda>p. snd p) (YS\<^sub>L, YS\<^sub>R)"
-    define TC where "TC = t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
-    obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) L YS"
+    define YS where "YS = val (merge_tm (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R)"
+    obtain C\<^sub>0 C\<^sub>1 where C\<^sub>0\<^sub>1_def: "(C\<^sub>0, C\<^sub>1) = val (combine_tm (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) (fst (hd XS\<^sub>R)) YS)"
       using prod.collapse by metis
-    note defs = XS_def TS_def L_def CP\<^sub>L_def TL_def CP\<^sub>R_def TR_def YS_def TM_def TC_def
-
-    have FL: "t_closest_pair_rec ps = t_length ps + TS + TL + TR + TM + TC"
-      using False t_closest_pair_rec_simps_2 defs by (auto simp: Let_def split!: if_splits prod.splits)
-    have FR: "closest_pair_recurrence (length ps) = closest_pair_recurrence (nat \<lfloor>real ?n / 2\<rfloor>) +
-              closest_pair_recurrence (nat \<lceil>real ?n / 2\<rceil>) + 13 * ?n"
-      using False by simp
+    note defs = XS_def CP\<^sub>L_def CP\<^sub>R_def YS_def C\<^sub>0\<^sub>1_def
 
     have XSLR: "XS\<^sub>L = take (?n div 2) ps" "XS\<^sub>R = drop (?n div 2) ps"
-      using defs by (auto simp: split_at_take_drop_conv)
+      using defs by (auto simp: split_at_take_drop_conv split_at_eq_val_split_at_tm[symmetric])
     hence "length XS\<^sub>L = ?n div 2" "length XS\<^sub>R = ?n - ?n div 2"
       by simp_all
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
       by linarith+
     have "length XS\<^sub>L = length YS\<^sub>L" "length XS\<^sub>R = length YS\<^sub>R"
-      using defs closest_pair_rec_set_length_sorted_snd by metis+
+      using defs closest_pair_rec_set_length_sorted_snd closest_pair_rec_eq_val_closest_pair_rec_tm by metis+
     hence L: "?n = length YS\<^sub>L + length YS\<^sub>R"
       using defs XSLR by fastforce
 
@@ -1129,52 +1088,58 @@ proof (induction ps rule: length_induct)
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>L" "sorted_fst XS\<^sub>L"
       using XSLR "1.prems"(1,2) sorted_fst_def sorted_wrt_take by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_recurrence (length XS\<^sub>L)"
+    ultimately have "time (closest_pair_rec_tm XS\<^sub>L) \<le> closest_pair_recurrence (length XS\<^sub>L)"
       using "1.IH" by simp
-    hence IHL: "t_closest_pair_rec XS\<^sub>L \<le> closest_pair_recurrence (nat \<lfloor>real ?n / 2\<rfloor>)"
+    hence IHL: "time (closest_pair_rec_tm XS\<^sub>L) \<le> closest_pair_recurrence (nat \<lfloor>real ?n / 2\<rfloor>)"
       using * by simp
 
     have "1 < length XS\<^sub>R" "length XS\<^sub>R < length ps"
       using False XSLR by simp_all
     moreover have "distinct XS\<^sub>R" "sorted_fst XS\<^sub>R"
       using XSLR "1.prems"(1,2) sorted_fst_def sorted_wrt_drop by simp_all
-    ultimately have "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_recurrence (length XS\<^sub>R)"
+    ultimately have "time (closest_pair_rec_tm XS\<^sub>R) \<le> closest_pair_recurrence (length XS\<^sub>R)"
       using "1.IH" by simp
-    hence IHR: "t_closest_pair_rec XS\<^sub>R \<le> closest_pair_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
+    hence IHR: "time (closest_pair_rec_tm XS\<^sub>R) \<le> closest_pair_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
       using * by simp
 
-    have "(YS, C\<^sub>0, C\<^sub>1) = closest_pair_rec ps"
-      using False closest_pair_rec_simps defs C\<^sub>0\<^sub>1_def by (auto simp: Let_def split: prod.split)
+    have "(YS, C\<^sub>0, C\<^sub>1) = val (closest_pair_rec_tm ps)"
+      using False closest_pair_rec_simps defs by (auto simp: Let_def length_eq_val_length_tm split!: prod.split)
     hence "set ps = set YS" "length ps = length YS" "distinct YS" "sorted_snd YS"
-      using "1.prems" closest_pair_rec_set_length_sorted_snd closest_pair_rec_distinct by auto
-    moreover have "\<forall>p \<in> set YS\<^sub>L. fst p \<le> L"
+      using "1.prems" closest_pair_rec_set_length_sorted_snd closest_pair_rec_distinct 
+            closest_pair_rec_eq_val_closest_pair_rec_tm by auto
+    moreover have "\<forall>p \<in> set YS\<^sub>L. fst p \<le> fst (hd XS\<^sub>R)"
       using False "1.prems"(2) XSLR \<open>length XS\<^sub>L < length ps\<close> \<open>length XS\<^sub>L = length ps div 2\<close>
-            L_def CP\<^sub>L_def sorted_fst_take_less_hd_drop closest_pair_rec_set_length_sorted_snd by metis
-    moreover have "\<forall>p \<in> set YS\<^sub>R. L \<le> fst p"
-      using False "1.prems"(2) XSLR L_def CP\<^sub>R_def
-            sorted_fst_hd_drop_less_drop closest_pair_rec_set_length_sorted_snd by blast
+            CP\<^sub>L_def sorted_fst_take_less_hd_drop closest_pair_rec_set_length_sorted_snd
+            closest_pair_rec_eq_val_closest_pair_rec_tm by metis
+    moreover have "\<forall>p \<in> set YS\<^sub>R. fst (hd XS\<^sub>R) \<le> fst p"
+      using False "1.prems"(2) XSLR CP\<^sub>R_def sorted_fst_hd_drop_less_drop 
+            closest_pair_rec_set_length_sorted_snd closest_pair_rec_eq_val_closest_pair_rec_tm by metis
     moreover have "set YS = set YS\<^sub>L \<union> set YS\<^sub>R"
-      using set_merge defs by fast
+      using set_merge defs by (metis merge_eq_val_merge_tm)
     moreover have "sparse (dist C\<^sub>0\<^sub>L C\<^sub>1\<^sub>L) (set YS\<^sub>L)"
       using CP\<^sub>L_def \<open>1 < length XS\<^sub>L\<close> \<open>distinct XS\<^sub>L\<close> \<open>sorted_fst XS\<^sub>L\<close>
-            closest_pair_rec_dist closest_pair_rec_set_length_sorted_snd by auto
+            closest_pair_rec_dist closest_pair_rec_set_length_sorted_snd
+            closest_pair_rec_eq_val_closest_pair_rec_tm by auto
     moreover have "sparse (dist C\<^sub>0\<^sub>R C\<^sub>1\<^sub>R) (set YS\<^sub>R)"
       using CP\<^sub>R_def \<open>1 < length XS\<^sub>R\<close> \<open>distinct XS\<^sub>R\<close> \<open>sorted_fst XS\<^sub>R\<close>
-            closest_pair_rec_dist closest_pair_rec_set_length_sorted_snd by auto
-    ultimately have "TC \<le> 10 * ?n"
-      using t_combine TC_def by presburger
-    moreover have "t_length ps = ?n"
-      using t_length by blast
-    moreover have "TS \<le> ?n"
-      using t_split_at TS_def by blast
-    moreover have "TL \<le> closest_pair_recurrence (nat \<lfloor>real ?n / 2\<rfloor>)"
-      using IHL TL_def by blast
-    moreover have "TR \<le> closest_pair_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
-      using IHR TR_def by blast
-    moreover have "TM \<le> ?n"
-      using L t_merge TM_def by auto
-    ultimately show ?thesis
-      using FL FR by linarith
+            closest_pair_rec_dist closest_pair_rec_set_length_sorted_snd 
+            closest_pair_rec_eq_val_closest_pair_rec_tm by auto
+    ultimately have combine_bound: "t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) (fst (hd XS\<^sub>R)) YS \<le> 3 + 10 * ?n"
+      using t_combine_bound[of YS "set YS\<^sub>L" "set YS\<^sub>R" "fst (hd XS\<^sub>R)"] by (simp add: add.commute)
+    have "time (closest_pair_rec_tm ps) = 1 + time (length_tm ps) + time (split_at_tm (?n div 2) ps) + 
+              time (closest_pair_rec_tm XS\<^sub>L) + time (closest_pair_rec_tm XS\<^sub>R) + time (merge_tm (\<lambda>p. snd p) YS\<^sub>L YS\<^sub>R) +
+              t_combine (C\<^sub>0\<^sub>L, C\<^sub>1\<^sub>L) (C\<^sub>0\<^sub>R, C\<^sub>1\<^sub>R) (fst (hd XS\<^sub>R)) YS"
+      using time_closest_pair_rec_tm_simps_2[OF False] defs
+      by (auto simp del: closest_pair_rec_tm.simps simp add: Let_def split: prod.split)
+    also have "... \<le> 7 + 13 * ?n + time (closest_pair_rec_tm XS\<^sub>L) + time (closest_pair_rec_tm XS\<^sub>R)"
+      using time_merge_tm[of "(\<lambda>p. snd p)" YS\<^sub>L YS\<^sub>R] L combine_bound by (simp add: time_length_tm time_split_at_tm)
+    also have "... \<le> 7 + 13 * ?n + closest_pair_recurrence (nat \<lfloor>real ?n / 2\<rfloor>) +
+              closest_pair_recurrence (nat \<lceil>real ?n / 2\<rceil>)"
+      using IHL IHR by simp
+    also have "... = closest_pair_recurrence (length ps)"
+      using False by simp
+    finally show ?thesis
+      by simp
   qed
 qed
 
@@ -1183,39 +1148,55 @@ theorem closest_pair_recurrence:
   by (master_theorem) auto
  
 theorem t_closest_pair_rec_bigo:
-  "t_closest_pair_rec \<in> O[length going_to at_top within { ps. distinct ps \<and> sorted_fst ps }]((\<lambda>n. n * ln n) o length)"
+  "(\<lambda>xs. time (closest_pair_rec_tm xs)) \<in> O[length going_to at_top within { ps. distinct ps \<and> sorted_fst ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. distinct ps \<and> sorted_fst ps } \<Longrightarrow>
-           t_closest_pair_rec ps \<le> (closest_pair_recurrence o length) ps"
-    unfolding comp_def using t_closest_pair_rec_conv_closest_pair_recurrence by auto
+           time (closest_pair_rec_tm ps) \<le> (closest_pair_recurrence o length) ps"
+    unfolding comp_def using time_closest_pair_rec_conv_closest_pair_recurrence by auto
   show ?thesis
     using bigo_measure_trans[OF 0] bigthetaD1[OF closest_pair_recurrence] of_nat_0_le_iff by blast
 qed
 
-definition t_closest_pair :: "point list \<Rightarrow> nat" where
-  "t_closest_pair ps = t_mergesort fst ps + t_closest_pair_rec (mergesort fst ps)"
-
 definition closest_pair_time :: "nat \<Rightarrow> real" where
-  "closest_pair_time n = mergesort_recurrence n + closest_pair_recurrence n"
+  "closest_pair_time n = 1 + mergesort_recurrence n + closest_pair_recurrence n"
 
-lemma t_closest_pair_conv_closest_pair_recurrence:
+lemma time_closest_pair_conv_closest_pair_recurrence:
   assumes "distinct ps"
-  shows "t_closest_pair ps \<le> closest_pair_time (length ps)"
-  unfolding t_closest_pair_def closest_pair_time_def
-  using t_closest_pair_rec_conv_closest_pair_recurrence[of "mergesort fst ps"] t_mergesort_conv_mergesort_recurrence[of fst ps]
-  by (simp add: mergesort sorted_fst_def assms)
+  shows "time (closest_pair_tm ps) \<le> closest_pair_time (length ps)"
+  using assms
+  unfolding closest_pair_time_def
+proof (induction rule: induct_list012)
+  case (3 x y zs)
+  let ?ps = "x # y # zs"
+  define xs where "xs = val (mergesort_tm fst ?ps)"
+  have *: "distinct xs" "sorted_fst xs" "length xs = length ?ps"
+    using xs_def mergesort(4)[OF "3.prems", of fst] mergesort(1)[of fst ?ps] mergesort(3)[of fst ?ps]
+          sorted_fst_def mergesort_eq_val_mergesort_tm by metis+
+  have "time (closest_pair_tm ?ps) = 1 + time (mergesort_tm fst ?ps) + time (closest_pair_rec_tm xs)"
+    using xs_def by (auto simp del: mergesort_tm.simps closest_pair_rec_tm.simps simp add: time_simps split: prod.split)
+  also have "... \<le> 1 + mergesort_recurrence (length ?ps) + time (closest_pair_rec_tm xs)"
+    using time_mergesort_conv_mergesort_recurrence[of fst ?ps] by simp
+  also have "... \<le> 1 + mergesort_recurrence (length ?ps) + closest_pair_recurrence (length ?ps)"
+    using time_closest_pair_rec_conv_closest_pair_recurrence[of xs] * by auto
+  finally show ?case
+    by blast
+qed (auto simp: time_simps)
+
+lemma TODO:
+  "(\<lambda>_. 1) \<in> O(\<lambda>n. n * ln n)"
+  sorry
 
 corollary closest_pair_time:
   "closest_pair_time \<in> O(\<lambda>n. n * ln n)"
   unfolding closest_pair_time_def
-  using mergesort_recurrence closest_pair_recurrence sum_in_bigo(1) by blast
+  using mergesort_recurrence closest_pair_recurrence sum_in_bigo(1) TODO by blast
 
 corollary t_closest_pair_bigo:
-  "t_closest_pair \<in> O[length going_to at_top within { ps. distinct ps }]((\<lambda>n. n * ln n) o length)"
+  "(\<lambda>ps. time (closest_pair_tm ps)) \<in> O[length going_to at_top within { ps. distinct ps }]((\<lambda>n. n * ln n) o length)"
 proof -
   have 0: "\<And>ps. ps \<in> { ps. distinct ps } \<Longrightarrow>
-           t_closest_pair ps \<le> (closest_pair_time o length) ps"
-    unfolding comp_def using t_closest_pair_conv_closest_pair_recurrence by auto
+           time (closest_pair_tm ps) \<le> (closest_pair_time o length) ps"
+    unfolding comp_def using time_closest_pair_conv_closest_pair_recurrence by auto
   show ?thesis
     using bigo_measure_trans[OF 0] closest_pair_time by fastforce
 qed
