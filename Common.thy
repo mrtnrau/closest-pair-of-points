@@ -47,6 +47,30 @@ proof -
   show ?thesis by(rule landau_o.big_trans[OF 1 3])
 qed
 
+lemma const_1_bigo_n_ln_n:
+  "(\<lambda>(n::nat). 1) \<in> O(\<lambda>n. n * ln n)"
+proof -
+  have "\<exists>N. \<forall>(n::nat) \<ge> N. (\<lambda>x. 1 \<le> x * ln x) n"
+  proof -
+    have "\<forall>(n::nat) \<ge> 3. (\<lambda>x. 1 \<le> x * ln x) n"
+    proof standard
+      fix n
+      show "3 \<le> n \<longrightarrow> 1 \<le> real n * ln (real n)"
+      proof standard
+        assume "3 \<le> n"
+        hence "1 \<le> ln (real n)" "1 \<le> real n"
+          using ln3_gt_1 ln_ln_nonneg' by auto
+        thus "1 \<le> real n * ln (real n)"
+          by (auto simp: order_trans)
+      qed
+    qed
+    thus ?thesis
+      by blast
+  qed
+  thus ?thesis
+    by auto
+qed
+
 subsubsection "Miscellaneous Lemmas"
 
 lemma set_take_drop_i_le_j:
