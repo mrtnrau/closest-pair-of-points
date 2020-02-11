@@ -1182,14 +1182,34 @@ proof (induction rule: induct_list012)
     by blast
 qed (auto simp: time_simps)
 
-lemma TODO:
-  "(\<lambda>_. 1) \<in> O(\<lambda>n. n * ln n)"
-  sorry
+lemma const_1_bigo_n_ln_n:
+  "(\<lambda>(n::nat). 1) \<in> O(\<lambda>n. n * ln n)"
+proof -
+  have "\<exists>N. \<forall>(n::nat) \<ge> N. (\<lambda>x. 1 \<le> x * ln x) n"
+  proof -
+    have "\<forall>(n::nat) \<ge> 3. (\<lambda>x. 1 \<le> x * ln x) n"
+    proof standard
+      fix n
+      show "3 \<le> n \<longrightarrow> 1 \<le> real n * ln (real n)"
+      proof standard
+        assume "3 \<le> n"
+        hence "1 \<le> ln (real n)" "1 \<le> real n"
+          using ln3_gt_1 ln_ln_nonneg' by auto
+        thus "1 \<le> real n * ln (real n)"
+          by (auto simp: order_trans)
+      qed
+    qed
+    thus ?thesis
+      by blast
+  qed
+  thus ?thesis
+    by auto
+qed
 
 corollary closest_pair_time:
   "closest_pair_time \<in> O(\<lambda>n. n * ln n)"
   unfolding closest_pair_time_def
-  using mergesort_recurrence closest_pair_recurrence sum_in_bigo(1) TODO by blast
+  using mergesort_recurrence closest_pair_recurrence sum_in_bigo(1) const_1_bigo_n_ln_n by blast
 
 corollary t_closest_pair_bigo:
   "(\<lambda>ps. time (closest_pair_tm ps)) \<in> O[length going_to at_top within { ps. distinct ps }]((\<lambda>n. n * ln n) o length)"
