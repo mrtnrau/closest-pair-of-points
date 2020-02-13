@@ -71,6 +71,11 @@ lemmas val_simps =
 
 lemmas val_cong = arg_cong[where f=val]
 
+lemma bind_tm_cong[fundef_cong]:
+  assumes "\<And>v. v = val n \<Longrightarrow> f v = g v" "m = n"
+  shows "bind_tm m f = bind_tm n g"
+  using assms unfolding bind_tm_def by (auto split: tm.split)
+
 hide_const TM
 
 end

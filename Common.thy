@@ -143,8 +143,7 @@ lemma length_filter_P_impl_Q:
 
 lemma filter_Un:
   "set xs = A \<union> B \<Longrightarrow> set (filter P xs) = { x \<in> A. P x } \<union> { x \<in> B. P x }"
-  apply (induction xs)
-   apply (auto) by (metis UnI1 UnI2 insert_iff)+
+  by (induction xs) (auto, metis UnI1 insert_iff, metis UnI2 insert_iff)
 
 subsubsection \<open>@{const length}\<close>
 
@@ -157,7 +156,7 @@ fun length_tm :: "'a list \<Rightarrow> nat tm" where
     }"
 
 lemma length_eq_val_length_tm:
-  "length xs = val (length_tm xs)"
+  "val (length_tm xs) = length xs"
   by (induction xs) auto
 
 lemma time_length_tm:
@@ -210,7 +209,7 @@ fun take_tm :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list tm" where
     )"
 
 lemma take_eq_val_take_tm:
-  "take n xs = val (take_tm n xs)"
+  "val (take_tm n xs) = take n xs"
   by (induction xs arbitrary: n) (auto split: nat.split)
 
 lemma time_take_tm:
@@ -232,7 +231,7 @@ fun filter_tm :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a
     )"
 
 lemma filter_eq_val_filter_tm:
-  "filter P xs = val (filter_tm P xs)"
+  "val (filter_tm P xs) = filter P xs"
   by (induction xs) auto
 
 lemma time_filter_tm:
@@ -284,7 +283,7 @@ fun split_at :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list \<times> 'a lis
   )"
 
 lemma split_at_eq_val_split_at_tm:
-  "split_at n xs = val (split_at_tm n xs)"
+  "val (split_at_tm n xs) = split_at n xs"
   by (induction xs arbitrary: n) (auto split: nat.split prod.split)
 
 lemma split_at_take_drop_conv:
@@ -311,9 +310,8 @@ lemma split_at_conv_split_at_it':
   shows "rev acc @ ts = ts'"
     and "ds = ds'"
   using assms
-  apply (induction acc n xs arbitrary: ts rule: split_at_it'.induct)
-  apply (auto simp: split: prod.splits nat.splits)
-  done
+  by (induction acc n xs arbitrary: ts rule: split_at_it'.induct)
+     (auto simp: split: prod.splits nat.splits)
 
 lemma split_at_conv_split_at_it_prod:
   assumes "(ts, ds) = split_at n xs" "(ts', ds') = split_at_it n xs"
@@ -325,7 +323,8 @@ lemma split_at_conv_split_at_it[code_unfold]:
   "split_at n xs = split_at_it n xs"
   using split_at_conv_split_at_it_prod surj_pair by metis
 
-declare split_at_tm.simps split_at.simps [simp del]
+declare split_at_tm.simps [simp del]
+declare split_at.simps [simp del]
 
 
 subsection "Mergesort"
@@ -365,7 +364,7 @@ fun merge :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow
 | "merge f xs [] = xs"
 
 lemma merge_eq_val_merge_tm:
-  "merge f xs ys = val (merge_tm f xs ys)"
+  "val (merge_tm f xs ys) = merge f xs ys"
   by (induction f xs ys rule: merge.induct) auto
 
 lemma length_merge:
@@ -386,6 +385,8 @@ lemma sorted_merge:
   shows "sorted_wrt P (merge f xs ys) \<longleftrightarrow> sorted_wrt P xs \<and> sorted_wrt P ys"
   using assms by (induction f xs ys rule: merge.induct) (auto simp: set_merge)
 
+declare split_at_take_drop_conv [simp]
+
 function (sequential) mergesort_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list tm" where
   "mergesort_tm f [] =1 return []"
 | "mergesort_tm f [x] =1 return [x]"
@@ -400,11 +401,8 @@ function (sequential) mergesort_tm :: "('b \<Rightarrow> 'a::linorder) \<Rightar
   )"
   by pat_completeness auto
 termination mergesort_tm
-  apply (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
-  apply blast
-  sorry
-
-declare split_at_take_drop_conv [simp]
+  by (relation "Wellfounded.measure (\<lambda>(_, xs). length xs)")
+     (auto simp add: length_eq_val_length_tm split_at_eq_val_split_at_tm)
 
 fun mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Rightarrow> 'b list" where
   "mergesort f [] = []"
@@ -418,7 +416,7 @@ fun mergesort :: "('b \<Rightarrow> 'a::linorder) \<Rightarrow> 'b list \<Righta
 declare split_at_take_drop_conv [simp del]
 
 lemma mergesort_eq_val_mergesort_tm:
-  "mergesort f xs = val (mergesort_tm f xs)"
+  "val (mergesort_tm f xs) = mergesort f xs"
   by (induction f xs rule: mergesort.induct)
      (auto simp add: length_eq_val_length_tm split_at_eq_val_split_at_tm merge_eq_val_merge_tm split: prod.split)
 
@@ -428,9 +426,8 @@ lemma sorted_wrt_mergesort:
 
 lemma set_mergesort:
   "set (mergesort f xs) = set xs"
-  apply (induction f xs rule: mergesort.induct)
-  apply (simp_all add: set_merge split_at_take_drop_conv)
-  using set_take_drop by (metis list.simps(15))
+  by (induction f xs rule: mergesort.induct)
+     (simp_all add: set_merge split_at_take_drop_conv, metis list.simps(15) set_take_drop)
 
 lemma length_mergesort:
   "length (mergesort f xs) = length xs"
@@ -503,9 +500,9 @@ next
   note defs = xs_def n_def lr_def l'_def r'_def
 
   have IHL: "time (mergesort_tm f l) \<le> mergesort_recurrence (length l)"
-    using defs "3.IH"(1) prod.collapse by blast
+    using defs "3.IH"(1) by (auto simp: length_eq_val_length_tm split_at_eq_val_split_at_tm)
   have IHR: "time (mergesort_tm f r) \<le> mergesort_recurrence (length r)"
-    using defs "3.IH"(2) prod.collapse by blast
+    using defs "3.IH"(2) by (auto simp: length_eq_val_length_tm split_at_eq_val_split_at_tm)
 
   have *: "length l = n div 2" "length r = n - n div 2"
     using defs by (auto simp: split_at_take_drop_conv)
@@ -591,7 +588,7 @@ lemma sparse_update:
   assumes "sparse \<delta> (set ps)"
   assumes "dist p\<^sub>0 p\<^sub>1 \<le> \<delta>" "\<forall>p \<in> set ps. dist p\<^sub>0 p\<^sub>1 \<le> dist p\<^sub>0 p"
   shows "sparse (dist p\<^sub>0 p\<^sub>1) (set (p\<^sub>0 # ps))"
-  using assms apply (auto simp: dist_commute sparse_def) by force+
+  using assms by (auto simp: dist_commute sparse_def, force+)
 
 lemma sparse_mono:
   "sparse \<Delta> P \<Longrightarrow> \<delta> \<le> \<Delta> \<Longrightarrow> sparse \<delta> P"
@@ -682,7 +679,7 @@ fun find_closest_bf :: "point \<Rightarrow> point list \<Rightarrow> point" wher
   )"
 
 lemma find_closest_bf_eq_val_find_closest_bf_tm:
-  "find_closest_bf p ps = val (find_closest_bf_tm p ps)"
+  "val (find_closest_bf_tm p ps) = find_closest_bf p ps"
   by (induction p ps rule: find_closest_bf.induct) (auto simp: Let_def)
 
 lemma find_closest_bf_set:
@@ -724,7 +721,7 @@ fun closest_pair_bf :: "point list \<Rightarrow> (point * point)" where
   )"
 
 lemma closest_pair_bf_eq_val_closest_pair_bf_tm:
-  "closest_pair_bf ps = val (closest_pair_bf_tm ps)"
+  "val (closest_pair_bf_tm ps) = closest_pair_bf ps"
   by (induction ps rule: closest_pair_bf.induct) 
      (auto simp: Let_def find_closest_bf_eq_val_find_closest_bf_tm split: prod.split)
 

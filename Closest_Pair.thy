@@ -44,7 +44,7 @@ fun find_closest :: "point \<Rightarrow> real \<Rightarrow> point list \<Rightar
   )"
 
 lemma find_closest_eq_val_find_closest_tm:
-  "find_closest p \<delta> ps = val (find_closest_tm p \<delta> ps)"
+  "val (find_closest_tm p \<delta> ps) = find_closest p \<delta> ps"
   by (induction p \<delta> ps rule: find_closest.induct) (auto simp: Let_def)
 
 lemma find_closest_set:
@@ -124,7 +124,7 @@ fun find_closest_pair :: "(point * point) \<Rightarrow> point list \<Rightarrow>
   )"
 
 lemma find_closest_pair_eq_val_find_closest_pair_tm:
-  "find_closest_pair (c\<^sub>0, c\<^sub>1) ps = val (find_closest_pair_tm (c\<^sub>0, c\<^sub>1) ps)"
+  "val (find_closest_pair_tm (c\<^sub>0, c\<^sub>1) ps) = find_closest_pair (c\<^sub>0, c\<^sub>1) ps"
   by (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 rule: find_closest_pair.induct)
      (auto simp: Let_def find_closest_eq_val_find_closest_tm)
 
@@ -146,7 +146,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "(C\<^sub>0' \<in> set (p\<^sub>2 # ps) \<and> C\<^sub>1' \<in> set (p\<^sub>2 # ps)) \<or> (C\<^sub>0' = c\<^sub>0 \<and> C\<^sub>1' = c\<^sub>1)"
       using "3.hyps"(1) True p\<^sub>1_def by blast
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs True "3.prems" apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs True "3.prems" by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       by auto
   next
@@ -157,7 +157,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "(C\<^sub>0' \<in> set (p\<^sub>2 # ps) \<and> C\<^sub>1' \<in> set (p\<^sub>2 # ps)) \<or> (C\<^sub>0' = p\<^sub>0 \<and> C\<^sub>1' = p\<^sub>1)"
       using "3.hyps"(2) p\<^sub>1_def False by blast
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs False "3.prems" apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs False "3.prems" by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       using A by auto
   qed
@@ -180,7 +180,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "C\<^sub>0' \<noteq> C\<^sub>1'"
       using "3.hyps"(1) "3.prems"(1,2) True p\<^sub>1_def by simp
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs True "3.prems"(3) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs True "3.prems"(3) by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       by simp
   next
@@ -191,7 +191,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "C\<^sub>0' \<noteq> C\<^sub>1'"
       using "3.hyps"(2) "3.prems"(2) A False p\<^sub>1_def by simp
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs False "3.prems"(3) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs False "3.prems"(3) by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       by simp
   qed
@@ -213,7 +213,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "dist C\<^sub>0' C\<^sub>1' \<le> dist c\<^sub>0 c\<^sub>1"
       using "3.hyps"(1) True p\<^sub>1_def by simp
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs True "3.prems" apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs True "3.prems" by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       by simp
   next
@@ -224,7 +224,7 @@ proof (induction "(c\<^sub>0, c\<^sub>1)" ps arbitrary: c\<^sub>0 c\<^sub>1 C\<^
     hence "dist C\<^sub>0' C\<^sub>1' \<le> dist p\<^sub>0 p\<^sub>1"
       using "3.hyps"(2) False p\<^sub>1_def by blast
     moreover have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
-      using defs False "3.prems"(1) apply (auto split: prod.splits) by (metis Pair_inject)+
+      using defs False "3.prems"(1) by (auto split: prod.splits, metis Pair_inject)+
     ultimately show ?thesis
       using False by simp
   qed
@@ -292,7 +292,7 @@ fun combine :: "(point \<times> point) \<Rightarrow> (point \<times> point) \<Ri
   )"
 
 lemma combine_eq_val_combine_tm:
-  "combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = val (combine_tm (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps)"
+  "val (combine_tm (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps) = combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps"
   by (auto simp: filter_eq_val_filter_tm find_closest_pair_eq_val_find_closest_pair_tm)
 
 lemma combine_set:
@@ -371,7 +371,12 @@ proof -
     using EQ by blast
 qed
 
+declare combine.simps [simp del]
+declare combine_tm.simps[simp del]
+
 subsubsection "Divide and Conquer Algorithm"
+
+declare split_at_take_drop_conv [simp add]
 
 function closest_pair_rec_tm :: "point list \<Rightarrow> (point list \<times> point \<times> point) tm" where
   "closest_pair_rec_tm xs =1 (
@@ -396,8 +401,8 @@ function closest_pair_rec_tm :: "point list \<Rightarrow> (point list \<times> p
   )"
   by pat_completeness auto
 termination closest_pair_rec_tm
-  apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  sorry
+  by (relation "Wellfounded.measure (\<lambda>xs. length xs)")
+     (auto simp add: length_eq_val_length_tm split_at_eq_val_split_at_tm)
 
 function closest_pair_rec :: "point list \<Rightarrow> (point list * point * point)" where
   "closest_pair_rec xs = (
@@ -413,9 +418,10 @@ function closest_pair_rec :: "point list \<Rightarrow> (point list * point * poi
   )"
   by pat_completeness auto
 termination closest_pair_rec
-  apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp: split_at_take_drop_conv Let_def)
-  done
+  by (relation "Wellfounded.measure (\<lambda>xs. length xs)")
+     (auto simp: Let_def)
+
+declare split_at_take_drop_conv [simp del]
 
 lemma length_induct': 
   "(\<And>xs. (\<And>ys. length ys < length xs \<Longrightarrow> P ys) \<Longrightarrow> P xs) \<Longrightarrow> P xs"
@@ -432,10 +438,10 @@ lemma closest_pair_rec_simps:
   )"
   using assms by (auto simp: Let_def)
 
-declare combine.simps closest_pair_rec.simps [simp del]
+declare closest_pair_rec.simps [simp del]
 
 lemma closest_pair_rec_eq_val_closest_pair_rec_tm:
-  "closest_pair_rec xs = val (closest_pair_rec_tm xs)"
+  "val (closest_pair_rec_tm xs) = closest_pair_rec xs"
 proof (induction rule: length_induct')
   case (1 xs)
   define n where "n = length xs"
@@ -453,13 +459,13 @@ proof (induction rule: length_induct')
     assume asm: "\<not> n \<le> 3"
     have "length xs\<^sub>L < length xs" "length xs\<^sub>R < length xs"
       using asm defs by (auto simp: split_at_take_drop_conv)
-    hence "closest_pair_rec xs\<^sub>L = val (closest_pair_rec_tm xs\<^sub>L)"
-          "closest_pair_rec xs\<^sub>R = val (closest_pair_rec_tm xs\<^sub>R)"
+    hence "val (closest_pair_rec_tm xs\<^sub>L) = closest_pair_rec xs\<^sub>L"
+          "val (closest_pair_rec_tm xs\<^sub>R) = closest_pair_rec xs\<^sub>R"
       using "1.IH" by blast+
     thus ?thesis
       using asm defs 
       apply (subst closest_pair_rec.simps, subst closest_pair_rec_tm.simps)
-      by (auto simp del: closest_pair_rec_tm.simps combine_tm.simps combine.simps
+      by (auto simp del: closest_pair_rec_tm.simps
                simp add: Let_def length_eq_val_length_tm merge_eq_val_merge_tm 
                          split_at_eq_val_split_at_tm combine_eq_val_combine_tm
                split: prod.split)
@@ -726,7 +732,7 @@ fun closest_pair :: "point list \<Rightarrow> (point * point)" where
 | "closest_pair ps = (let (_, p) = closest_pair_rec (mergesort fst ps) in p)"
 
 lemma closest_pair_eq_val_closest_pair_tm:
-  "closest_pair ps = val (closest_pair_tm ps)"
+  "val (closest_pair_tm ps) = closest_pair ps"
   by (induction ps rule: induct_list012)
      (auto simp del: closest_pair_rec_tm.simps mergesort_tm.simps
            simp add: closest_pair_rec_eq_val_closest_pair_rec_tm mergesort_eq_val_mergesort_tm
@@ -957,7 +963,7 @@ fun t_combine :: "(point * point) \<Rightarrow> (point * point) \<Rightarrow> in
 
 lemma t_combine_eq_time_combine_tm:
   "t_combine (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps = time (combine_tm (p\<^sub>0\<^sub>L, p\<^sub>1\<^sub>L) (p\<^sub>0\<^sub>R, p\<^sub>1\<^sub>R) l ps)"
-  by (auto simp: time_simps t_find_closest_pair_eq_time_find_closest_pair_tm filter_eq_val_filter_tm)
+  by (auto simp: combine_tm.simps time_simps t_find_closest_pair_eq_time_find_closest_pair_tm filter_eq_val_filter_tm)
 
 lemma t_combine_bound:
   fixes ps :: "point list"
@@ -1025,7 +1031,7 @@ lemma time_closest_pair_rec_tm_simps_2:
   )"
   using assms
   apply (subst closest_pair_rec_tm.simps)
-  by (auto simp del: closest_pair_rec_tm.simps combine_tm.simps
+  by (auto simp del: closest_pair_rec_tm.simps
            simp add: time_simps length_eq_val_length_tm t_combine_eq_time_combine_tm
               split: prod.split)
 
@@ -1074,7 +1080,7 @@ proof (induction ps rule: length_induct)
     note defs = XS_def CP\<^sub>L_def CP\<^sub>R_def YS_def C\<^sub>0\<^sub>1_def
 
     have XSLR: "XS\<^sub>L = take (?n div 2) ps" "XS\<^sub>R = drop (?n div 2) ps"
-      using defs by (auto simp: split_at_take_drop_conv split_at_eq_val_split_at_tm[symmetric])
+      using defs by (auto simp: split_at_take_drop_conv split_at_eq_val_split_at_tm)
     hence "length XS\<^sub>L = ?n div 2" "length XS\<^sub>R = ?n - ?n div 2"
       by simp_all
     hence *: "(nat \<lfloor>real ?n / 2\<rfloor>) = length XS\<^sub>L" "(nat \<lceil>real ?n / 2\<rceil>) = length XS\<^sub>R"
@@ -1429,7 +1435,7 @@ proof -
   ultimately have "C\<^sub>0 = C\<^sub>0'" "C\<^sub>1 = C\<^sub>1'"
     using * find_closest_pair_code_eq \<Delta>_def by blast+
   moreover have "C\<^sub>0 = c\<^sub>0" "C\<^sub>1 = c\<^sub>1"
-    using assms(4) defs(1,3,5) apply (auto split: prod.splits) by (metis Pair_inject)+
+    using assms(4) defs(1,3,5) apply (auto simp: combine.simps split: prod.splits) by (metis Pair_inject)+
   moreover have "C\<^sub>0' = c\<^sub>0'" "C\<^sub>1' = c\<^sub>1'"
     using assms(5) defs(2,4,6) apply (auto split: prod.splits) by (metis prod.inject)+
   ultimately show ?thesis
@@ -1455,9 +1461,8 @@ function closest_pair_rec_code :: "point list \<Rightarrow> (point list * int * 
   )"
   by pat_completeness auto
 termination closest_pair_rec_code
-  apply (relation "Wellfounded.measure (\<lambda>xs. length xs)")
-  apply (auto simp: split_at_take_drop_conv Let_def)
-  done
+  by (relation "Wellfounded.measure (\<lambda>xs. length xs)")
+     (auto simp: split_at_take_drop_conv Let_def)
 
 lemma closest_pair_rec_code_simps:
   assumes "n = length xs" "\<not> (n \<le> 3)"
