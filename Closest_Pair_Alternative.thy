@@ -537,10 +537,6 @@ termination closest_pair_rec
 
 declare split_at_take_drop_conv [simp del]
 
-lemma length_induct': 
-  "(\<And>xs. (\<And>ys. length ys < length xs \<Longrightarrow> P ys) \<Longrightarrow> P xs) \<Longrightarrow> P xs"
-  using length_induct by blast
-
 lemma closest_pair_rec_simps:
   assumes "n = length xs" "\<not> (n \<le> 3)"
   shows "closest_pair_rec xs = (
@@ -556,7 +552,7 @@ declare closest_pair_rec.simps [simp del]
 
 lemma closest_pair_rec_eq_val_closest_pair_rec_tm:
   "val (closest_pair_rec_tm xs) = closest_pair_rec xs"
-proof (induction rule: length_induct')
+proof (induction rule: length_induct)
   case (1 xs)
   define n where "n = length xs"
   obtain xs\<^sub>L xs\<^sub>R where xs_def: "(xs\<^sub>L, xs\<^sub>R) = split_at (n div 2) xs"
