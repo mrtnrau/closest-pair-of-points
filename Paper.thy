@@ -164,7 +164,7 @@ combinations. Otherwise we apply the divide-and-conquer tactic.
 
 We divide $P$ into two sets $P_L$ and $P_R$ along a vertical 
 line $l$ such that the sizes of $P_L$ and $P_R$ differ by at most $1$ and the
-$y$-coordinate of all points \mbox{$p_L \in P_L\,(p_R \in P_R)$} is \<open>\<le> l\<close>
+$x$-coordinate of all points \mbox{$p_L \in P_L\,(p_R \in P_R)$} is \<open>\<le> l\<close>
 (\<open>\<ge> l\<close>).
 
 We then conquer the left and right subproblems by applying the algorithm recursively, 
@@ -325,7 +325,7 @@ Cormen \emph{et al.} propose the following top-down approach: Their algorithm ta
 of points \<open>P\<close> and lists \<open>xs\<close> and \<open>ys\<close> which contain the same set of points \<open>P\<close> but are respectively 
 sorted by \<open>x\<close> and \<open>y\<close>-coordinate. The algorithm first splits \<open>xs\<close> at \<open>length xs div 2\<close> into two still
 sorted lists \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close> and chooses \<open>l\<close> as either the \<open>x\<close>-coordinate of the last element of \<open>xs\<^sub>L\<close>
-or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
+or the \<open>x\<close>-coordinate of the first element of \<open>xs\<^sub>R\<close>. It then constructs the sets \<open>P\<^sub>L\<close> and \<open>P\<^sub>R\<close> respectively consisting
 of the points of \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. For the recursive invocations it needs to obtain in addition lists 
 \<open>ys\<^sub>L\<close> and \<open>ys\<^sub>R\<close> that are still sorted by \<open>y\<close>-coordinate and again respectively refer to the same points as
 \<open>xs\<^sub>L\<close> and \<open>xs\<^sub>R\<close>. It achieves this by iterating once through \<open>ys\<close> and checking for each point if it is
@@ -401,14 +401,17 @@ Corollary \ref{cor:closest_pair_dist} together with Theorems \ref{thm:closest_pa
 
 \section{Time Complexity Proof} \label{section:proving_running_time}
 
-To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. For each function @{text f}
-we define a function @{text "t_f"} that takes the same arguments as @{text f} but computes the number of function
-calls the computation of @{text f} needs, the `time'. Function @{text "t_f"} follows the same recursion
-structure as @{text f} and can be seen as an abstract interpretation of @{text f}. For simplicity of presentation
-we define @{text f} and @{text "t_f"} directly rather than deriving them from a monadic function that computes
-both the value and the time. We also simplify matters a bit: we count only expensive operations where the running time increases with the size of the input; in particular we assume constant time arithmetic and ignore small additive constants. Due to reasons of space we only show
-one example of such a `timing' functon, @{const t_find_closest}, which is crucial to our time
-complexity proof. 
+To formally verify the running time we follow the approach in \cite{Nipkow-APLAS17}. 
+For each function @{text f} we define a function @{text "t_f"} that takes the same arguments as 
+@{text f} but computes the number of function calls the computation of @{text f} needs, the `time'. 
+Function @{text "t_f"} follows the same recursion structure as @{text f} and can be seen as an 
+abstract interpretation of @{text f}. To ensure the absence of errors we derive @{text f} and
+@{text "t_f"} from a monadic function that computes both the value and the time but for simplicity of 
+presentation we present only @{text f} and @{text "t_f"}. We also simplify matters a bit: we count 
+only expensive operations where the running time increases with the size of the input; in particular 
+we assume constant time arithmetic and ignore small additive constants. Due to reasons of space we 
+only show one example of such a `timing' function, @{const t_find_closest}, which is crucial to our 
+time complexity proof. 
 
 \begin{quote}
 @{term [source, break] "t_find_closest :: point \<Rightarrow> real \<Rightarrow> point list \<Rightarrow> nat"} \vskip 0pt
@@ -461,7 +464,7 @@ on the length of \<open>ps\<close>. Looking back at Figure \ref{fig:Combine}, th
 we can assume that the list @{term "p # ps"} is distinct and sorted in ascending order by \<open>y\<close>-coordinate. 
 From the precomputing effort of the @{const combine} step we know that its points are contained 
 within the @{text "2\<delta>"} wide vertical strip centered around @{term l} and can be split into two sets @{term P\<^sub>L}
-(@{term P\<^sub>R}) consisting of all points which lie to the left (right) of or on the line @{term l}, respectively.
+(@{term P\<^sub>R}) consisting of all points which lie to the left (right) of or on the line @{term l}.
 Due to the two recursive invocations of the algorithm during the conquer step we can additionally assume
 that both @{term P\<^sub>L} and @{term P\<^sub>R} are @{term \<delta>}-sparse, suggesting the following lemma which implies
 @{term "t_find_closest p \<delta> ps \<le> 8"} and thus the constant running time of @{const find_closest}.
@@ -587,7 +590,7 @@ and thus evaluating @{term "find_closest_pair (p\<^sub>0, p\<^sub>1) ps"} as wel
 takes time linear in @{term "length ps"}.
 
 Next we turn our attention to the timing of @{const closest_pair_rec}
-and define (but do not show) the corresponding function @{const t_closest_pair_rec}.
+and derive (but do not show) the corresponding function @{const t_closest_pair_rec}.
 At this point we could prove a concrete bound on @{const t_closest_pair_rec}.
 But since we are dealing with a divide-and-conquer algorithm we should, in theory, be able to determine its
 running time using the `master theorem' \cite{Introduction-to-Algorithms:2009}. This is, in practice, also
@@ -709,7 +712,7 @@ optimized version of the closest pair algorithm with a CCP of $2n \log n$, in co
 which will be the worst case CCP of the algorithm of Section \ref{section:proving_functional_correctness} 
 after we minimize the number of distance computations in Section \ref{section:executable_code}. They
 improve upon the algorithm presented by Preparata and Shamos \cite{Computational-Geometry-An-Introduction:1985} 
-which achieves CCP of $3n \log n$. Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, 
+which achieves a CCP of $3n \log n$. Ge \emph{et al.} \cite{Ge2006} base their, quite sophisticated, 
 algorithm on the version of Zhou \emph{et al.} and prove an even lower CCP of $\frac{3}{2}n \log n$ 
 for their implementation. The race for the lowest number of distance computations culminates so far 
 with the work of Jiang and Gillespie~\cite{jiang2007engineering} who present their algorithms `Basic-2' 
@@ -725,7 +728,7 @@ to generate executable code from our formalization.
 
 In Section \ref{section:proving_functional_correctness} we fixed the data representation of a point 
 to be a pair of mathematical ints rather than mathematical reals. During code export Isabelle 
-can then correctly and automatically maps its abstract data type @{typ int} to a suitable concrete 
+then maps, correctly and automatically, its abstract data type @{typ int} to a suitable concrete 
 implementation of (arbitrary-sized) integers; for our target language OCaml using the library `zarith'. 
 For the data type @{typ real} this is not possible since we cannot implement mathematical reals. We would instead 
 have to resort to an approximation (e.g. floats) losing all proved guarantees in the process. 
@@ -773,7 +776,7 @@ the huge impact the small optimization of Subsection \ref{subsection:snd} can ha
 
 We have presented the first verification (both functional correctness and running time) of two related 
 closest pair of points algorithms in the plane, without assuming the \<open>x\<close> coordinates of all points 
-are distinct. The executable code generated from the formalization is competitive with existing 
+to be distinct. The executable code generated from the formalization is competitive with existing 
 reference implementations. A challenging and rewarding next step would be to formalize and verify a 
 closest pair of points algorithm in arbitrary dimensions. This case is treated rather sketchily in the literature.
 
