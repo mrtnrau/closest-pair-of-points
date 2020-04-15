@@ -1,0 +1,60 @@
+\documentclass{llncs}
+\pagestyle{plain} % turn on page numbers in llncs
+
+\usepackage{isabelle,isabellesym}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{changepage}
+\usepackage{graphicx}
+
+% this should be the last package used
+\usepackage{pdfsetup}
+
+\newtheorem{thm}{Theorem}
+
+% no right margin in quote:
+\renewenvironment{quote}
+{\list{}{}%
+\item\relax}
+{\endlist}
+
+\newcommand{\noquotes}[1]{{\renewcommand{\isachardoublequote}{}\renewcommand{\isachardoublequoteopen}{}\renewcommand{\isachardoublequoteclose}{}#1}}
+
+\isabellestyle{it}
+
+\renewcommand{\isacharunderscore}{\_}
+\renewcommand{\isacharunderscorekeyword}{\_}
+\renewcommand{\isadigit}[1]{{\rm #1}}
+
+% for uniform font size
+\renewcommand{\isastyle}{\isastyleminor}
+
+\newcommand{\eqnum}{\refstepcounter{equation}\hfill(\theequation)}
+
+\hyphenation{Isa-belle}
+
+
+\begin{document}
+
+\title{Verification of Closest Pair of Points Algorithms}
+\author{Martin Rau \and Tobias Nipkow\orcidID{0000-0003-0730-515X}}
+\institute{Fakult\"at f\"ur Informatik, Technische Universit\"at M\"unchen}
+\date{}
+\maketitle
+
+\begin{abstract}
+We verify two related divide-and-conquer algorithms solving one of the fundamental problems
+in Computational Geometry, the \textit{Closest Pair of Points} problem.
+Using the interactive theorem prover Isabelle/HOL, we prove functional correctness
+and the optimal running time of $\mathcal{O}(n \log n)$ of the algorithms. 
+We generate executable code which is empirically competitive with handwritten
+reference implementations.
+\end{abstract}
+
+\input{Paper.tex}
+
+\bibliographystyle{splncs04}
+\bibliography{root}
+
+\end{document}

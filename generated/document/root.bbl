@@ -1,0 +1,141 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{Akra1998}
+Akra, M., Bazzi, L.: On the solution of linear recurrence equations.
+  Computational Optimization and Applications  \textbf{10}(2),  195--210
+  (1998). \doi{10.1023/A:1018373005182},
+  \url{https://doi.org/10.1023/A:1018373005182}
+
+\bibitem{Divide-And-Conquer-In-Multidimensional-Space:1976}
+Bentley, J.L., Shamos, M.I.: Divide-and-conquer in multidimensional space. In:
+  Proc.\ Eighth Annual ACM Symposium on Theory of Computing. pp. 220--230. STOC
+  '76, ACM (1976). \doi{10.1145/800113.803652}
+
+\bibitem{DBLP:conf/ictac/Bertot18}
+Bertot, Y.: Formal verification of a geometry algorithm: {A} quest for abstract
+  views and symmetry in {Coq} proofs. In: Fischer, B., Uustalu, T. (eds.)
+  Theoretical Aspects of Computing - {ICTAC} 2018. LNCS, vol. 11187, pp. 3--10.
+  Springer (2018). \doi{10.1007/978-3-030-02508-3\_1}
+
+\bibitem{DBLP:journals/comgeo/BrunDM12}
+Brun, C., Dufourd, J., Magaud, N.: Designing and proving correct a convex hull
+  algorithm with hypermaps in {Coq}. Comput. Geom.  \textbf{45}(8),  436--457
+  (2012). \doi{10.1016/j.comgeo.2010.06.006}
+
+\bibitem{Introduction-to-Algorithms:2009}
+Cormen, T.H., Leiserson, C.E., Rivest, R.L., Stein, C.: Introduction to
+  Algorithms, Third Edition. The MIT Press, 3rd edn. (2009)
+
+\bibitem{DBLP:journals/jar/Dufourd09}
+Dufourd, J.: An intuitionistic proof of a discrete form of the {Jordan Curve
+  Theorem} formalized in {Coq} with combinatorial hypermaps. J. Autom.
+  Reasoning  \textbf{43}(1),  19--51 (2009). \doi{10.1007/s10817-009-9117-x}
+
+\bibitem{DBLP:conf/itp/DufourdB10}
+Dufourd, J., Bertot, Y.: Formal study of plane delaunay triangulation. In:
+  Kaufmann, M., Paulson, L.C. (eds.) Interactive Theorem Proving, {ITP} 2010.
+  LNCS, vol.~6172, pp. 211--226. Springer (2010).
+  \doi{10.1007/978-3-642-14052-5\_16}
+
+\bibitem{eberl_akra_bazzi}
+Eberl, M.: Proving divide and conquer complexities in {I}sabelle/{HOL}. Journal
+  of Automated Reasoning  \textbf{58}(4),  483--508 (Apr 2017).
+  \doi{10.1007/s10817-016-9378-0}
+
+\bibitem{eberl19issac}
+Eberl, M.: Verified real asymptotics in {I}sabelle/{HOL}. In: Proceedings of
+  the International Symposium on Symbolic and Algebraic Computation. ISSAC '19,
+  ACM, New York, NY, USA (2019). \doi{10.1145/3326229.3326240}
+
+\bibitem{Ge2006}
+Ge, Q., Wang, H.T., Zhu, H.: An improved algorithm for finding the closest pair
+  of points. Journal of Computer Science and Technology  \textbf{21}(1),
+  27--31 (Jan 2006). \doi{10.1007/s11390-006-0027-7},
+  \url{https://doi.org/10.1007/s11390-006-0027-7}
+
+\bibitem{filter}
+H{\"o}lzl, J., Immler, F., Huffman, B.: Type classes and filters for
+  mathematical analysis in isabelle/hol. In: Blazy, S., Paulin-Mohring, C.,
+  Pichardie, D. (eds.) Interactive Theorem Proving. pp. 279--294. Springer
+  Berlin Heidelberg, Berlin, Heidelberg (2013)
+
+\bibitem{Immler:2015}
+Immler, F.: A verified algorithm for geometric zonotope/hyperplane
+  intersection. In: Certified Programs and Proofs. pp. 129--136. CPP '15, ACM
+  (2015). \doi{10.1145/2676724.2693164}
+
+\bibitem{jiang2007engineering}
+Jiang, M., Gillespie, J.: Engineering the divide-and-conquer closest pair
+  algorithm. Journal of Computer Science and Technology  \textbf{22}(4),
+  532--540 (2007)
+
+\bibitem{DBLP:conf/adg/MeikleF04}
+Meikle, L.I., Fleuriot, J.D.: Mechanical theorem proving in computational
+  geometry. In: Hong, H., Wang, D. (eds.) Automated Deduction in Geometry,
+  {ADG} 2004. LNCS, vol.~3763, pp. 1--18. Springer (2004).
+  \doi{10.1007/11615798\_1}
+
+\bibitem{narboux:hal-01779452}
+Narboux, J., Janicic, P., Fleuriot, J.: {Computer-assisted Theorem Proving in
+  Synthetic Geometry}. In: Sitharam, M., John, A.S., Sidman, J. (eds.)
+  {Handbook of Geometric Constraint Systems Principles}. Discrete Mathematics
+  and Its Applications, {Chapman and Hall/CRC } (2018)
+
+\bibitem{Nipkow-APLAS17}
+Nipkow, T.: Verified root-balanced trees. In: Chang, B.Y.E. (ed.) Asian
+  Symposium on Programming Languages and Systems, APLAS 2017. LNCS, vol. 10695,
+  pp. 255--272. Springer (2017)
+
+\bibitem{Concrete}
+Nipkow, T., Klein, G.: Concrete Semantics with Isabelle/HOL. Springer (2014),
+  \url{http://concrete-semantics.org}
+
+\bibitem{LNCS2283}
+Nipkow, T., Paulson, L., Wenzel, M.: Isabelle/HOL --- A Proof Assistant for
+  Higher-Order Logic, LNCS, vol.~2283. Springer (2002)
+
+\bibitem{pereira2012optimized}
+Pereira, J.C., Lobo, F.G.: An optimized divide-and-conquer algorithm for the
+  closest-pair problem in the planar case. Journal of Computer Science and
+  Technology  \textbf{27}(4),  891--896 (2012)
+
+\bibitem{DBLP:conf/tphol/PichardieB01}
+Pichardie, D., Bertot, Y.: Formalizing convex hull algorithms. In: Boulton,
+  R.J., Jackson, P.B. (eds.) Theorem Proving in Higher Order Logics, TPHOLs
+  2001. LNCS, vol.~2152, pp. 346--361. Springer (2001).
+  \doi{10.1007/3-540-44755-5\_24}
+
+\bibitem{Computational-Geometry-An-Introduction:1985}
+Preparata, F.P., Shamos, M.I.: Computational Geometry: An Introduction.
+  Springer-Verlag, Berlin, Heidelberg (1985)
+
+\bibitem{DBLP:journals/tcs/PuitgD00}
+Puitg, F., Dufourd, J.: Formalizing mathematics in higher-order logic: {A} case
+  study in geometric modelling. Theor. Comput. Sci.  \textbf{234}(1-2),  1--57
+  (2000). \doi{10.1016/S0304-3975(98)00228-X}
+
+\bibitem{Closest_Pair_Points-AFP}
+Rau, M., Nipkow, T.: Closest pair of points algorithms. Archive of Formal
+  Proofs  (Jan 2020),
+  \url{http://isa-afp.org/entries/Closest_Pair_Points.html}, Formal proof
+  development
+
+\bibitem{Handbook-Computational-Geometry:2000}
+Sack, J.R., Urrutia, J. (eds.): Handbook of Computational Geometry.
+  North-Holland Publishing Co., Amsterdam, The Netherlands, The Netherlands
+  (2000)
+
+\bibitem{Closest-Point-Problems:1975}
+{Shamos}, M.I., {Hoey}, D.: Closest-point problems. In: 16th Annual Symposium
+  on Foundations of Computer Science (sfcs 1975). pp. 151--162 (Oct 1975).
+  \doi{10.1109/SFCS.1975.8}
+
+\bibitem{zhou1998improved}
+Zhou, Y., Xiong, P., Zhu, H.: An improved algorithm about the closest pair of
+  points on plane set. Computer Research and Development  \textbf{35}(10),
+  957--960 (1998)
+
+\end{thebibliography}
